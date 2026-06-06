@@ -3,8 +3,18 @@ const redisClient = require('../config/redis');
 const axios = require('axios');
 
 const createDish = async (req, res) => {
-  const { nombre, descripcion, precio, categoria, url_imagen, ingredientes } = req.body;
-  const restaurante_id = req.user.id; // Extraído del token por authMiddleware
+  const { nombre, descripcion, precio, categoria, ingredientes } = req.body;
+  const restaurante_id = req.user.id;
+  
+  // La URL de la imagen vendrá de multer-s3 si se subió un archivo
+  // Si no hay archivo, se puede permitir una URL externa o dejarlo vacío
+  let url_imagen = req.file ? req.file.location : req.body.url_imagen;
+
+  // Si existe CLOUDFRONT_DOMAIN, reemplazar el host de S3 por el de CloudFront para mejores tiempos de carga
+  if (req.file && process.env.CLOUDFRONT_DOMAIN) {
+    const s3Url = new URL(req.file.location);
+    url_imagen = `${process.env.CLOUDFRONT_DOMAIN}${s3Url.pathname}`;
+  }
 
   if (!nombre || !precio) {
     return res.status(400).json({ mensaje: 'Nombre y precio son obligatorios' });
