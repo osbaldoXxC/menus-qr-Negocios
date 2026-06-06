@@ -41,6 +41,8 @@ services:
       - "4000:4000"
     volumes:
       - ./backend:/app
+    env_file:
+      - .env
     environment:
       - DATABASE_URL=postgresql://admin:password123@postgres:5432/mexxicanmx_db
       - REDIS_URL=redis://redis:6379
@@ -60,6 +62,8 @@ services:
       - "3000:3000"
     volumes:
       - ./frontend:/app
+    env_file:
+      - .env
     networks:
       - app-network
     depends_on:
@@ -73,6 +77,8 @@ services:
       - "8000:8000"
     volumes:
       - ./ai-engine:/app
+    env_file:
+      - .env
     environment:
       - DATABASE_URL=postgresql://admin:password123@postgres:5432/mexxicanmx_db
     networks:
