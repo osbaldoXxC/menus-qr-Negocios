@@ -4,7 +4,7 @@ services:
     image: ankane/pgvector:latest
     environment:
       POSTGRES_USER: admin
-      POSTGRES_PASSWORD: password123
+      POSTGRES_PASSWORD: pass}word123
       POSTGRES_DB: mexxicanmx_db
     ports:
       - "5432:5432"
@@ -42,8 +42,6 @@ services:
     volumes:
       - ./backend:/app
       - /app/node_modules
-    env_file:
-      - .env
     environment:
       - DATABASE_URL=postgresql://admin:password123@postgres:5432/mexxicanmx_db
       - REDIS_URL=redis://redis:6379
@@ -63,8 +61,7 @@ services:
       - "3000:3000"
     volumes:
       - ./frontend:/app
-    env_file:
-      - .env
+      - /app/node_modules
     networks:
       - app-network
     depends_on:
@@ -78,8 +75,6 @@ services:
       - "8000:8000"
     volumes:
       - ./ai-engine:/app
-    env_file:
-      - .env
     environment:
       - DATABASE_URL=postgresql://admin:password123@postgres:5432/mexxicanmx_db
     networks:
