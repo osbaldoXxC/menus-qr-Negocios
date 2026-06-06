@@ -72,6 +72,55 @@ const createDish = async (req, res) => {
   }
 };
 
+const getPublicMenu = async (req, res) => {
+  const { restaurant_id } = req.params;
+  const cacheKey = `cache:menu:${restaurant_id}`;
+
+  try {
+    // 1. Intentar obtener de Redis (Cache Hit)
+    const cachedMenu = await redisClient.get(cacheKey);
+    if (cachedMenu) {
+      console.log(`Cache Hit for restaurant: ${restaurant_id}`);
+      return res.json(JSON.parse(cachedMenu));
+    }
+
+    // 2. Si no hay en caché (Cache Miss), consultar PostgreSQL
+    console.log(`Cache Miss for restaurant: ${restaurant_id}`);
+    
+    // Validar primero que el restaurante exista y esté activo
+    const restRes = await db.query(
+      'SELECT estado_activo FROM restaurantes WHERE id = $1',
+      [restaurant_id]
+    );
+
+    if (restRes.rows.length === 0) {
+      return res.status(404).json({ mensaje: 'Restaurante no encontrado' });
+    }
+
+    if (!restRes.rows[0].estado_activo) {
+      return res.status(403).json({ mensaje: 'Restaurante no disponible temporalmente' });
+    }
+
+    // Obtener los platillos
+    const dishesRes = await db.query(
+      'SELECT id, nombre, descripcion, precio, categoria, url_imagen FROM platillos WHERE restaurante_id = $1',
+      [restaurant_id]
+    );
+
+    const menuData = dishesRes.rows;
+
+    // 3. Guardar en Redis con TTL de 4 horas (14400 segundos)
+    await redisClient.setEx(cacheKey, 14400, JSON.stringify(menuData));
+
+    res.json(menuData);
+
+  } catch (error) {
+    console.error('Error al obtener menú público:', error);
+    res.status(500).json({ mensaje: 'Error interno del servidor' });
+  }
+};
+
 module.exports = {
   createDish,
+  getPublicMenu,
 };
