@@ -9,67 +9,285 @@
 [@osbaldoXxC] Tarea 7.2: Motor de Recomendación IA Python (Rama: feature/7.2-ia-recomendacion | PR -> develop)
 [@osbaldoXxC] Tarea 7.3: Endpoint de Interacciones Swipes (Rama: feature/7.3-api-interacciones | PR -> develop)
 
+Por cada uno se tiene que hacer un pr para deploy 
+🗄️ ÉPICA 5: Infraestructura, DB y Seguridad
 
-////
-primer tarea Contexto:
-Soy el Líder Técnico de un proyecto llamado MexxicanMX. Estoy trabajando en la "Tarea 5.1: Levantar Entorno Docker, DB, Redis". Necesito que me ayudes a crear la infraestructura base en contenedores.
+Tarea 5.1 & 5.2: Entorno Docker y Esquema de BD
 
-Instrucciones:
+(Tareas de configuración de infraestructura ya vistas: Levantar contenedores y crear tablas. El enfoque principal ahora son los Endpoints).
 
-Crea la siguiente estructura de carpetas en la raíz del proyecto (si no existen):
+Tarea 5.3: Sistema de Auth y RBAC (Node.js)
 
-/frontend
+A. Endpoint: Registro de Restaurante
 
-/backend
+Ruta: POST /api/auth/register
 
-/ai-engine
+Request (Datos que recibes de Kevin):
 
-En la raíz del proyecto, crea un archivo docker-compose.yml que orqueste 5 servicios:
+{
+  "nombre_negocio": "Tacos El Paisa",
+  "email": "contacto@elpaisa.com",
+  "password": "PasswordSeguro123!",
+  "plan": "basico"
+}
 
-postgres: Usando la imagen ankane/pgvector:latest (puerto 5432, con volumen persistente postgres_data). Usuario: admin, Password: password123, BD: mexxicanmx_db.
 
-redis: Usando la imagen redis:alpine (puerto 6379, volumen redis_data).
+Lógica Interna:
 
-frontend: Construido desde ./frontend/Dockerfile.dev (puerto 3000, volumen apuntando a ./frontend). Depende de backend.
+Validar que el email no exista en la tabla Restaurantes.
 
-backend: Construido desde ./backend/Dockerfile.dev (puerto 4000, volumen apuntando a ./backend). Depende de postgres y redis.
+Hashear el password usando bcrypt (ej. salt rounds 10).
 
-ai-engine: Construido desde ./ai-engine/Dockerfile.dev (puerto 8000, volumen apuntando a ./ai-engine). Depende de postgres.
+Hacer INSERT INTO Restaurantes (id, nombre, email, password_hash, suscripcion_activa, rol) VALUES (...).
 
-Todos deben estar en una red llamada app-network (driver bridge).
+Response (Datos que devuelves):
 
-Crea el archivo frontend/Dockerfile.dev usando node:18-alpine. El comando CMD debe mantener el contenedor vivo si aún no existe un package.json (ej. usando tail -f /dev/null).
+{ "mensaje": "Registrado con éxito", "restaurante_id": "uuid..." }
 
-Crea el archivo backend/Dockerfile.dev usando node:18-alpine. Igual que el anterior, mantenlo vivo si no hay package.json.
 
-Crea el archivo ai-engine/Dockerfile.dev usando python:3.10-slim. Mantenlo vivo si no existe requirements.txt.
+B. Endpoint: Login (Seguridad de Tokens)
 
-Genera el código para estos 4 archivos de configuración.
-////segunda tarea :Contexto: 5.2:
-Soy el Líder Backend del proyecto MexxicanMX. Estoy en la "Tarea 5.2: Esquema Relacional PostgreSQL". Ya tengo levantado un contenedor con ankane/pgvector:latest.
+Ruta: POST /api/auth/login
 
-Instrucciones:
-Necesito que me generes un archivo de script SQL puro (puedes llamarlo init.sql) que contenga la creación de todas las tablas necesarias para el sistema.
+Request:
 
-Requisitos estrictos para el SQL:
+{ "email": "contacto@elpaisa.com", "password": "PasswordSeguro123!" }
 
-Primero, debe ejecutar CREATE EXTENSION IF NOT EXISTS vector; para habilitar pgvector.
 
-Usar UUIDs para los IDs primarios (usa gen_random_uuid()).
+Lógica Interna (Crítica según Diagrama):
 
-Crear las siguientes tablas con sus respectivas relaciones (Foreign Keys):
+Buscar usuario por email.
 
-restaurantes: id, nombre_negocio, email (único), password_hash, rol (default 'restaurante'), estado_activo (boolean, default true), ultimo_pago (date), created_at.
+Comparar bcrypt.compare(password, password_hash).
 
-platillos: id, restaurante_id (FK), nombre, descripcion, precio (decimal), categoria, url_imagen, vector_ia (tipo vector de 768 dimensiones, que es el estándar para muchos modelos de embeddings), estado_ia (procesando/completado), created_at.
+Si suscripcion_activa === false y el rol NO es Super_Admin, devolver 403 Forbidden (Módulo 7 del diagrama).
 
-ingredientes: id, nombre (único, ej. 'cacahuate', 'camaron').
+Generar Access Token (JWT firmado con caducidad de 15 minutos). Payload: { id, rol }.
 
-platillo_ingredientes (Tabla intermedia M:M): platillo_id (FK), ingrediente_id (FK).
+Generar Refresh Token (JWT firmado con caducidad de 7 días). Payload: { id }.
 
-interacciones: id, platillo_id (FK), tipo_accion (varchar, ej. 'like', 'dislike'), created_at.
+Guardar el Refresh Token en la DB para poder revocarlo si es necesario.
 
-Agrega comentarios en el SQL para explicar brevemente cada tabla.
+Response:
 
-Salida esperada:
-Genera únicamente el código del archivo init.sql. Después, indícame brevemente qué comando de docker exec o psql puedo usar en mi terminal para inyectar este archivo SQL dentro de mi contenedor Docker mexxicanmx_db y crear las tablas de inmediato
+Headers: Set-Cookie: refreshToken=...; HttpOnly; Secure; SameSite=Strict
+
+Body (JSON):
+
+{
+  "access_token": "eyJhbG...",
+  "rol": "Restaurante",
+  "restaurante_id": "uuid..."
+}
+
+
+⚙️ ÉPICA 6: API Core (Node.js) - Controladores
+
+Tarea 6.1: API de Menús y AWS S3 (Creación con IA)
+
+Ruta: POST /api/menu/platillos
+
+Headers: Authorization: Bearer <access_token>
+
+Request (Datos que recibes):
+
+{
+  "nombre": "Tacos al Pastor",
+  "descripcion": "Orden de 5 tacos con piña.",
+  "precio": 120.50,
+  "categoria": "Plato Fuerte",
+  "url_imagen": "[https://s3.aws.com/tu-bucket/imagen.jpg](https://s3.aws.com/tu-bucket/imagen.jpg)",
+  "ingredientes": ["uuid-ingr1", "uuid-ingr2"]
+}
+
+
+Lógica Interna:
+
+Extraer restaurante_id desde el Access Token.
+
+Iniciar una transacción SQL (Begin).
+
+INSERT INTO Platillos obteniendo el platillo_id generado.
+
+Iterar sobre ingredientes y hacer INSERT INTO Receta_Platillo (platillo_id, ingrediente_id).
+
+Cerrar transacción (Commit).
+
+El paso asíncrono (Diagrama Módulo 4): Sin hacer un await que bloquee la respuesta, enviar un HTTP request interno a tu contenedor de Python: POST http://ai-engine:8000/vectorize enviando { id_platillo, texto_descriptivo: nombre + descripcion + ingredientes }.
+
+Invalidar Caché: redisClient.del('cache:menu:' + restaurante_id) y redisClient.del('cache:busquedas_globales').
+
+Response:
+
+{ "mensaje": "Platillo creado", "platillo_id": "uuid..." }
+
+
+Tarea 6.2: API Generador de QR
+
+Ruta: GET /api/restaurants/qr
+
+Headers: Authorization: Bearer <access_token>
+
+Request: Ninguno (el ID viene del token).
+
+Lógica Interna:
+
+Obtener restaurante_id del token.
+
+Construir el string público: const url = "https://mexxican.mx/menu/" + restaurante_id.
+
+Usar librería qrcode para generar una imagen Base64: const qrImage = await QRCode.toDataURL(url).
+
+Response:
+
+{ "url_menu": "https://...", "qr_base64": "data:image/png;base64,iVBORw0K..." }
+
+
+Tarea 6.3: API Super Admin (Bloqueo y RBAC)
+
+Ruta: PUT /api/admin/restaurants/:id/status
+
+Headers: Authorization: Bearer <access_token> (Solo Super Admins).
+
+Request:
+
+{ "suscripcion_activa": false }
+
+
+Lógica Interna (Diagrama Módulo 7):
+
+Middleware: Validar que req.user.rol === 'Super_Admin'. Si no, 403 Forbidden.
+
+Ejecutar UPDATE Restaurantes SET suscripcion_activa = $1 WHERE id = $2.
+
+Limpieza Crítica de Redis: redisClient.del('cache:menu:' + req.params.id). (Esto garantiza que el restaurante desaparezca instantáneamente).
+
+Response:
+
+{ "mensaje": "Estado del restaurante actualizado y caché purgado." }
+
+
+Tarea 6.4: API Menú Local con Caché Redis
+
+Ruta: GET /api/menu/:restaurant_id
+
+Request: restaurant_id en la URL.
+
+Lógica Interna (Diagrama Módulo 5):
+
+Definir clave: const cacheKey = 'cache:menu:' + req.params.restaurant_id.
+
+const cachedMenu = await redisClient.get(cacheKey).
+
+Hit: Si cachedMenu existe, retornarlo con JSON.parse().
+
+Miss: Si es nulo, ejecutar SELECT * FROM Platillos WHERE restaurante_id = $1.
+
+Validar que la tabla Restaurantes tenga suscripcion_activa = true. (Si es false, devolver error 403 "Restaurante no disponible").
+
+Guardar en caché: redisClient.setEx(cacheKey, 14400, JSON.stringify(datosDB)) (Expira en 4 horas).
+
+Response:
+
+[
+  { "id": "...", "nombre": "Tacos", "precio": 120, "url_imagen": "..." }
+]
+
+
+🧠 ÉPICA 7: Motor IA (Python / FastAPI)
+
+Tarea 7.1: Microservicio Vectorizador
+
+Ruta: POST /vectorize (Puerto 8000, interno, llamado por Node.js).
+
+Request (Lo que manda Node.js):
+
+{
+  "id_platillo": "uuid...",
+  "texto_descriptivo": "Tacos al Pastor Orden de 5 tacos con piña Cerdo Piña Cebolla"
+}
+
+
+Lógica Interna:
+
+Recibir texto y llamar a la API de Google Gemini (o OpenAI Text-Embedding).
+
+El LLM devuelve un arreglo matemático: [0.015, -0.022, 0.551, ...].
+
+Conectarse a Postgres mediante psycopg2 o SQLAlchemy.
+
+Ejecutar: UPDATE platillos SET vector_embedding = %s WHERE id = %s.
+
+Response:
+
+{ "status": "vector_actualizado" }
+
+
+Tarea 7.2: Motor de Recomendación IA (El Cerebro)
+
+Ruta: POST /api/search/matches (Expuesto al Frontend de Kevin)
+
+Request (Datos del Cuestionario):
+
+{
+  "sabor_antojo": "Tengo ganas de algo muy picante y caldosito",
+  "alergias_ids": ["uuid-mani", "uuid-mariscos"]
+}
+
+
+Lógica Interna (El algoritmo híbrido):
+
+Node.js (Filtro Duro): Construir un Query SQL que excluya las alergias y verifique que el negocio haya pagado.
+SELECT id FROM Platillos p JOIN Restaurantes r ON p.restaurante_id = r.id WHERE r.suscripcion_activa = true AND p.id NOT IN (SELECT platillo_id FROM Receta_Platillo WHERE ingrediente_id IN ($1, $2))
+
+Node.js manda el sabor_antojo y la lista de IDs permitidos al servidor de Python.
+
+Python (Filtro Vectorial): Convierte "Tengo ganas de algo muy picante..." a un Vector de Embedding.
+
+Ejecutar consulta de Similitud del Coseno usando pgvector:
+SELECT id, 1 - (vector_embedding <=> '[vector_del_usuario]') AS match_score FROM Platillos WHERE id IN (lista_ids_permitidos) ORDER BY match_score DESC LIMIT 15;
+
+Python devuelve los IDs ordenados a Node.js.
+
+Node.js consulta los detalles de esos IDs a Postgres (nombres, fotos, precios) para enviárselos a Kevin.
+
+Response:
+
+{
+  "resultados": [
+    {
+      "platillo_id": "uuid...",
+      "nombre": "Birria en Caldo",
+      "precio": 150,
+      "url_imagen": "https://...",
+      "porcentaje_match": 98.5
+    }
+  ]
+}
+
+
+Tarea 7.3: Endpoint de Interacciones (Para entrenar la IA a futuro)
+
+Ruta: POST /api/feed/interactions
+
+Request (De los swipes de Kevin):
+
+{
+  "platillo_id": "uuid...",
+  "tipo_accion": "SWIPE_DERECHA" 
+}
+
+
+Lógica Interna:
+
+Obtener ID del comensal (ya sea por Token de usuario registrado o generar un ID anónimo vinculado al dispositivo/sesión).
+
+Ejecutar INSERT INTO Interacciones_Feed (usuario_id, platillo_id, tipo_interaccion, fecha) VALUES (...).
+
+Response:
+
+{ "status": "registrado" }
+
+
+
+Por cada uno se tiene que hacer un pr para deploy 
