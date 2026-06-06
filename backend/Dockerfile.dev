@@ -4,7 +4,10 @@ WORKDIR /app
 
 # Intentar instalar dependencias si existe package.json
 COPY package*.json ./
-RUN if [ -f package.json ]; then npm install; fi
+RUN if [ -f package.json ]; then \
+    npm install && \
+    npm install --os=linux --libc=musl --cpu=x64 sharp; \
+    fi
 
 COPY . .
 
