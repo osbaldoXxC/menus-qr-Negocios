@@ -1,0 +1,42 @@
+services:
+  db:
+    image: ankane/pgvector
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mexxicanmx
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+  backend:
+    build: ./backend
+    ports:
+      - "4000:4000"
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/mexxicanmx
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - db
+      - redis
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+
+  ai-engine:
+    build: ./ai-engine
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/mexxicanmx
+
+volumes:
+  postgres_data:
