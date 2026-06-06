@@ -22,6 +22,7 @@ require('./config/redis');
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/menu', require('./routes/menuRoutes'));
 app.use('/api/restaurants', require('./routes/restaurantRoutes'));
+app.use('/api/admin', require('./routes/adminRoutes'));
 
 app.get('/', (req, res) => {
 
