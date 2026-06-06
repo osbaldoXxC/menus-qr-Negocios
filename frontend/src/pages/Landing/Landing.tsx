@@ -1,34 +1,16 @@
+import { useNavigate } from 'react-router-dom';
+import { Header } from '../components/Header';
+import { Footer } from '../components/Footer';
+
 export function Landing() {
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 bg-black/90 backdrop-blur-md z-50 border-b border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <span className="text-3xl">🌮</span>
-            <span className="font-bold text-xl bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">
-              MexxicanMX
-            </span>
-          </div>
-          <div className="hidden md:flex gap-8">
-            <a href="#" className="text-gray-300 hover:text-orange-500 transition">Inicio</a>
-            <a href="#" className="text-gray-300 hover:text-orange-500 transition">Cómo funciona</a>
-            <a href="#" className="text-gray-300 hover:text-orange-500 transition">Para restaurantes</a>
-            <a href="#" className="text-gray-300 hover:text-orange-500 transition">Precios</a>
-            <a href="#" className="text-gray-300 hover:text-orange-500 transition">Blog</a>
-          </div>
-          <div className="flex gap-3">
-            <button className="px-5 py-2 text-gray-300 hover:text-white font-semibold transition">Ingresar</button>
-            <button className="px-5 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-full font-semibold hover:shadow-lg hover:shadow-orange-500/30 transition-all transform hover:scale-105">
-              Registrarse
-            </button>
-          </div>
-        </div>
-      </nav>
+      <Header />
 
       {/* Hero Section */}
       <div className="pt-32 pb-20 px-4 relative overflow-hidden">
-        {/* Fondo con efecto de partículas simplificado */}
         <div className="absolute inset-0 bg-gradient-to-b from-orange-900/20 via-black to-black"></div>
         <div className="absolute inset-0 opacity-20 bg-repeat" style={{
           backgroundImage: `radial-gradient(circle at 2px 2px, #F05A28 1px, transparent 1px)`,
@@ -55,15 +37,20 @@ export function Landing() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold py-4 px-10 rounded-full text-lg transition-all transform hover:scale-105 shadow-xl shadow-orange-500/30">
+            <button 
+              onClick={() => navigate('/register?role=comensal')}
+              className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold py-4 px-10 rounded-full text-lg transition-all transform hover:scale-105 shadow-xl shadow-orange-500/30"
+            >
               🌮 Quiero comer
             </button>
-            <button className="border-2 border-orange-500 text-orange-500 hover:bg-orange-500/10 font-bold py-4 px-10 rounded-full text-lg transition-all transform hover:scale-105">
+            <button 
+              onClick={() => navigate('/register?role=restaurante')}
+              className="border-2 border-orange-500 text-orange-500 hover:bg-orange-500/10 font-bold py-4 px-10 rounded-full text-lg transition-all transform hover:scale-105"
+            >
               🍽️ Soy restaurante
             </button>
           </div>
 
-          {/* Estadísticas */}
           <div className="mt-16 flex flex-wrap justify-center gap-8 md:gap-16">
             <div>
               <div className="text-3xl font-bold text-orange-500">10K+</div>
@@ -83,7 +70,6 @@ export function Landing() {
             </div>
           </div>
 
-          {/* Mockup visual */}
           <div className="mt-16">
             <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-8 text-white max-w-md mx-auto shadow-2xl border border-gray-700">
               <div className="flex justify-center space-x-8 mb-4">
@@ -100,7 +86,7 @@ export function Landing() {
         </div>
       </div>
 
-      {/* Cómo funciona */}
+      {/* Cómo funciona - Sección */}
       <div className="py-20 px-4 bg-gradient-to-b from-black to-gray-900">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
@@ -202,7 +188,10 @@ export function Landing() {
                   <span className="text-gray-300">Soporte 24/7 y actualizaciones automáticas</span>
                 </li>
               </ul>
-              <button className="bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-3 px-8 rounded-full hover:shadow-xl transition-all">
+              <button 
+                onClick={() => navigate('/register?role=restaurante')}
+                className="bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-3 px-8 rounded-full hover:shadow-xl transition-all"
+              >
                 Comenzar ahora → 
               </button>
             </div>
@@ -228,12 +217,7 @@ export function Landing() {
         </div>
       </div>
 
-      {/* Footer */}
-      <footer className="bg-black border-t border-gray-800 py-12 px-4">
-        <div className="max-w-7xl mx-auto text-center text-gray-600 text-sm">
-          © 2024 MexxicanMX - Motor de Descubrimiento Gastronómico con IA
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
