@@ -59,7 +59,7 @@ const login = async (req, res) => {
     }
 
     // 3. Verificar suscripción (si no es SUPER_ADMIN)
-    if (!user.estado_activo && user.rol !== 'SUPER_ADMIN') {
+    if (!user.suscripcion_activa && user.rol !== 'SUPER_ADMIN') {
       return res.status(403).json({ mensaje: 'Suscripción inactiva. Contacte al administrador.' });
     }
 

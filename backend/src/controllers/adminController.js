@@ -11,9 +11,9 @@ const updateRestaurantStatus = async (req, res) => {
 
   try {
     // 1. Actualizar el estado en la base de datos
-    // Usamos 'estado_activo' que es el nombre de la columna en nuestro esquema SQL (Tarea 5.2)
+    // Usamos 'suscripcion_activa' que es el nombre de la columna en nuestro nuevo esquema SQL
     const result = await db.query(
-      'UPDATE restaurantes SET estado_activo = $1 WHERE id = $2 RETURNING id, nombre_negocio, estado_activo',
+      'UPDATE restaurantes SET suscripcion_activa = $1 WHERE id = $2 RETURNING id, nombre_negocio, suscripcion_activa',
       [suscripcion_activa, id]
     );
 

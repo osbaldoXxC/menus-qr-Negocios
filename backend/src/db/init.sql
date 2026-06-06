@@ -1,59 +1,116 @@
--- MexxicanMX Database Schema
+-- MexxicanMX Database Schema (v3.0 - 100% Normalizado 3FN - IA Standby)
 -- Tarea 5.2: Esquema Relacional PostgreSQL
 
--- 1. Habilitar extensión pgvector para búsqueda semántica
+-- 1. Habilitar extensión pgvector (Se mantiene la capacidad, aunque no se use activamente)
 CREATE EXTENSION IF NOT EXISTS vector;
 
--- 2. Tabla de Restaurantes (Multi-tenant y Auth base)
+-- 2. Tabla de Restaurantes (Módulo de Panel SaaS)
 CREATE TABLE IF NOT EXISTS restaurantes (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    nombre_negocio TEXT NOT NULL,
-    email TEXT UNIQUE NOT NULL,
+    nombre_negocio VARCHAR(255) NOT NULL,
+    descripcion TEXT,
+    email VARCHAR(255) UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
-    rol TEXT NOT NULL DEFAULT 'restaurante',
-    estado_activo BOOLEAN DEFAULT true,
+    ubicacion_lat FLOAT,
+    ubicacion_lng FLOAT,
+    suscripcion_activa BOOLEAN DEFAULT true, -- Crítico para ABAC
+    rol VARCHAR(50) NOT NULL DEFAULT 'RESTAURANTE', -- 'RESTAURANTE', 'SUPER_ADMIN'
+    plan VARCHAR(50) DEFAULT 'basico', -- 'basico', 'premium'
     ultimo_pago DATE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- 3. Tabla de Platillos (Incluye vector para IA)
+-- 2.1 Tabla para manejo de Refresh Tokens (Seguridad)
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+    id SERIAL PRIMARY KEY,
+    restaurante_id UUID NOT NULL REFERENCES restaurantes(id) ON DELETE CASCADE,
+    token TEXT NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 3. Horarios_Restaurante (Normalización de horarios)
+CREATE TABLE IF NOT EXISTS horarios_restaurante (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    restaurante_id UUID NOT NULL REFERENCES restaurantes(id) ON DELETE CASCADE,
+    dia_semana INT CHECK (dia_semana BETWEEN 1 AND 7), -- 1=Lunes, 7=Domingo
+    hora_apertura TIME NOT NULL,
+    hora_cierre TIME NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 4. Categorias_Catalogo (Normalización de categorías)
+CREATE TABLE IF NOT EXISTS categorias_catalogo (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    nombre VARCHAR(100) UNIQUE NOT NULL -- Ej: Entrada, Plato Fuerte, Bebida
+);
+
+-- 5. Platillos (El corazón del Discovery Feed)
 CREATE TABLE IF NOT EXISTS platillos (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     restaurante_id UUID NOT NULL REFERENCES restaurantes(id) ON DELETE CASCADE,
-    nombre TEXT NOT NULL,
+    nombre VARCHAR(255) NOT NULL,
     descripcion TEXT,
     precio DECIMAL(10,2) NOT NULL,
-    categoria TEXT,
-    url_imagen TEXT,
-    vector_ia vector(768), -- Dimensiones estándar para embeddings de Gemini/OpenAI
-    estado_ia TEXT DEFAULT 'procesando', -- 'procesando' o 'completado'
+    url_imagen TEXT, -- Apunta a S3
+    categoria_id UUID REFERENCES categorias_catalogo(id) ON DELETE SET NULL,
+    vector_ia vector(768), -- Restaurado a vector_ia para compatibilidad con código actual
+    estado_ia VARCHAR(50) DEFAULT 'pendiente', -- 'pendiente', 'procesando', 'completado'
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- 4. Tabla de Ingredientes (Catálogo único para gestión de alérgenos)
-CREATE TABLE IF NOT EXISTS ingredientes (
+-- 6. Ingredientes_Catalogo
+CREATE TABLE IF NOT EXISTS ingredientes_catalogo (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    nombre TEXT UNIQUE NOT NULL
+    nombre VARCHAR(255) UNIQUE NOT NULL,
+    es_alergeno_comun BOOLEAN DEFAULT false,
+    es_origen_animal BOOLEAN DEFAULT false
 );
 
--- 5. Tabla Intermedia Platillo-Ingredientes (Relación Muchos a Muchos)
-CREATE TABLE IF NOT EXISTS platillo_ingredientes (
+-- 7. Sabores_Catalogo (Normalización de perfiles de sabor)
+CREATE TABLE IF NOT EXISTS sabores_catalogo (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    nombre VARCHAR(100) UNIQUE NOT NULL -- Ej: Picante, Dulce, Umami, Crujiente
+);
+
+-- 8. Usuarios_Comensales (Los que hacen swipe)
+CREATE TABLE IF NOT EXISTS usuarios_comensales (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    nombre VARCHAR(255),
+    email VARCHAR(255) UNIQUE,
+    auth_provider VARCHAR(50), -- 'Google', 'Apple', 'Email', 'Anonimo'
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 9. Receta_Platillo (Pivote M:M - Platillos <-> Ingredientes)
+CREATE TABLE IF NOT EXISTS receta_platillo (
     platillo_id UUID REFERENCES platillos(id) ON DELETE CASCADE,
-    ingrediente_id UUID REFERENCES ingredientes(id) ON DELETE CASCADE,
+    ingrediente_id UUID REFERENCES ingredientes_catalogo(id) ON DELETE CASCADE,
+    tipo_ingrediente VARCHAR(50) DEFAULT 'PRINCIPAL', -- 'PRINCIPAL', 'COMPLEMENTO'
+    es_modificable BOOLEAN DEFAULT true, -- ¿Se le puede quitar la cebolla?
     PRIMARY KEY (platillo_id, ingrediente_id)
 );
 
--- 6. Tabla de Interacciones (Swipes / Likes / Dislikes para el Discovery Feed)
-CREATE TABLE IF NOT EXISTS interacciones (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    platillo_id UUID NOT NULL REFERENCES platillos(id) ON DELETE CASCADE,
-    tipo_accion VARCHAR(20) NOT NULL, -- ej. 'like', 'dislike'
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+-- 10. Perfil_Sabor_Platillo (Pivote M:M - Platillos <-> Sabores)
+CREATE TABLE IF NOT EXISTS perfil_sabor_platillo (
+    platillo_id UUID REFERENCES platillos(id) ON DELETE CASCADE,
+    sabor_id UUID REFERENCES sabores_catalogo(id) ON DELETE CASCADE,
+    PRIMARY KEY (platillo_id, sabor_id)
 );
 
--- Comentarios de tablas
+-- 11. Interacciones_Feed (Para aprender del usuario)
+CREATE TABLE IF NOT EXISTS interacciones_feed (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    usuario_id UUID REFERENCES usuarios_comensales(id) ON DELETE SET NULL,
+    platillo_id UUID NOT NULL REFERENCES platillos(id) ON DELETE CASCADE,
+    tipo_interaccion VARCHAR(50) NOT NULL, -- 'SWIPE_DERECHA', 'SWIPE_IZQUIERDA', 'CLICK_DETALLE'
+    fecha_timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Comentarios
 COMMENT ON TABLE restaurantes IS 'Almacena la información de los negocios registrados y su estado de acceso.';
-COMMENT ON TABLE platillos IS 'Información de los platillos incluyendo el vector de búsqueda semántica para la IA.';
-COMMENT ON TABLE ingredientes IS 'Catálogo global de ingredientes para control de alérgenos.';
-COMMENT ON TABLE platillo_ingredientes IS 'Relación entre platillos y sus ingredientes.';
-COMMENT ON TABLE interacciones IS 'Registro de swipes realizados por los comensales para el motor de recomendación.';
+COMMENT ON TABLE horarios_restaurante IS 'Horarios de apertura y cierre normalizados por día.';
+COMMENT ON TABLE platillos IS 'Información de los platillos. La IA está en espera (Épica 7).';
+COMMENT ON TABLE ingredientes_catalogo IS 'Catálogo global de ingredientes con metadatos de alérgenos y dieta.';
+COMMENT ON TABLE receta_platillo IS 'Relación detallada de ingredientes por platillo.';
+COMMENT ON TABLE interacciones_feed IS 'Registro de actividad de los comensales.';
