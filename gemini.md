@@ -45,3 +45,31 @@ Crea el archivo backend/Dockerfile.dev usando node:18-alpine. Igual que el anter
 Crea el archivo ai-engine/Dockerfile.dev usando python:3.10-slim. Mantenlo vivo si no existe requirements.txt.
 
 Genera el código para estos 4 archivos de configuración.
+////segunda tarea :Contexto: 5.2:
+Soy el Líder Backend del proyecto MexxicanMX. Estoy en la "Tarea 5.2: Esquema Relacional PostgreSQL". Ya tengo levantado un contenedor con ankane/pgvector:latest.
+
+Instrucciones:
+Necesito que me generes un archivo de script SQL puro (puedes llamarlo init.sql) que contenga la creación de todas las tablas necesarias para el sistema.
+
+Requisitos estrictos para el SQL:
+
+Primero, debe ejecutar CREATE EXTENSION IF NOT EXISTS vector; para habilitar pgvector.
+
+Usar UUIDs para los IDs primarios (usa gen_random_uuid()).
+
+Crear las siguientes tablas con sus respectivas relaciones (Foreign Keys):
+
+restaurantes: id, nombre_negocio, email (único), password_hash, rol (default 'restaurante'), estado_activo (boolean, default true), ultimo_pago (date), created_at.
+
+platillos: id, restaurante_id (FK), nombre, descripcion, precio (decimal), categoria, url_imagen, vector_ia (tipo vector de 768 dimensiones, que es el estándar para muchos modelos de embeddings), estado_ia (procesando/completado), created_at.
+
+ingredientes: id, nombre (único, ej. 'cacahuate', 'camaron').
+
+platillo_ingredientes (Tabla intermedia M:M): platillo_id (FK), ingrediente_id (FK).
+
+interacciones: id, platillo_id (FK), tipo_accion (varchar, ej. 'like', 'dislike'), created_at.
+
+Agrega comentarios en el SQL para explicar brevemente cada tabla.
+
+Salida esperada:
+Genera únicamente el código del archivo init.sql. Después, indícame brevemente qué comando de docker exec o psql puedo usar en mi terminal para inyectar este archivo SQL dentro de mi contenedor Docker mexxicanmx_db y crear las tablas de inmediato

@@ -1,17 +1,19 @@
 services:
-  db:
-    image: ankane/pgvector
+  postgres:
+    image: ankane/pgvector:latest
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: mexxicanmx
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: mexxicanmx_db
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/src/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - app-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d mexxicanmx"]
+      test: ["CMD-SHELL", "pg_isready -U admin -d mexxicanmx_db"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -22,6 +24,8 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    networks:
+      - app-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -29,35 +33,57 @@ services:
       retries: 5
 
   backend:
-    build: ./backend
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile.dev
     ports:
       - "4000:4000"
+    volumes:
+      - ./backend:/app
     environment:
-      - DATABASE_URL=postgresql://user:password@db:5432/mexxicanmx
+      - DATABASE_URL=postgresql://admin:password123@postgres:5432/mexxicanmx_db
       - REDIS_URL=redis://redis:6379
+    networks:
+      - app-network
     depends_on:
-      db:
+      postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
     ports:
-      - "5173:5173"
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+    networks:
+      - app-network
     depends_on:
       - backend
 
   ai-engine:
-    build: ./ai-engine
+    build:
+      context: ./ai-engine
+      dockerfile: Dockerfile.dev
     ports:
       - "8000:8000"
+    volumes:
+      - ./ai-engine:/app
     environment:
-      - DATABASE_URL=postgresql://user:password@db:5432/mexxicanmx
+      - DATABASE_URL=postgresql://admin:password123@postgres:5432/mexxicanmx_db
+    networks:
+      - app-network
     depends_on:
-      db:
+      postgres:
         condition: service_healthy
 
 volumes:
   postgres_data:
   redis_data:
+
+networks:
+  app-network:
+    driver: bridge
