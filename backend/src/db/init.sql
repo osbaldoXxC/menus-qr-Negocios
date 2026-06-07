@@ -20,6 +20,27 @@ CREATE TABLE IF NOT EXISTS restaurantes (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 2.2 Configuración de Tema (Branding Premium)
+DO $$ BEGIN
+    CREATE TYPE layout_style AS ENUM ('LISTA_SIMPLE', 'CUADRICULA_FOTOS', 'TARJETAS_DETALLADAS');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+CREATE TABLE IF NOT EXISTS configuracion_tema (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    restaurante_id UUID UNIQUE NOT NULL REFERENCES restaurantes(id) ON DELETE CASCADE,
+    logo_url TEXT,
+    banner_url TEXT,
+    color_primario VARCHAR(7) DEFAULT '#E63946',
+    color_fondo VARCHAR(7) DEFAULT '#F1FAEE',
+    fuente_familia VARCHAR(50) DEFAULT 'Sans-Serif',
+    layout_type layout_style DEFAULT 'TARJETAS_DETALLADAS',
+    banner_promocional_activo BOOLEAN DEFAULT false,
+    banner_promocional_texto TEXT,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
 -- 2.1 Tabla para manejo de Refresh Tokens (Seguridad)
 CREATE TABLE IF NOT EXISTS refresh_tokens (
     id SERIAL PRIMARY KEY,

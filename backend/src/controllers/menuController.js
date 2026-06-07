@@ -83,10 +83,14 @@ const getPublicMenu = async (req, res) => {
       return res.json(JSON.parse(cachedMenu));
     }
 
-    // 2. PostgreSQL
-    // Validar suscripcion_activa
+    // 2. PostgreSQL - Obtener info del restaurante y su tema
     const restRes = await db.query(
-      'SELECT suscripcion_activa FROM restaurantes WHERE id = $1',
+      `SELECT r.nombre_negocio, r.suscripcion_activa, 
+              t.logo_url, t.banner_url, t.color_primario, t.color_fondo, 
+              t.fuente_familia, t.layout_type, t.banner_promocional_activo, t.banner_promocional_texto
+       FROM restaurantes r
+       LEFT JOIN configuracion_tema t ON r.id = t.restaurante_id
+       WHERE r.id = $1`,
       [restaurant_id]
     );
 
@@ -94,22 +98,64 @@ const getPublicMenu = async (req, res) => {
       return res.status(404).json({ mensaje: 'Restaurante no encontrado' });
     }
 
-    if (!restRes.rows[0].suscripcion_activa) {
+    const restInfo = restRes.rows[0];
+
+    if (!restInfo.suscripcion_activa) {
       return res.status(403).json({ mensaje: 'Restaurante no disponible temporalmente' });
     }
 
-    // Obtener los platillos (categoria_id en vez de categoria)
+    // 3. Obtener platillos con sus categorías
     const dishesRes = await db.query(
-      'SELECT id, nombre, descripcion, precio, categoria_id, url_imagen FROM platillos WHERE restaurante_id = $1',
+      `SELECT p.id, p.nombre, p.descripcion, p.precio, p.url_imagen, c.nombre as categoria_nombre
+       FROM platillos p
+       LEFT JOIN categorias_catalogo c ON p.categoria_id = c.id
+       WHERE p.restaurante_id = $1
+       ORDER BY c.nombre, p.nombre`,
       [restaurant_id]
     );
 
-    const menuData = dishesRes.rows;
+    // 4. Estructurar la respuesta
+    const response = {
+      restaurante: {
+        nombre: restInfo.nombre_negocio,
+        tema: {
+          logo_url: restInfo.logo_url,
+          banner_url: restInfo.banner_url,
+          color_primario: restInfo.color_primario,
+          color_fondo: restInfo.color_fondo,
+          fuente_familia: restInfo.fuente_familia,
+          layout_type: restInfo.layout_type,
+          banner_promocional_activo: restInfo.banner_promocional_activo,
+          banner_promocional_texto: restInfo.banner_promocional_texto
+        }
+      },
+      categorias: []
+    };
 
-    // 3. Guardar en Redis (4h)
-    await redisClient.setEx(cacheKey, 14400, JSON.stringify(menuData));
+    // Agrupar por categorías
+    const categoriesMap = {};
+    dishesRes.rows.forEach(dish => {
+      const catName = dish.categoria_nombre || 'General';
+      if (!categoriesMap[catName]) {
+        categoriesMap[catName] = {
+          nombre: catName,
+          platillos: []
+        };
+        response.categorias.push(categoriesMap[catName]);
+      }
+      response.categorias.find(c => c.nombre === catName).platillos.push({
+        id: dish.id,
+        nombre: dish.nombre,
+        descripcion: dish.descripcion,
+        precio: dish.precio,
+        url_imagen: dish.url_imagen
+      });
+    });
 
-    res.json(menuData);
+    // 5. Guardar en Redis (4h)
+    await redisClient.setEx(cacheKey, 14400, JSON.stringify(response));
+
+    res.json(response);
 
   } catch (error) {
     console.error('Error al obtener menú público:', error);
