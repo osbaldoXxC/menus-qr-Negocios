@@ -1,100 +1,81 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
-
-type UserRole = 'comensal' | 'restaurante';
+import { authService } from '../../services/auth';
 
 export function Register() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const [role, setRole] = useState<UserRole>('comensal');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [formData, setFormData] = useState({
+    nombre_dueño: '',
     email: '',
     password: '',
-    nombre: '',
-    restauranteNombre: '',
+    nombre_negocio: '',
   });
-  const [aceptaTerminos, setAceptaTerminos] = useState(false);
 
-  useEffect(() => {
-    const roleParam = searchParams.get('role');
-    if (roleParam === 'restaurante') {
-      setRole('restaurante');
-    } else if (roleParam === 'comensal') {
-      setRole('comensal');
-    }
-  }, [searchParams]);
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Registro:', { role, ...formData });
+    setLoading(true);
+    setError('');
+    
+    try {
+      await authService.register(formData);
+      navigate('/login');
+    } catch (err: any) {
+      setError(err.response?.data?.mensaje || 'Error al registrar');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-black text-white">
       <Header />
-      
       <div className="flex items-center justify-center min-h-screen px-4 pt-20 pb-20">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <div className="text-4xl mb-3">🌮</div>
-            <h1 className="text-2xl font-semibold text-white mb-2">Crear cuenta</h1>
-            <p className="text-sm text-gray-500">
-              {role === 'comensal' ? 'Descubre los mejores sabores' : 'Registra tu restaurante'}
-            </p>
-          </div>
-
-          <div className="flex gap-2 mb-8 bg-white/5 rounded-xl p-1">
-            <button
-              onClick={() => setRole('comensal')}
-              className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${
-                role === 'comensal' ? 'bg-white text-black' : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              Comensal
-            </button>
-            <button
-              onClick={() => setRole('restaurante')}
-              className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${
-                role === 'restaurante' ? 'bg-white text-black' : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              Restaurante
-            </button>
+            <h1 className="text-2xl font-bold mb-2">Registra tu restaurante</h1>
+            <p className="text-sm text-gray-500">Comienza a vender más</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            {error && (
+              <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm text-center">
+                {error}
+              </div>
+            )}
+
             <div>
               <input
                 type="text"
-                value={formData.nombre}
-                onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                className="w-full px-0 py-3 bg-transparent border-b border-white/10 text-white text-base placeholder-gray-600 focus:border-white/30 focus:outline-none transition"
-                placeholder={role === 'comensal' ? 'Nombre completo' : 'Nombre del contacto'}
+                value={formData.nombre_dueño}
+                onChange={(e) => setFormData({ ...formData, nombre_dueño: e.target.value })}
+                className="w-full px-0 py-3 bg-transparent border-b border-white/10 text-white text-base placeholder-gray-600 focus:border-orange-500 focus:outline-none transition"
+                placeholder="Nombre del dueño"
                 required
               />
             </div>
 
-            {role === 'restaurante' && (
-              <div>
-                <input
-                  type="text"
-                  value={formData.restauranteNombre}
-                  onChange={(e) => setFormData({ ...formData, restauranteNombre: e.target.value })}
-                  className="w-full px-0 py-3 bg-transparent border-b border-white/10 text-white text-base placeholder-gray-600 focus:border-white/30 focus:outline-none transition"
-                  placeholder="Nombre del restaurante"
-                  required
-                />
-              </div>
-            )}
+            <div>
+              <input
+                type="text"
+                value={formData.nombre_negocio}
+                onChange={(e) => setFormData({ ...formData, nombre_negocio: e.target.value })}
+                className="w-full px-0 py-3 bg-transparent border-b border-white/10 text-white text-base placeholder-gray-600 focus:border-orange-500 focus:outline-none transition"
+                placeholder="Nombre del restaurante"
+                required
+              />
+            </div>
 
             <div>
               <input
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-0 py-3 bg-transparent border-b border-white/10 text-white text-base placeholder-gray-600 focus:border-white/30 focus:outline-none transition"
+                className="w-full px-0 py-3 bg-transparent border-b border-white/10 text-white text-base placeholder-gray-600 focus:border-orange-500 focus:outline-none transition"
                 placeholder="Correo electrónico"
                 required
               />
@@ -105,52 +86,29 @@ export function Register() {
                 type="password"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full px-0 py-3 bg-transparent border-b border-white/10 text-white text-base placeholder-gray-600 focus:border-white/30 focus:outline-none transition"
+                className="w-full px-0 py-3 bg-transparent border-b border-white/10 text-white text-base placeholder-gray-600 focus:border-orange-500 focus:outline-none transition"
                 placeholder="Contraseña"
                 required
               />
             </div>
 
-            <div className="flex items-center gap-2 pt-2">
-              <input
-                type="checkbox"
-                id="terminos"
-                checked={aceptaTerminos}
-                onChange={(e) => setAceptaTerminos(e.target.checked)}
-                className="w-4 h-4 rounded border-white/20 bg-transparent checked:bg-white checked:border-white"
-              />
-              <label htmlFor="terminos" className="text-xs text-gray-500">
-                Acepto los <a href="#" className="text-gray-300 hover:text-white">términos</a> y{' '}
-                <a href="#" className="text-gray-300 hover:text-white">política de privacidad</a>
-              </label>
-            </div>
-
             <button
               type="submit"
-              disabled={!aceptaTerminos}
-              className={`w-full py-3 mt-4 rounded-full font-medium text-sm transition-all ${
-                aceptaTerminos ? 'bg-white text-black hover:bg-gray-200' : 'bg-white/20 text-gray-500 cursor-not-allowed'
-              }`}
+              disabled={loading}
+              className="w-full py-3 bg-gradient-to-r from-orange-500 to-red-500 rounded-full font-semibold text-white hover:shadow-lg transition disabled:opacity-50"
             >
-              {role === 'comensal' ? 'Comenzar' : 'Registrar restaurante'}
+              {loading ? 'Registrando...' : 'Registrar restaurante'}
             </button>
+
+            <p className="text-center text-sm text-gray-500">
+              ¿Ya tienes cuenta?{' '}
+              <button onClick={() => navigate('/login')} className="text-orange-400 hover:underline">
+                Inicia sesión
+              </button>
+            </p>
           </form>
-
-          <div className="relative my-8">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-white/10"></div>
-            </div>
-            <div className="relative flex justify-center text-xs">
-              <span className="px-3 bg-black text-gray-600">o</span>
-            </div>
-          </div>
-
-          <button className="w-full py-3 rounded-full border border-white/10 text-sm text-gray-300 hover:bg-white/5 transition">
-            Continuar con Google
-          </button>
         </div>
       </div>
-
       <Footer />
     </div>
   );
