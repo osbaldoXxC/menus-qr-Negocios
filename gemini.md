@@ -526,3 +526,79 @@ Enviar un platillo_id inexistente → debe manejar el error correctamente (no ro
 Enviar un tipo_accion inválido (ej. "CLICK") → validar y devolver error descriptivo
 Hacer 10 swipes rápidos seguidos → verificar que todos se registraron y no hay condiciones de carrera
 PR: feature/7.3-api-interacciones → develop · luego PR a deploy
+
+Planificación de Módulos - Proyecto MexxicanMX (Versión 3.0)
+
+Módulo 1: Landing Page Comercial (Escaparate Público)
+
+El objetivo de este módulo es captar a ambos tipos de usuarios: el dueño del restaurante que necesita digitalizarse y atraer clientes, y el comensal que busca qué comer.
+
+Propuesta de Valor Dual: Explicación clara de "Encuentra tu antojo ideal" (para comensales) y "Pon tu menú en el radar de miles" (para restaurantes).
+
+Llamados a la Acción (CTA): "Registra tu restaurante" y "Prueba el buscador IA".
+
+Sección de Precios/Planes: Para el modelo SaaS dirigido a los restaurantes.
+
+Módulo 2: Identidad y Control de Acceso (Identity & ABAC)
+
+Gestión de usuarios y seguridad para garantizar que los dueños de los restaurantes solo modifiquen sus propios datos.
+
+Autenticación: Registro y Login seguro.
+
+Motor ABAC (Attribute-Based Access Control): Reglas estrictas para que el Usuario A solo pueda editar el menú de la Sucursal A.
+
+Gestión de Perfiles: Recuperación de contraseñas y actualización de datos de contacto.
+
+Módulo 3: Panel SaaS para Restaurantes (Gestión de Catálogo)
+
+El espacio de trabajo para los dueños de negocios. Aquí alimentan la base de datos de la IA sin tener que preocuparse por gestionar pedidos en tiempo real.
+
+Perfil de la Sucursal: Nombre, dirección, horarios, logotipo y fotos del local.
+
+Generador de Código QR: Creación de un único código QR por sucursal (para imprimir y colocar en mesas, entradas o volantes).
+
+Constructor de Menú Interactivo:
+
+Creación de categorías (Entradas, Especialidades, Bebidas).
+
+Alta de platillos/bebidas con foto (vital para el feed estilo TikTok), precio y descripción.
+
+Motor de Ingredientes (Crítico): Etiquetado exhaustivo de ingredientes base para que la IA pueda cruzar datos con alergias y dietas.
+
+Opciones y Extras: Adiciones informativas ("Se puede pedir sin cebolla", "Opción a cambiar por leche de avena"). Nota: Como no hay pedidos desde la app, esto es solo informativo.
+
+Módulo 4: App Web del Comensal (Buscador y Visor)
+
+La interfaz para el usuario final. Se divide en dos flujos principales integrados en la misma plataforma:
+
+Flujo A: El Buscador Global IA (Discovery Feed estilo Tinder/TikTok)
+
+El usuario entra a la app/web y lanza el Cuestionario Interactivo (4 pasos): Sabor/Antojo, Dieta, Alergias, y Plan/Acompañantes.
+
+Interfaz de Resultados "Match": En lugar de una lista aburrida, la IA presenta los resultados en un formato de tarjetas a pantalla completa.
+
+La Tarjeta Principal (Vista Rápida): Muestra la foto del platillo en grande, Nombre del Platillo, Nombre del Restaurante, y un breve resumen de por qué hizo match (ej. "Sin Gluten + Picante").
+
+Interacción (Swipe/Scroll): El usuario puede deslizar (swipe) a la izquierda/derecha o hacer scroll hacia abajo para descartar y ver la siguiente recomendación de la IA.
+
+Vista Detallada (Click/Tap): Si al usuario le gusta lo que ve, da clic en la tarjeta. Esta se expande para mostrar toda la información: precio, descripción completa, distancia/ubicación del restaurante, y el menú completo de ese lugar.
+
+Objetivo: Generar un efecto adictivo y visual ("food porn") hasta que el usuario encuentre su plato favorito.
+
+Flujo B: Lector QR Local (Menú Digital Inteligente)
+
+El usuario llega físicamente a un restaurante y escanea el QR de la sucursal.
+
+Visor de Menú: Se despliega el menú digital exclusivo de ese restaurante. Es un catálogo de solo lectura.
+
+Filtro Rápido Local (Opcional): El usuario puede aplicar filtros rápidos (ej. "Mostrar solo lo que no tiene gluten" dentro de ese menú específico).
+
+Módulo 5: Motor de Inteligencia Artificial (El Cerebro Central)
+
+El backend inteligente que procesa las intenciones del usuario y las cruza con el catálogo global de restaurantes.
+
+Procesamiento de Lenguaje Natural (NLP): Analiza los campos de texto libre del cuestionario.
+
+Motor de Reglas y Exclusión (Filtro de Seguridad): Descarta a nivel global cualquier restaurante o platillo que contenga alérgenos marcados por el usuario.
+
+Algoritmo de Coincidencia (Matchmaking): Cruza el perfil del antojo con la base de datos masiva y ordena los resultados que se enviarán al Discovery Feed del usuario en el Módulo 4, poniendo el "Match del 100%" como la primera tarjeta que verá.

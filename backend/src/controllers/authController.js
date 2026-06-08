@@ -58,8 +58,8 @@ const login = async (req, res) => {
       return res.status(401).json({ mensaje: 'Credenciales inválidas' });
     }
 
-    // 3. Verificar suscripción (si no es Super_Admin)
-    if (!user.estado_activo && user.rol !== 'super_admin') {
+    // 3. Verificar suscripción (si no es SUPER_ADMIN)
+    if (!user.suscripcion_activa && user.rol !== 'SUPER_ADMIN') {
       return res.status(403).json({ mensaje: 'Suscripción inactiva. Contacte al administrador.' });
     }
 

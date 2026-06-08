@@ -10,7 +10,7 @@ const { upload, optimizeImage } = require('../middleware/uploadMiddleware');
 // Flujo: Autenticar -> Verificar Rol -> Recibir Archivo -> Optimizar y Subir a S3 -> Crear en DB
 router.post('/platillos', 
   authMiddleware, 
-  roleMiddleware(['restaurante', 'super_admin']), 
+  roleMiddleware(['RESTAURANTE', 'SUPER_ADMIN']), 
   upload.single('imagen'), 
   optimizeImage,
   createDish
