@@ -8,12 +8,14 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
   const { isAuthenticated, rol } = authService.getCurrentUser();
+  const userRol = rol?.toLowerCase() || '';
+  const normalizedRoles = allowedRoles.map((role) => role.toLowerCase());
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
-  if (!allowedRoles.includes(rol || '')) {
+  if (!normalizedRoles.includes(userRol)) {
     return <Navigate to="/" replace />;
   }
 

@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Landing } from './pages/Landing/Landing';
 import { Register } from './pages/Register/Register';
 import { Login } from './pages/Login/Login';
@@ -22,7 +22,8 @@ function App() {
     <BrowserRouter>
       <Routes>
         {/* Públicas */}
-        <Route path="/" element={<Landing />} />
+        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/landing" element={<Landing />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
         <Route path="/como-funciona" element={<ComoFunciona />} />
@@ -30,7 +31,7 @@ function App() {
         <Route path="/precios" element={<Precios />} />
         <Route path="/escanear/:id?" element={<EscanearQR />} />
         
-        {/* Comensales (requiere autenticación) */}
+        {/* Rutas protegidas para usuarios autenticados */}
         <Route path="/descubrir" element={
           <ProtectedRoute allowedRoles={['Comensal', 'Restaurante', 'Super_Admin']}>
             <Descubrir />
@@ -41,8 +42,13 @@ function App() {
             <CuestionarioIA />
           </ProtectedRoute>
         } />
-        
-        {/* Restaurante (requiere rol Restaurante) */}
+        <Route path="/perfil" element={
+          <ProtectedRoute allowedRoles={['Comensal', 'Restaurante', 'Super_Admin']}>
+            <Perfil />
+          </ProtectedRoute>
+        } />
+
+        {/* Rutas exclusivas para restaurante */}
         <Route path="/dashboard/restaurante" element={
           <ProtectedRoute allowedRoles={['Restaurante']}>
             <DashboardRestaurante />
@@ -68,15 +74,8 @@ function App() {
             <Configuracion />
           </ProtectedRoute>
         } />
-        
-        {/* Usuario (requiere autenticación) */}
-        <Route path="/perfil" element={
-          <ProtectedRoute allowedRoles={['Comensal', 'Restaurante', 'Super_Admin']}>
-            <Perfil />
-          </ProtectedRoute>
-        } />
-        
-        {/* Admin (requiere rol Super_Admin) */}
+
+        {/* Ruta exclusiva para administrador */}
         <Route path="/admin" element={
           <ProtectedRoute allowedRoles={['Super_Admin']}>
             <AdminPanel />

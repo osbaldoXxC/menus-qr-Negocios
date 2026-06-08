@@ -4,7 +4,7 @@ services:
     image: ankane/pgvector:latest
     environment:
       POSTGRES_USER: admin
-      POSTGRES_PASSWORD: pass}word123
+      POSTGRES_PASSWORD: password123
       POSTGRES_DB: mexxicanmx_db
     ports:
       - "5432:5432"
@@ -45,6 +45,8 @@ services:
     environment:
       - DATABASE_URL=postgresql://admin:password123@postgres:5432/mexxicanmx_db
       - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=supersecret_jwt_key
+      - REFRESH_TOKEN_SECRET=supersecret_refresh_key
     networks:
       - app-network
     depends_on:

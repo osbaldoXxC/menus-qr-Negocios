@@ -1,18 +1,16 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Header } from '../components/Header';
-import { Footer } from '../components/Footer';
-import { authService } from '../../services/auth';
+import api from '../../services/api';
 
 export function Register() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
-    nombre_dueño: '',
+    nombre_dueño: '',     // ← IMPORTANTE: debe ser exactamente "nombre_dueño"
     email: '',
     password: '',
-    nombre_negocio: '',
+    nombre_negocio: '',   // ← IMPORTANTE: debe ser exactamente "nombre_negocio"
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -20,11 +18,35 @@ export function Register() {
     setLoading(true);
     setError('');
     
+    console.log('Enviando al backend:', {
+      nombre_dueño: formData.nombre_dueño,
+      email: formData.email,
+      password: formData.password,
+      nombre_negocio: formData.nombre_negocio,
+    });
+    
     try {
-      await authService.register(formData);
+      const response = await api.post('/auth/register', {
+        nombre_dueño: formData.nombre_dueño,
+        email: formData.email,
+        password: formData.password,
+        nombre_negocio: formData.nombre_negocio,
+      });
+      
+      console.log('Respuesta:', response.data);
+      alert('✅ Registro exitoso!');
       navigate('/login');
+      
     } catch (err: any) {
-      setError(err.response?.data?.mensaje || 'Error al registrar');
+      console.error('Error detallado:', err);
+      
+      if (err.response?.data?.mensaje) {
+        setError(err.response.data.mensaje);
+      } else if (err.response?.data?.error) {
+        setError(err.response.data.error);
+      } else {
+        setError('Error al registrar. Intenta de nuevo.');
+      }
     } finally {
       setLoading(false);
     }
@@ -32,12 +54,11 @@ export function Register() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <Header />
-      <div className="flex items-center justify-center min-h-screen px-4 pt-20 pb-20">
+      <div className="flex items-center justify-center min-h-screen px-4">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <div className="text-4xl mb-3">🌮</div>
-            <h1 className="text-2xl font-bold mb-2">Registra tu restaurante</h1>
+            <h1 className="text-2xl font-bold">Registra tu restaurante</h1>
             <p className="text-sm text-gray-500">Comienza a vender más</p>
           </div>
 
@@ -53,7 +74,7 @@ export function Register() {
                 type="text"
                 value={formData.nombre_dueño}
                 onChange={(e) => setFormData({ ...formData, nombre_dueño: e.target.value })}
-                className="w-full px-0 py-3 bg-transparent border-b border-white/10 text-white text-base placeholder-gray-600 focus:border-orange-500 focus:outline-none transition"
+                className="w-full px-4 py-3 bg-gray-900 border border-gray-800 rounded-xl text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none transition"
                 placeholder="Nombre del dueño"
                 required
               />
@@ -64,7 +85,7 @@ export function Register() {
                 type="text"
                 value={formData.nombre_negocio}
                 onChange={(e) => setFormData({ ...formData, nombre_negocio: e.target.value })}
-                className="w-full px-0 py-3 bg-transparent border-b border-white/10 text-white text-base placeholder-gray-600 focus:border-orange-500 focus:outline-none transition"
+                className="w-full px-4 py-3 bg-gray-900 border border-gray-800 rounded-xl text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none transition"
                 placeholder="Nombre del restaurante"
                 required
               />
@@ -75,7 +96,7 @@ export function Register() {
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-0 py-3 bg-transparent border-b border-white/10 text-white text-base placeholder-gray-600 focus:border-orange-500 focus:outline-none transition"
+                className="w-full px-4 py-3 bg-gray-900 border border-gray-800 rounded-xl text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none transition"
                 placeholder="Correo electrónico"
                 required
               />
@@ -86,7 +107,7 @@ export function Register() {
                 type="password"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full px-0 py-3 bg-transparent border-b border-white/10 text-white text-base placeholder-gray-600 focus:border-orange-500 focus:outline-none transition"
+                className="w-full px-4 py-3 bg-gray-900 border border-gray-800 rounded-xl text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none transition"
                 placeholder="Contraseña"
                 required
               />
@@ -95,21 +116,20 @@ export function Register() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-gradient-to-r from-orange-500 to-red-500 rounded-full font-semibold text-white hover:shadow-lg transition disabled:opacity-50"
+              className="w-full py-3 bg-gradient-to-r from-orange-500 to-red-500 rounded-xl font-semibold text-white hover:shadow-lg transition disabled:opacity-50"
             >
               {loading ? 'Registrando...' : 'Registrar restaurante'}
             </button>
 
             <p className="text-center text-sm text-gray-500">
               ¿Ya tienes cuenta?{' '}
-              <button onClick={() => navigate('/login')} className="text-orange-400 hover:underline">
+              <button type="button" onClick={() => navigate('/login')} className="text-orange-400 hover:underline">
                 Inicia sesión
               </button>
             </p>
           </form>
         </div>
       </div>
-      <Footer />
     </div>
   );
 }

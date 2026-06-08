@@ -20,12 +20,11 @@ export function Login() {
     try {
       const response = await authService.login(email, password);
       console.log('Login exitoso:', response);
-      
-      // Redirigir según el rol
-      const rol = localStorage.getItem('rol');
-      if (rol === 'Restaurante') {
+
+      const rol = response.rol?.toString().toLowerCase() || localStorage.getItem('rol')?.toLowerCase();
+      if (rol?.includes('restaurante')) {
         navigate('/dashboard/restaurante');
-      } else if (rol === 'Super_Admin') {
+      } else if (rol?.includes('super')) {
         navigate('/admin');
       } else {
         navigate('/descubrir');
