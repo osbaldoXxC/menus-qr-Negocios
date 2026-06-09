@@ -45,6 +45,8 @@ services:
     environment:
       - DATABASE_URL=postgresql://admin:password123@postgres:5432/mexxicanmx_db
       - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=super_secret_key_123
+      - REFRESH_TOKEN_SECRET=refresh_secret_key_456
     networks:
       - app-network
     depends_on:

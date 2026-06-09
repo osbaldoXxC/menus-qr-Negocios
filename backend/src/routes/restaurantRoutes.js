@@ -1,8 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { generateQR, updateTheme } = require('../controllers/restaurantController');
+const { generateQR, updateTheme, getRestaurantInfo } = require('../controllers/restaurantController');
 const authMiddleware = require('../middleware/authMiddleware');
 const roleMiddleware = require('../middleware/roleMiddleware');
+
+// GET /api/restaurants/info
+router.get('/info', authMiddleware, roleMiddleware(['RESTAURANTE', 'SUPER_ADMIN']), getRestaurantInfo);
 
 // GET /api/restaurants/qr
 // Solo accesible por Restaurantes autenticados

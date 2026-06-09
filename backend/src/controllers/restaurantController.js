@@ -93,7 +93,33 @@ const updateTheme = async (req, res) => {
   }
 };
 
+const getRestaurantInfo = async (req, res) => {
+  const restaurante_id = req.user.id;
+
+  try {
+    const result = await db.query(
+      `SELECT r.id, r.nombre_negocio, r.email, r.plan, r.suscripcion_activa,
+              t.logo_url, t.banner_url, t.color_primario, t.color_fondo, 
+              t.fuente_familia, t.layout_type, t.banner_promocional_activo, t.banner_promocional_texto
+       FROM restaurantes r
+       LEFT JOIN configuracion_tema t ON r.id = t.restaurante_id
+       WHERE r.id = $1`,
+      [restaurante_id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ mensaje: 'Restaurante no encontrado' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error al obtener info del restaurante:', error);
+    res.status(500).json({ mensaje: 'Error interno del servidor' });
+  }
+};
+
 module.exports = {
   generateQR,
-  updateTheme
+  updateTheme,
+  getRestaurantInfo
 };

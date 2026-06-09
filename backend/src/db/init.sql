@@ -60,10 +60,14 @@ CREATE TABLE IF NOT EXISTS horarios_restaurante (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- 4. Categorias_Catalogo (Normalización de categorías)
-CREATE TABLE IF NOT EXISTS categorias_catalogo (
+-- 4. Categorias_Restaurante (ABAC - Categorías por restaurante con ordenamiento)
+CREATE TABLE IF NOT EXISTS categorias_restaurante (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    nombre VARCHAR(100) UNIQUE NOT NULL -- Ej: Entrada, Plato Fuerte, Bebida
+    restaurante_id UUID NOT NULL REFERENCES restaurantes(id) ON DELETE CASCADE,
+    nombre VARCHAR(100) NOT NULL,
+    orden INT DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(restaurante_id, nombre)
 );
 
 -- 5. Platillos (El corazón del Discovery Feed)
@@ -74,7 +78,8 @@ CREATE TABLE IF NOT EXISTS platillos (
     descripcion TEXT,
     precio DECIMAL(10,2) NOT NULL,
     url_imagen TEXT, -- Apunta a S3
-    categoria_id UUID REFERENCES categorias_catalogo(id) ON DELETE SET NULL,
+    categoria_id UUID REFERENCES categorias_restaurante(id) ON DELETE SET NULL,
+    activo BOOLEAN DEFAULT true, -- Soporte para pausado lógico
     vector_ia vector(768), -- Restaurado a vector_ia para compatibilidad con código actual
     estado_ia VARCHAR(50) DEFAULT 'pendiente', -- 'pendiente', 'procesando', 'completado'
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
