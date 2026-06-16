@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 import { authService } from '../../services/auth';
@@ -16,16 +17,15 @@ export function Login() {
     e.preventDefault();
     setLoading(true);
     setError('');
-    
+
     try {
       const response = await authService.login(email, password);
-      console.log('Login exitoso:', response);
+      const rol =
+        response.rol?.toString().toUpperCase() ||
+        localStorage.getItem('rol')?.toUpperCase();
 
-      const rol = response.rol?.toString().toLowerCase() || localStorage.getItem('rol')?.toLowerCase();
-      if (rol?.includes('restaurante')) {
+      if (rol?.includes('RESTAURANTE')) {
         navigate('/dashboard/restaurante');
-      } else if (rol?.includes('super')) {
-        navigate('/admin');
       } else {
         navigate('/descubrir');
       }
@@ -37,71 +37,105 @@ export function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="bg-[#000000] text-[#F5F5F7] min-h-screen flex flex-col">
       <Header />
-      <div className="flex items-center justify-center min-h-screen px-4 pt-20 pb-20">
-        <div className="w-full max-w-sm">
-          <div className="text-center mb-8">
-            <div className="text-4xl mb-3">🌮</div>
-            <h1 className="text-2xl font-bold mb-2">Bienvenido</h1>
-            <p className="text-sm text-gray-500">Inicia sesión en tu cuenta</p>
+
+      <div className="flex-1 flex items-center justify-center px-5 py-20">
+        <motion.div
+          className="w-full max-w-[400px]"
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        >
+          {/* Header */}
+          <div className="text-center mb-10">
+            <motion.span
+              className="text-4xl mb-5 block"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.1, duration: 0.4, ease: 'easeOut' }}
+            >
+              🌮
+            </motion.span>
+            <h1 className="text-2xl font-bold mb-2 tracking-[-0.015em]">Bienvenido de vuelta</h1>
+            <p className="text-[15px] text-[#A1A1A6]">
+              Inicia sesión para continuar descubriendo
+            </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
-              <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm text-center">
+              <motion.div
+                className="p-4 rounded-apple-lg bg-[#FF453A]/5 border border-[#FF453A]/15 text-[#FF453A] text-[14px] text-center"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+              >
                 {error}
-              </div>
+              </motion.div>
             )}
 
+            {/* Email */}
             <div>
+              <label className="sr-only">Correo electrónico</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-0 py-3 bg-transparent border-b border-white/10 text-white text-base placeholder-gray-600 focus:border-orange-500 focus:outline-none transition"
+                className="w-full px-5 py-3.5 bg-white/[0.03] border border-white/[0.06] rounded-apple-lg text-[15px] text-[#F5F5F7] placeholder-[#6E6E73] focus:border-[#2997FF]/40 focus:outline-none focus:bg-white/[0.04] transition-all duration-200"
                 placeholder="Correo electrónico"
                 required
               />
             </div>
 
-            <div>
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-0 py-3 bg-transparent border-b border-white/10 text-white text-base placeholder-gray-600 focus:border-orange-500 focus:outline-none transition pr-10"
-                  placeholder="Contraseña"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
-                >
-                  {showPassword ? '👁️' : '👁️‍🗨️'}
-                </button>
-              </div>
+            {/* Password */}
+            <div className="relative">
+              <label className="sr-only">Contraseña</label>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-5 py-3.5 pr-12 bg-white/[0.03] border border-white/[0.06] rounded-apple-lg text-[15px] text-[#F5F5F7] placeholder-[#6E6E73] focus:border-[#2997FF]/40 focus:outline-none focus:bg-white/[0.04] transition-all duration-200"
+                placeholder="Contraseña"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-[#6E6E73] hover:text-[#A1A1A6] transition-colors select-none"
+              >
+                {showPassword ? '👁️' : '👁️‍🗨️'}
+              </button>
             </div>
 
-            <button
+            {/* Submit */}
+            <motion.button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-gradient-to-r from-orange-500 to-red-500 rounded-full font-semibold text-white hover:shadow-lg hover:shadow-orange-500/30 transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
+              whileTap={{ scale: 0.97 }}
+              className="w-full py-3.5 bg-[#2997FF] text-white rounded-full text-[15px] font-medium hover:bg-[#40A9FF] transition-all duration-250 hover:shadow-[0_0_24px_rgba(41,151,255,0.2)] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
-            </button>
+            </motion.button>
           </form>
 
-          <p className="text-center text-sm text-gray-500 mt-6">
+          {/* Footer link */}
+          <p className="text-center mt-8 text-[14px] text-[#A1A1A6]">
             ¿No tienes cuenta?{' '}
-            <button onClick={() => navigate('/register')} className="text-orange-400 hover:underline">
-              Regístrate aquí
+            <button
+              onClick={() => navigate('/register')}
+              className="text-[#2997FF] hover:text-[#40A9FF] font-medium transition-colors"
+            >
+              Regístrate gratis
             </button>
           </p>
-        </div>
+
+          <p className="text-center mt-6 text-[12px] text-[#6E6E73]">
+            Tus datos se procesan de forma segura con encriptación bancaria.
+          </p>
+        </motion.div>
       </div>
+
       <Footer />
     </div>
   );

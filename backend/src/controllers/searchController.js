@@ -74,6 +74,33 @@ const findMatches = async (req, res) => {
   }
 };
 
+const registerInteraction = async (req, res) => {
+  const { platillo_id, accion } = req.body;
+
+  if (!platillo_id || !accion) {
+    return res.status(400).json({ mensaje: 'platillo_id y accion son obligatorios' });
+  }
+
+  if (!['like', 'dislike'].includes(accion)) {
+    return res.status(400).json({ mensaje: 'accion debe ser like o dislike' });
+  }
+
+  try {
+    const tipo = accion === 'like' ? 'SWIPE_DERECHA' : 'SWIPE_IZQUIERDA';
+
+    await db.query(
+      'INSERT INTO interacciones_feed (platillo_id, tipo_interaccion) VALUES ($1, $2)',
+      [platillo_id, tipo]
+    );
+
+    res.status(201).json({ mensaje: 'Interacción registrada correctamente' });
+  } catch (error) {
+    console.error('Error al registrar interacción:', error);
+    res.status(500).json({ mensaje: 'Error interno al guardar la interacción' });
+  }
+};
+
 module.exports = {
-  findMatches
+  findMatches,
+  registerInteraction
 };

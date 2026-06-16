@@ -6,34 +6,56 @@ export const restauranteService = {
     return response.data;
   },
 
-  crearPlatillo: async (data: {
-    nombre: string;
-    descripcion: string;
-    precio: number;
-    categoria: string;
-    url_imagen: string;
-    ingredientes_principales: string[];
-    complementos: string[];
-  }) => {
-    const response = await api.post('/menu/platillos', data);
+  // Recibe FormData con el archivo de imagen
+  crearPlatillo: async (formData: FormData) => {
+    const response = await api.post('/menu/platillos', formData);
     return response.data;
   },
 
   getPlatillos: async () => {
-    const response = await api.get('/menu/platillos');
-    return response.data;
+    const restaurante_id = localStorage.getItem('restaurante_id');
+    if (!restaurante_id) {
+      throw new Error('Restaurante no autenticado');
+    }
+    const response = await api.get(`/public/menu/${restaurante_id}`);
+    const data = response.data;
+
+    const normalizeImageUrl = (url: string | null | undefined) => {
+      if (!url) return '';
+      const trimmed = url.trim();
+      if (!trimmed) return '';
+
+      // Descarta rutas de API o rutas de menú que no son imágenes
+      if (/\/public\/menu\//i.test(trimmed) || /\/api\/public\/menu\//i.test(trimmed)) {
+        console.warn('Invalid image URL detected, ignoring:', trimmed);
+        return '';
+      }
+
+      if (/^https?:\/\//i.test(trimmed)) return trimmed;
+      if (/^\/\//.test(trimmed)) return `http:${trimmed}`;
+      return `http://localhost:4000${trimmed.startsWith('/') ? '' : '/'}${trimmed}`;
+    };
+
+    // Transformar la respuesta pública en una lista plana de platillos
+    const platillos = data.categorias?.flatMap((categoria: any) =>
+      categoria.platillos.map((platillo: any) => {
+        const normalizedUrl = normalizeImageUrl(platillo.url_imagen);
+        return {
+          id: platillo.id,
+          nombre: platillo.nombre,
+          descripcion: platillo.descripcion,
+          precio: platillo.precio,
+          url_imagen: normalizedUrl,
+          categoria: categoria.nombre,
+        };
+      })
+    ) || [];
+
+    console.log('🍽️ Platillos obtenidos:', platillos);
+    return platillos;
   },
 
-  updateTheme: async (data: {
-    logo_url?: string;
-    banner_url?: string;
-    color_primario: string;
-    color_fondo: string;
-    fuente_familia: string;
-    layout_type: string;
-    banner_promocional_activo: boolean;
-    banner_promocional_texto?: string;
-  }) => {
+  updateTheme: async (data: any) => {
     const response = await api.put('/restaurants/theme', data);
     return response.data;
   },

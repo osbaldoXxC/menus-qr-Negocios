@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 import { authService } from '../../services/auth';
 import { restauranteService } from '../../services/restaurante';
 
 export function DashboardRestaurante() {
   const navigate = useNavigate();
-  const [menuAbierto, setMenuAbierto] = useState(false);
   const [restauranteInfo, setRestauranteInfo] = useState<any>(null);
   const [platillos, setPlatillos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,111 +30,100 @@ export function DashboardRestaurante() {
     fetchData();
   }, []);
 
-  const menuItems = [
-    { icon: '📊', nombre: 'Resumen', ruta: '/dashboard/restaurante' },
-    { icon: '🍽️', nombre: 'Mi Menú', ruta: '/dashboard/platillos' },
-    { icon: '➕', nombre: 'Nuevo Platillo', ruta: '/dashboard/platillos/nuevo' },
-    { icon: '📷', nombre: 'Código QR', ruta: '/dashboard/qr' },
-    { icon: '🎨', nombre: 'Configuración', ruta: '/dashboard/configuracion' },
-    { icon: '👤', nombre: 'Perfil', ruta: '/perfil' },
-  ];
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+      <div className="bg-[#000000] text-[#F5F5F7] min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="text-4xl animate-pulse">🌮</div>
-          <p className="text-gray-500 mt-2">Cargando...</p>
+          <motion.div className="text-4xl" animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 1 }}>
+            🌮
+          </motion.div>
+          <p className="text-[#6E6E73] mt-2">Cargando...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <nav className="fixed top-0 left-0 right-0 bg-black/90 backdrop-blur-md z-50 border-b border-gray-800">
-        <div className="px-4 py-3 flex justify-between items-center">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
-            <span className="text-2xl">🌮</span>
-            <span className="font-bold text-lg bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">
-              MexxicanMX
-            </span>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-400 hidden sm:inline">{restauranteInfo?.nombre_negocio}</span>
-            <button 
-              onClick={() => setMenuAbierto(!menuAbierto)}
-              className="w-8 h-8 rounded-full bg-gradient-to-r from-orange-500 to-red-500 flex items-center justify-center"
-            >
-              <span className="text-sm">👤</span>
-            </button>
-          </div>
-        </div>
-      </nav>
+    <div className="bg-black text-[#F5F5F7] min-h-screen">
+      <Header />
 
-      {menuAbierto && (
-        <div className="fixed inset-0 z-40 bg-black/95 pt-16">
-          <div className="flex flex-col p-4">
-            {menuItems.map((item) => (
+      <div className="pt-24 pb-20 px-5 md:px-8 min-h-screen">
+        <div className="max-w-[1400px] mx-auto">
+          <motion.div
+            className="mb-12"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <h1 className="text-[2rem] md:text-[2.5rem] font-bold tracking-[-0.02em] mb-1">
+              Bienvenido, {restauranteInfo?.nombre_dueño}
+            </h1>
+            <p className="text-[#A1A1A6] text-[15px] tracking-[-0.01em]">
+              Gestiona tu menú, estadísticas y configuración aquí
+            </p>
+          </motion.div>
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            <motion.div
+              className="glass rounded-lg p-6 border border-white/[0.08]"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.05 }}
+            >
+              <div className="text-3xl mb-3">🍽️</div>
+              <div className="text-[13px] text-[#A1A1A6] mb-1 font-500 tracking-[-0.01em]">Platillos activos</div>
+              <div className="text-4xl font-bold text-[#2997FF] tracking-[-0.02em]">{platillos.length}</div>
+            </motion.div>
+            <motion.div
+              className="glass rounded-lg p-6 border border-white/[0.08]"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <div className="text-3xl mb-3">📊</div>
+              <div className="text-[13px] text-[#A1A1A6] mb-1 font-500 tracking-[-0.01em]">Visualizaciones</div>
+              <div className="text-4xl font-bold text-[#FF6B35] tracking-[-0.02em]">--</div>
+            </motion.div>
+            <motion.div
+              className="glass rounded-lg p-6 border border-white/[0.08]"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+            >
+              <div className="text-3xl mb-3">📷</div>
+              <div className="text-[13px] text-[#A1A1A6] mb-1 font-500 tracking-[-0.01em]">Código QR</div>
+              <div className="text-4xl font-bold text-[#2997FF] tracking-[-0.02em]">1</div>
+            </motion.div>
+          </div>
+
+          {/* Quick Actions */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+          >
+            <h2 className="text-[17px] font-600 tracking-[-0.015em] mb-4">Acciones rápidas</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <button
-                key={item.ruta}
-                onClick={() => {
-                  navigate(item.ruta);
-                  setMenuAbierto(false);
-                }}
-                className="flex items-center gap-3 p-4 text-gray-300 hover:text-orange-400 hover:bg-white/5 rounded-xl transition"
+                onClick={() => navigate('/dashboard/platillos/nuevo')}
+                className="p-4 rounded-lg bg-[#2997FF] text-white font-500 text-[15px] tracking-[-0.01em] hover:bg-[#40A9FF] transition-all duration-200 hover:shadow-[0_4px_16px_rgba(41,151,255,0.2)] hover:translate-y-[-2px]"
               >
-                <span className="text-xl">{item.icon}</span>
-                <span>{item.nombre}</span>
+                ➕ Nuevo platillo
               </button>
-            ))}
-            <div className="border-t border-gray-800 my-4"></div>
-            <button
-              onClick={() => authService.logout()}
-              className="flex items-center gap-3 p-4 text-red-400 hover:bg-red-500/10 rounded-xl transition"
-            >
-              <span className="text-xl">🚪</span>
-              <span>Cerrar sesión</span>
-            </button>
-          </div>
-        </div>
-      )}
-
-      <div className="pt-16 pb-20 px-4 min-h-screen">
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold mb-1">Bienvenido, {restauranteInfo?.nombre_dueño}</h1>
-            <p className="text-gray-500 text-sm">Aquí puedes gestionar tu restaurante</p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4 mb-8">
-            <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-4 border border-gray-800">
-              <div className="text-2xl mb-2">🍽️</div>
-              <div className="text-2xl font-bold text-orange-500">{platillos.length}</div>
-              <div className="text-xs text-gray-500">Platillos activos</div>
+              <button
+                onClick={() => navigate('/dashboard/qr')}
+                className="p-4 rounded-lg border border-white/[0.10] font-semibold text-sm text-[#A1A1A6] hover:border-[#2997FF]/40 hover:text-[#F5F5F7] transition-all duration-200"
+              >
+                📷 Ver mi QR
+              </button>
+              <button
+                onClick={() => navigate('/dashboard/platillos')}
+                className="p-4 rounded-lg border border-white/[0.10] font-semibold text-sm text-[#A1A1A6] hover:border-[#2997FF]/40 hover:text-[#F5F5F7] transition-all duration-200"
+              >
+                📋 Gestionar menú
+              </button>
             </div>
-            <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-4 border border-gray-800">
-              <div className="text-2xl mb-2">📷</div>
-              <div className="text-2xl font-bold text-orange-500">1</div>
-              <div className="text-xs text-gray-500">Código QR</div>
-            </div>
-          </div>
-
-          <h2 className="text-lg font-semibold mb-4">Acciones rápidas</h2>
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              onClick={() => navigate('/dashboard/platillos/nuevo')}
-              className="p-4 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 font-semibold text-sm hover:shadow-lg transition"
-            >
-              ➕ Nuevo platillo
-            </button>
-            <button
-              onClick={() => navigate('/dashboard/qr')}
-              className="p-4 rounded-xl border border-gray-700 font-semibold text-sm hover:border-orange-500 transition"
-            >
-              📷 Ver mi QR
-            </button>
-          </div>
+          </motion.div>
         </div>
       </div>
 

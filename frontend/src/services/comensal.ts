@@ -2,7 +2,7 @@ import api from './api';
 
 export const comensalService = {
   getMenuByQR: async (restaurante_id: string) => {
-    const response = await api.get(`/menu/local/${restaurante_id}`);
+    const response = await api.get(`/public/menu/${restaurante_id}`);
     return response.data;
   },
 
@@ -17,7 +17,7 @@ export const comensalService = {
   },
 
   registrarInteraccion: async (platillo_id: string, accion: 'like' | 'dislike') => {
-    const response = await api.post('/feed/interactions', { platillo_id, accion });
+    const response = await api.post('/search/interactions', { platillo_id, accion });
     return response.data;
   },
 };

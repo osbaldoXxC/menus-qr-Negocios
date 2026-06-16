@@ -93,7 +93,40 @@ const updateTheme = async (req, res) => {
   }
 };
 
+const getInfo = async (req, res) => {
+  try {
+    const restaurante_id = req.user.id;
+
+    // Obtener datos básicos del restaurante
+    const restRes = await db.query(
+      `SELECT id, nombre_negocio, descripcion, email, suscripcion_activa, rol, plan, ultimo_pago, created_at
+       FROM restaurantes WHERE id = $1`,
+      [restaurante_id]
+    );
+
+    if (!restRes.rows.length) {
+      return res.status(404).json({ mensaje: 'Restaurante no encontrado' });
+    }
+
+    // Obtener configuración de tema si existe
+    const temaRes = await db.query(
+      `SELECT logo_url, banner_url, color_primario, color_fondo, fuente_familia, layout_type, banner_promocional_activo, banner_promocional_texto
+       FROM configuracion_tema WHERE restaurante_id = $1`,
+      [restaurante_id]
+    );
+
+    const restaurante = restRes.rows[0];
+    const tema = temaRes.rows[0] || null;
+
+    res.json({ restaurante, tema });
+  } catch (error) {
+    console.error('Error al obtener info del restaurante:', error);
+    res.status(500).json({ mensaje: 'Error interno al obtener información del restaurante' });
+  }
+};
+
 module.exports = {
   generateQR,
-  updateTheme
+  updateTheme,
+  getInfo
 };

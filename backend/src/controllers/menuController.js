@@ -6,10 +6,10 @@ const createDish = async (req, res) => {
   const { nombre, descripcion, precio, categoria_id, ingredientes } = req.body;
   const restaurante_id = req.user.id;
   
-  // La URL de la imagen vendrá de multer-s3 si se subió un archivo
-  let url_imagen = req.file ? req.file.location : req.body.url_imagen;
+  // La URL de la imagen vendrá de multer/S3 si se subió un archivo
+  let url_imagen = req.file?.location ?? req.body.url_imagen ?? null;
 
-  if (req.file && process.env.CLOUDFRONT_DOMAIN) {
+  if (req.file && process.env.CLOUDFRONT_DOMAIN && req.file.location) {
     const s3Url = new URL(req.file.location);
     url_imagen = `${process.env.CLOUDFRONT_DOMAIN}${s3Url.pathname}`;
   }

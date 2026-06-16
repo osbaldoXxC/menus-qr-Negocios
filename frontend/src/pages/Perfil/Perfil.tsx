@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 import { authService } from '../../services/auth';
 import { restauranteService } from '../../services/restaurante';
@@ -86,37 +88,41 @@ export function Perfil() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="text-4xl animate-pulse">👤</div>
+      <div className="bg-[#000000] text-[#F5F5F7] min-h-screen flex items-center justify-center">
+        <motion.div className="text-4xl" animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 1 }}>
+          👤
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <nav className="fixed top-0 left-0 right-0 bg-black/90 backdrop-blur-md z-50 border-b border-gray-800">
-        <div className="px-4 py-3 flex items-center gap-3">
-          <button onClick={() => navigate(-1)} className="text-2xl">←</button>
-          <span className="font-bold">Mi Perfil</span>
-        </div>
-      </nav>
-
+    <div className="bg-[#000000] text-[#F5F5F7] min-h-screen">
+      <Header />
       <div className="pt-16 pb-20 px-4 max-w-2xl mx-auto">
-        <div className="text-center mb-8">
-          <div className="w-24 h-24 rounded-full bg-gradient-to-r from-orange-500 to-red-500 flex items-center justify-center text-4xl mx-auto mb-3">
+        <motion.div
+          className="text-center mb-8"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <div className="w-24 h-24 rounded-full bg-[#2997FF]/10 border border-[#2997FF]/20 flex items-center justify-center text-4xl mx-auto mb-3">
             👤
           </div>
           <h2 className="text-xl font-bold">{userData.nombre}</h2>
-          <p className="text-sm text-gray-500">{userData.email}</p>
-        </div>
+          <p className="text-sm text-[#A1A1A6]">{userData.email}</p>
+        </motion.div>
 
         {error && (
-          <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm text-center">
+          <motion.div
+            className="mb-4 p-4 rounded-apple-lg bg-[#FF453A]/5 border border-[#FF453A]/15 text-[#FF453A] text-[14px] text-center"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+          >
             {error}
-          </div>
+          </motion.div>
         )}
 
-        <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 border border-gray-800 mb-6">
+        <div className="glass rounded-apple-lg p-6 border border-white/[0.06] mb-6">
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-semibold">Información personal</h3>
           </div>
@@ -124,66 +130,67 @@ export function Perfil() {
           {editando ? (
             <div className="space-y-4">
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Nombre completo</label>
+                <label className="block text-sm text-[#A1A1A6] mb-1">Nombre completo</label>
                 <input
                   type="text"
                   value={userData.nombre}
                   onChange={(e) => setUserData({ ...userData, nombre: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl text-white focus:border-orange-500 focus:outline-none"
+                  className="w-full px-5 py-3 bg-white/[0.03] border border-white/[0.06] rounded-apple-lg text-[15px] text-[#F5F5F7] placeholder-[#6E6E73] focus:border-[#2997FF]/40 focus:outline-none focus:bg-white/[0.04] transition-all duration-200"
                 />
               </div>
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Correo electrónico</label>
+                <label className="block text-sm text-[#A1A1A6] mb-1">Correo electrónico</label>
                 <input
                   type="email"
                   value={userData.email}
                   onChange={(e) => setUserData({ ...userData, email: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl text-white focus:border-orange-500 focus:outline-none"
+                  className="w-full px-5 py-3 bg-white/[0.03] border border-white/[0.06] rounded-apple-lg text-[15px] text-[#F5F5F7] placeholder-[#6E6E73] focus:border-[#2997FF]/40 focus:outline-none focus:bg-white/[0.04] transition-all duration-200"
                 />
               </div>
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Teléfono</label>
+                <label className="block text-sm text-[#A1A1A6] mb-1">Teléfono</label>
                 <input
                   type="tel"
                   value={userData.telefono}
                   onChange={(e) => setUserData({ ...userData, telefono: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl text-white focus:border-orange-500 focus:outline-none"
+                  className="w-full px-5 py-3 bg-white/[0.03] border border-white/[0.06] rounded-apple-lg text-[15px] text-[#F5F5F7] placeholder-[#6E6E73] focus:border-[#2997FF]/40 focus:outline-none focus:bg-white/[0.04] transition-all duration-200"
                 />
               </div>
               <div className="flex gap-3 pt-2">
                 <button
                   onClick={() => setEditando(false)}
-                  className="flex-1 py-2 rounded-xl border border-gray-700 text-sm"
+                  className="flex-1 py-3 rounded-apple-full border border-white/[0.10] text-sm text-[#A1A1A6] hover:border-[#2997FF]/40 hover:text-[#F5F5F7] transition-all duration-200"
                   disabled={saving}
                 >
                   Cancelar
                 </button>
-                <button
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
                   onClick={handleGuardarPerfil}
                   disabled={saving}
-                  className="flex-1 py-2 bg-gradient-to-r from-orange-500 to-red-500 rounded-xl text-sm font-semibold disabled:opacity-50"
+                  className="flex-1 py-3 bg-[#2997FF] text-white rounded-apple-full text-sm font-semibold hover:bg-[#40A9FF] transition-all duration-200 hover:shadow-[0_0_20px_rgba(41,151,255,0.2)] disabled:opacity-50"
                 >
                   {saving ? 'Guardando...' : 'Guardar'}
-                </button>
+                </motion.button>
               </div>
             </div>
           ) : (
             <div className="space-y-3">
-              <div className="flex justify-between py-2 border-b border-gray-800">
-                <span className="text-gray-400">Nombre</span>
-                <span className="text-white">{userData.nombre}</span>
+              <div className="flex justify-between py-2 border-b border-white/[0.06]">
+                <span className="text-[#A1A1A6]">Nombre</span>
+                <span className="text-[#F5F5F7]">{userData.nombre}</span>
               </div>
-              <div className="flex justify-between py-2 border-b border-gray-800">
-                <span className="text-gray-400">Correo</span>
-                <span className="text-white">{userData.email}</span>
+              <div className="flex justify-between py-2 border-b border-white/[0.06]">
+                <span className="text-[#A1A1A6]">Correo</span>
+                <span className="text-[#F5F5F7]">{userData.email}</span>
               </div>
-              <div className="flex justify-between py-2 border-b border-gray-800">
-                <span className="text-gray-400">Teléfono</span>
-                <span className="text-white">{userData.telefono || 'No especificado'}</span>
+              <div className="flex justify-between py-2 border-b border-white/[0.06]">
+                <span className="text-[#A1A1A6]">Teléfono</span>
+                <span className="text-[#F5F5F7]">{userData.telefono || 'No especificado'}</span>
               </div>
               <button
                 onClick={() => setEditando(true)}
-                className="w-full mt-4 py-2 rounded-xl border border-gray-700 text-sm hover:border-orange-500 transition"
+                className="w-full mt-4 py-3 rounded-apple-full border border-white/[0.10] text-sm text-[#A1A1A6] hover:border-[#2997FF]/40 hover:text-[#F5F5F7] transition-all duration-200"
               >
                 Editar perfil
               </button>
@@ -191,27 +198,27 @@ export function Perfil() {
           )}
         </div>
 
-        <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 border border-gray-800 mb-6">
+        <div className="glass rounded-apple-lg p-6 border border-white/[0.06] mb-6">
           <h3 className="font-semibold mb-4">Mi restaurante</h3>
           <div className="space-y-3">
-            <div className="flex justify-between py-2 border-b border-gray-800">
-              <span className="text-gray-400">Nombre</span>
-              <span className="text-white">{userData.restaurante}</span>
+            <div className="flex justify-between py-2 border-b border-white/[0.06]">
+              <span className="text-[#A1A1A6]">Nombre</span>
+              <span className="text-[#F5F5F7]">{userData.restaurante}</span>
             </div>
-            <div className="flex justify-between py-2 border-b border-gray-800">
-              <span className="text-gray-400">Plan actual</span>
-              <span className="text-orange-400 font-semibold">{userData.plan}</span>
+            <div className="flex justify-between py-2 border-b border-white/[0.06]">
+              <span className="text-[#A1A1A6]">Plan actual</span>
+              <span className="text-[#2997FF] font-semibold">{userData.plan}</span>
             </div>
             <button
               onClick={() => navigate('/precios')}
-              className="w-full mt-4 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 text-sm font-semibold"
+              className="w-full mt-4 py-3 bg-[#2997FF] text-white rounded-apple-full text-sm font-semibold hover:bg-[#40A9FF] transition-all duration-200 hover:shadow-[0_0_20px_rgba(41,151,255,0.2)]"
             >
               Actualizar plan
             </button>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 border border-gray-800">
+        <div className="glass rounded-apple-lg p-6 border border-white/[0.06]">
           <h3 className="font-semibold mb-4">Cambiar contraseña</h3>
           <form onSubmit={handleCambiarPassword} className="space-y-4">
             <input
@@ -219,7 +226,7 @@ export function Perfil() {
               placeholder="Contraseña actual"
               value={passwordData.actual}
               onChange={(e) => setPasswordData({ ...passwordData, actual: e.target.value })}
-              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none"
+              className="w-full px-5 py-3 bg-white/[0.03] border border-white/[0.06] rounded-apple-lg text-[15px] text-[#F5F5F7] placeholder-[#6E6E73] focus:border-[#2997FF]/40 focus:outline-none focus:bg-white/[0.04] transition-all duration-200"
               required
             />
             <input
@@ -227,7 +234,7 @@ export function Perfil() {
               placeholder="Nueva contraseña"
               value={passwordData.nueva}
               onChange={(e) => setPasswordData({ ...passwordData, nueva: e.target.value })}
-              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none"
+              className="w-full px-5 py-3 bg-white/[0.03] border border-white/[0.06] rounded-apple-lg text-[15px] text-[#F5F5F7] placeholder-[#6E6E73] focus:border-[#2997FF]/40 focus:outline-none focus:bg-white/[0.04] transition-all duration-200"
               required
             />
             <input
@@ -235,13 +242,13 @@ export function Perfil() {
               placeholder="Confirmar nueva contraseña"
               value={passwordData.confirmar}
               onChange={(e) => setPasswordData({ ...passwordData, confirmar: e.target.value })}
-              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none"
+              className="w-full px-5 py-3 bg-white/[0.03] border border-white/[0.06] rounded-apple-lg text-[15px] text-[#F5F5F7] placeholder-[#6E6E73] focus:border-[#2997FF]/40 focus:outline-none focus:bg-white/[0.04] transition-all duration-200"
               required
             />
             <button
               type="submit"
               disabled={saving}
-              className="w-full py-2 rounded-xl border border-gray-700 text-sm hover:border-orange-500 transition disabled:opacity-50"
+              className="w-full py-3 rounded-apple-full border border-white/[0.10] text-sm text-[#A1A1A6] hover:border-[#2997FF]/40 hover:text-[#F5F5F7] transition-all duration-200 disabled:opacity-50"
             >
               {saving ? 'Actualizando...' : 'Actualizar contraseña'}
             </button>
@@ -250,7 +257,7 @@ export function Perfil() {
 
         <button
           onClick={() => authService.logout()}
-          className="w-full mt-6 py-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 font-semibold text-sm hover:bg-red-500/20 transition"
+          className="w-full mt-6 py-3 rounded-apple-full bg-[#FF453A]/5 border border-[#FF453A]/15 text-[#FF453A] font-semibold text-sm hover:bg-[#FF453A]/10 transition-all duration-200"
         >
           Cerrar sesión
         </button>

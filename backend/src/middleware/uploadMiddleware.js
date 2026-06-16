@@ -26,6 +26,18 @@ const upload = multer({
 const optimizeImage = async (req, res, next) => {
   if (!req.file) return next();
 
+  const bucketName = process.env.S3_BUCKET_NAME;
+  const accessKey = process.env.AWS_ACCESS_KEY_ID;
+  const secretKey = process.env.AWS_SECRET_ACCESS_KEY;
+
+  const isPlaceholderCredential = (value) => !value || value === 'your_access_key' || value === 'your_secret_key' || value.toLowerCase().includes('your_');
+
+  if (!bucketName || isPlaceholderCredential(accessKey) || isPlaceholderCredential(secretKey)) {
+    console.warn('S3 no está configurado correctamente. Se omite la subida de imagen y se continúa sin URL de imagen.');
+    req.file.location = undefined;
+    return next();
+  }
+
   try {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     const fileName = `dishes/${uniqueSuffix}.webp`;
@@ -41,7 +53,7 @@ const optimizeImage = async (req, res, next) => {
     const parallelUploadS3 = new Upload({
       client: s3Client,
       params: {
-        Bucket: process.env.S3_BUCKET_NAME,
+        Bucket: bucketName,
         Key: fileName,
         Body: optimizedBuffer,
         ContentType: 'image/webp',
