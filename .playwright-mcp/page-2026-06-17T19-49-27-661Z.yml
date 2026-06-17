@@ -1,0 +1,131 @@
+- generic [ref=e4]:
+  - banner [ref=e5]:
+    - generic [ref=e7]:
+      - generic [ref=e8] [cursor=pointer]:
+        - generic [ref=e9]: 🌮
+        - generic [ref=e10]: MexxicanMX
+      - generic [ref=e11]:
+        - button "Alternar tema" [ref=e12] [cursor=pointer]: ☀️ Día
+        - button "Iniciar sesión" [ref=e13] [cursor=pointer]
+        - button "Registrarse" [ref=e14] [cursor=pointer]
+  - generic [ref=e19]:
+    - generic [ref=e22]: MexxicanMX V3 Ya Disponible
+    - heading "El menú que sabe lo que quieres" [level=1] [ref=e23]:
+      - text: El menú que
+      - text: sabe lo que quieres
+    - paragraph [ref=e24]: Descubre tu próximo antojo con Inteligencia Artificial o crea el menú digital más rápido y elegante para tu restaurante.
+    - generic [ref=e25]:
+      - button "🚀 Registrar mi Restaurante" [ref=e26] [cursor=pointer]: 🚀 Registrar mi Restaurante
+      - button "🔑 Iniciar Sesión Negocios" [ref=e28] [cursor=pointer]
+    - button "¿Buscas comida? Prueba nuestro recomendador IA →" [ref=e30] [cursor=pointer]
+  - generic [ref=e32]:
+    - generic [ref=e33]:
+      - heading "Encuentra tu match perfecto." [level=2] [ref=e34]
+      - paragraph [ref=e35]: Cero búsquedas aburridas. Cero indecisión.
+    - generic [ref=e36]:
+      - generic [ref=e37]:
+        - generic [ref=e39]: 🧠
+        - heading "1. Tu perfil de sabor" [level=3] [ref=e40]
+        - paragraph [ref=e41]: Dinos qué se te antoja, tus alergias y tu dieta actual.
+      - generic [ref=e42]:
+        - generic [ref=e44]: ✨
+        - heading "2. Magia en el Feed" [level=3] [ref=e45]
+        - paragraph [ref=e46]: Nuestra IA analiza miles de recetas y te muestra solo lo que te hará feliz.
+      - generic [ref=e47]:
+        - generic [ref=e49]: 🔥
+        - heading "3. Match & Disfruta" [level=3] [ref=e50]
+        - paragraph [ref=e51]: Desliza como en Tinder, haz match con el platillo y encuentra dónde comerlo.
+  - generic [ref=e54]:
+    - generic [ref=e55]:
+      - generic [ref=e56]: SaaS Para Negocios
+      - heading "Tu menú digital en modo automático." [level=2] [ref=e57]:
+        - text: Tu menú digital en
+        - text: modo automático.
+      - paragraph [ref=e58]: Olvídate de los PDFs estáticos. Crea menús interactivos, genera códigos QR al instante y deja que nuestra IA recomiende tus mejores platillos a miles de comensales en la ciudad.
+      - list [ref=e59]:
+        - listitem [ref=e60]:
+          - img [ref=e62]
+          - text: Panel de control intuitivo
+        - listitem [ref=e64]:
+          - img [ref=e66]
+          - text: Códigos QR únicos por sucursal
+        - listitem [ref=e68]:
+          - img [ref=e70]
+          - text: Exposición en el Feed Público con IA
+        - listitem [ref=e72]:
+          - img [ref=e74]
+          - text: Soporte para alergias y dietas
+      - button "Crear cuenta de Restaurante" [ref=e76] [cursor=pointer]
+    - generic [ref=e79]:
+      - generic [ref=e80]:
+        - generic [ref=e81]:
+          - heading "Dashboard" [level=4] [ref=e82]
+          - paragraph [ref=e83]: Tacos El Inge
+        - generic [ref=e84]: ACTIVO
+      - generic [ref=e85]:
+        - generic [ref=e86]:
+          - generic [ref=e87]: Tacos al Pastor
+          - generic [ref=e88]: $120.00
+        - generic [ref=e89]:
+          - generic [ref=e90]: Volcán de Asada
+          - generic [ref=e91]: $180.00
+        - generic [ref=e92]:
+          - generic [ref=e93]: Quesadilla Especial
+          - generic [ref=e94]: $140.00
+  - generic [ref=e96]:
+    - heading "Precios simples y transparentes" [level=2] [ref=e97]
+    - generic [ref=e98]:
+      - generic [ref=e99]:
+        - heading "Básico" [level=3] [ref=e100]
+        - paragraph [ref=e101]: Para empezar a digitalizarte.
+        - generic [ref=e102]: Gratis
+        - list [ref=e103]:
+          - listitem [ref=e104]: ✓ 1 Sucursal
+          - listitem [ref=e105]: ✓ Menú Digital QR
+          - listitem [ref=e106]: ✓ Hasta 50 platillos
+        - button "Empezar Básico" [ref=e107] [cursor=pointer]
+      - generic [ref=e108]:
+        - generic [ref=e109]: POPULAR
+        - heading "Premium" [level=3] [ref=e110]
+        - paragraph [ref=e111]: El poder de la IA en tus manos.
+        - generic [ref=e112]: $299/mes
+        - list [ref=e113]:
+          - listitem [ref=e114]: ✓ Sucursales ilimitadas
+          - listitem [ref=e115]: ✓ Exposición en Discovery Feed (IA)
+          - listitem [ref=e116]: ✓ Personalización de colores y marca
+          - listitem [ref=e117]: ✓ Analíticas avanzadas
+        - button "Probar 14 días gratis" [ref=e118] [cursor=pointer]
+  - contentinfo [ref=e119]:
+    - generic [ref=e120]:
+      - generic [ref=e121]:
+        - generic [ref=e122]:
+          - generic [ref=e123]:
+            - generic [ref=e124]: 🌮
+            - generic [ref=e125]: MexxicanMX
+          - paragraph [ref=e126]: Motor de descubrimiento gastronómico impulsado por IA. Encuentra tu platillo perfecto.
+        - generic [ref=e127]:
+          - heading "Producto" [level=4] [ref=e128]
+          - list [ref=e129]:
+            - listitem [ref=e130]:
+              - button "Cómo funciona" [ref=e131] [cursor=pointer]
+            - listitem [ref=e132]:
+              - button "Precios" [ref=e133] [cursor=pointer]
+            - listitem [ref=e134]:
+              - button "Para restaurantes" [ref=e135] [cursor=pointer]
+        - generic [ref=e136]:
+          - heading "Compañía" [level=4] [ref=e137]
+          - list [ref=e138]:
+            - listitem [ref=e139]:
+              - button "Blog" [ref=e140] [cursor=pointer]
+            - listitem [ref=e141]:
+              - button "Contacto" [ref=e142] [cursor=pointer]
+        - generic [ref=e143]:
+          - heading "Legal" [level=4] [ref=e144]
+          - list [ref=e145]:
+            - listitem [ref=e146]:
+              - button "Privacidad" [ref=e147] [cursor=pointer]
+            - listitem [ref=e148]:
+              - button "Términos" [ref=e149] [cursor=pointer]
+      - generic [ref=e150]:
+        - paragraph [ref=e151]: © 2026 MexxicanMX. Todos los derechos reservados.
+        - paragraph [ref=e152]: Hecho con 🌶️ en México

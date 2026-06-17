@@ -1,0 +1,70 @@
+- generic [ref=e156]:
+  - navigation [ref=e157]:
+    - generic [ref=e158]:
+      - generic [ref=e159] [cursor=pointer]:
+        - generic [ref=e160]: 🌮
+        - generic [ref=e161]: MexxicanMX
+      - button "👤" [ref=e163] [cursor=pointer]:
+        - generic [ref=e164]: 👤
+  - generic [ref=e166]:
+    - generic [ref=e167]:
+      - heading "Bienvenido," [level=1] [ref=e168]
+      - paragraph [ref=e169]: Aquí puedes gestionar tu restaurante
+    - generic [ref=e170]:
+      - generic [ref=e171]:
+        - generic [ref=e172]: 🍽️
+        - generic [ref=e173]: "0"
+        - generic [ref=e174]: Platillos activos
+      - generic [ref=e175]:
+        - generic [ref=e176]: 📷
+        - generic [ref=e177]: "1"
+        - generic [ref=e178]: Código QR
+    - heading "Acciones rápidas" [level=2] [ref=e179]
+    - generic [ref=e180]:
+      - button "➕ Nuevo platillo" [ref=e181] [cursor=pointer]
+      - button "📷 Ver mi QR" [ref=e182] [cursor=pointer]
+  - contentinfo [ref=e183]:
+    - generic [ref=e184]:
+      - generic [ref=e185]:
+        - generic [ref=e186]:
+          - generic [ref=e187]:
+            - generic [ref=e188]: 🌮
+            - generic [ref=e189]: MexxicanMX
+          - paragraph [ref=e190]: Descubre los mejores sabores de México con IA
+        - generic [ref=e191]:
+          - heading "Producto" [level=4] [ref=e192]
+          - list [ref=e193]:
+            - listitem [ref=e194]:
+              - link "Cómo funciona" [ref=e195] [cursor=pointer]:
+                - /url: /como-funciona
+            - listitem [ref=e196]:
+              - link "Precios" [ref=e197] [cursor=pointer]:
+                - /url: /precios
+            - listitem [ref=e198]:
+              - link "Para restaurantes" [ref=e199] [cursor=pointer]:
+                - /url: /para-restaurantes
+        - generic [ref=e200]:
+          - heading "Compañía" [level=4] [ref=e201]
+          - list [ref=e202]:
+            - listitem [ref=e203]:
+              - link "Blog" [ref=e204] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e205]:
+              - link "Prensa" [ref=e206] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e207]:
+              - link "Contacto" [ref=e208] [cursor=pointer]:
+                - /url: "#"
+        - generic [ref=e209]:
+          - heading "Legal" [level=4] [ref=e210]
+          - list [ref=e211]:
+            - listitem [ref=e212]:
+              - link "Términos" [ref=e213] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e214]:
+              - link "Privacidad" [ref=e215] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e216]:
+              - link "Cookies" [ref=e217] [cursor=pointer]:
+                - /url: "#"
+      - generic [ref=e218]: © 2024 MexxicanMX - Motor de Descubrimiento Gastronómico con IA

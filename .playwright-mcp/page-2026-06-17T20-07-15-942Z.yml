@@ -1,0 +1,81 @@
+- generic [ref=e8]:
+  - banner [ref=e9]:
+    - generic [ref=e11]:
+      - generic [ref=e12] [cursor=pointer]:
+        - generic [ref=e13]: 🌮
+        - generic [ref=e14]: MexxicanMX
+      - generic [ref=e15]:
+        - button "Alternar tema" [ref=e16] [cursor=pointer]: ☀️ Día
+        - button "Perfil" [ref=e17] [cursor=pointer]
+        - button "Cerrar sesión" [ref=e18] [cursor=pointer]
+  - generic [ref=e20]:
+    - generic [ref=e24]:
+      - generic [ref=e25]:
+        - generic [ref=e26]:
+          - generic [ref=e27]: 🌮
+          - generic [ref=e29]: 98% Match
+        - generic [ref=e30]:
+          - generic [ref=e31]:
+            - heading "Tacos al Pastor Especiales" [level=2] [ref=e32]
+            - paragraph [ref=e33]: El Fogón de México
+            - paragraph [ref=e34]: Te encantan los sabores picositos y este adobo es legendario. Preparado al carbón con piña miel.
+          - generic [ref=e35]: Toca para revelar detalles
+      - generic [ref=e36]:
+        - generic [ref=e37]:
+          - heading "Detalles del Platillo" [level=3] [ref=e38]
+          - heading "Tacos al Pastor Especiales" [level=2] [ref=e39]
+          - generic [ref=e40]:
+            - generic [ref=e41]:
+              - generic [ref=e42]: Ubicación
+              - paragraph [ref=e43]: 📍 Av. Reforma 123, CDMX
+            - generic [ref=e44]:
+              - generic [ref=e45]: Ingredientes Clave
+              - generic [ref=e46]:
+                - generic [ref=e47]: Carne de cerdo
+                - generic [ref=e48]: Piña
+                - generic [ref=e49]: Cilantro
+                - generic [ref=e50]: Cebolla
+                - generic [ref=e51]: Tortilla a mano
+            - generic [ref=e52]:
+              - generic [ref=e53]: Precio
+              - paragraph [ref=e54]: $120
+        - button "Ver menú completo" [ref=e55] [cursor=pointer]
+    - generic [ref=e56]:
+      - button "👎" [ref=e57] [cursor=pointer]
+      - button "🔄" [ref=e58] [cursor=pointer]
+      - button "❤️" [ref=e59] [cursor=pointer]
+    - paragraph [ref=e60]: 3 platillos restantes en tu feed
+  - contentinfo [ref=e61]:
+    - generic [ref=e62]:
+      - generic [ref=e63]:
+        - generic [ref=e64]:
+          - generic [ref=e65]:
+            - generic [ref=e66]: 🌮
+            - generic [ref=e67]: MexxicanMX
+          - paragraph [ref=e68]: Motor de descubrimiento gastronómico impulsado por IA. Encuentra tu platillo perfecto.
+        - generic [ref=e69]:
+          - heading "Producto" [level=4] [ref=e70]
+          - list [ref=e71]:
+            - listitem [ref=e72]:
+              - button "Cómo funciona" [ref=e73] [cursor=pointer]
+            - listitem [ref=e74]:
+              - button "Precios" [ref=e75] [cursor=pointer]
+            - listitem [ref=e76]:
+              - button "Para restaurantes" [ref=e77] [cursor=pointer]
+        - generic [ref=e78]:
+          - heading "Compañía" [level=4] [ref=e79]
+          - list [ref=e80]:
+            - listitem [ref=e81]:
+              - button "Blog" [ref=e82] [cursor=pointer]
+            - listitem [ref=e83]:
+              - button "Contacto" [ref=e84] [cursor=pointer]
+        - generic [ref=e85]:
+          - heading "Legal" [level=4] [ref=e86]
+          - list [ref=e87]:
+            - listitem [ref=e88]:
+              - button "Privacidad" [ref=e89] [cursor=pointer]
+            - listitem [ref=e90]:
+              - button "Términos" [ref=e91] [cursor=pointer]
+      - generic [ref=e92]:
+        - paragraph [ref=e93]: © 2026 MexxicanMX. Todos los derechos reservados.
+        - paragraph [ref=e94]: Hecho con 🌶️ en México

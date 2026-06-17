@@ -1,154 +1,184 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
-
-type UserRole = 'comensal' | 'restaurante';
+import api from '../../services/api';
 
 export function Register() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const [role, setRole] = useState<UserRole>('comensal');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [formData, setFormData] = useState({
+    nombre_dueño: '',
     email: '',
     password: '',
-    nombre: '',
-    restauranteNombre: '',
+    nombre_negocio: '',
   });
-  const [aceptaTerminos, setAceptaTerminos] = useState(false);
 
-  useEffect(() => {
-    const roleParam = searchParams.get('role');
-    if (roleParam === 'restaurante') {
-      setRole('restaurante');
-    } else if (roleParam === 'comensal') {
-      setRole('comensal');
-    }
-  }, [searchParams]);
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Registro:', { role, ...formData });
+    setLoading(true);
+    setError('');
+
+    try {
+      await api.post('/auth/register', {
+        nombre_dueño: formData.nombre_dueño,
+        email: formData.email,
+        password: formData.password,
+        nombre_negocio: formData.nombre_negocio,
+      });
+
+      navigate('/login', { state: { registered: true } });
+    } catch (err: any) {
+      setError(
+        err.response?.data?.mensaje ||
+          err.response?.data?.error ||
+          'Error al registrar. Intenta de nuevo.'
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="bg-[#000000] text-[#F5F5F7] min-h-screen flex flex-col">
       <Header />
-      
-      <div className="flex items-center justify-center min-h-screen px-4 pt-20 pb-20">
-        <div className="w-full max-w-md">
-          <div className="text-center mb-8">
-            <div className="text-4xl mb-3">🌮</div>
-            <h1 className="text-2xl font-semibold text-white mb-2">Crear cuenta</h1>
-            <p className="text-sm text-gray-500">
-              {role === 'comensal' ? 'Descubre los mejores sabores' : 'Registra tu restaurante'}
+
+      <div className="flex-1 flex items-center justify-center px-5 py-20">
+        <motion.div
+          className="w-full max-w-[440px]"
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        >
+          {/* Header */}
+          <div className="text-center mb-10">
+            <motion.span
+              className="text-4xl mb-5 block"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.1, duration: 0.4, ease: 'easeOut' }}
+            >
+              🍽️
+            </motion.span>
+            <h1 className="text-2xl font-bold mb-2 tracking-[-0.015em]">
+              Registra tu restaurante
+            </h1>
+            <p className="text-[15px] text-[#A1A1A6]">
+              Únete a 500+ restaurantes que ya usan MexxicanMX
             </p>
           </div>
 
-          <div className="flex gap-2 mb-8 bg-white/5 rounded-xl p-1">
-            <button
-              onClick={() => setRole('comensal')}
-              className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${
-                role === 'comensal' ? 'bg-white text-black' : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              Comensal
-            </button>
-            <button
-              onClick={() => setRole('restaurante')}
-              className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${
-                role === 'restaurante' ? 'bg-white text-black' : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              Restaurante
-            </button>
-          </div>
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <motion.div
+                className="p-4 rounded-apple-lg bg-[#FF453A]/5 border border-[#FF453A]/15 text-[#FF453A] text-[14px] text-center"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+              >
+                {error}
+              </motion.div>
+            )}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Dueño */}
             <div>
+              <label className="sr-only">Nombre del dueño</label>
               <input
                 type="text"
-                value={formData.nombre}
-                onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                className="w-full px-0 py-3 bg-transparent border-b border-white/10 text-white text-base placeholder-gray-600 focus:border-white/30 focus:outline-none transition"
-                placeholder={role === 'comensal' ? 'Nombre completo' : 'Nombre del contacto'}
+                value={formData.nombre_dueño}
+                onChange={(e) =>
+                  setFormData({ ...formData, nombre_dueño: e.target.value })
+                }
+                className="w-full px-5 py-3.5 bg-white/[0.03] border border-white/[0.06] rounded-apple-lg text-[15px] text-[#F5F5F7] placeholder-[#6E6E73] focus:border-[#2997FF]/40 focus:outline-none focus:bg-white/[0.04] transition-all duration-200"
+                placeholder="Nombre del dueño"
                 required
               />
             </div>
 
-            {role === 'restaurante' && (
-              <div>
-                <input
-                  type="text"
-                  value={formData.restauranteNombre}
-                  onChange={(e) => setFormData({ ...formData, restauranteNombre: e.target.value })}
-                  className="w-full px-0 py-3 bg-transparent border-b border-white/10 text-white text-base placeholder-gray-600 focus:border-white/30 focus:outline-none transition"
-                  placeholder="Nombre del restaurante"
-                  required
-                />
-              </div>
-            )}
-
+            {/* Restaurante */}
             <div>
+              <label className="sr-only">Nombre del restaurante</label>
+              <input
+                type="text"
+                value={formData.nombre_negocio}
+                onChange={(e) =>
+                  setFormData({ ...formData, nombre_negocio: e.target.value })
+                }
+                className="w-full px-5 py-3.5 bg-white/[0.03] border border-white/[0.06] rounded-apple-lg text-[15px] text-[#F5F5F7] placeholder-[#6E6E73] focus:border-[#2997FF]/40 focus:outline-none focus:bg-white/[0.04] transition-all duration-200"
+                placeholder="Nombre del restaurante"
+                required
+              />
+            </div>
+
+            {/* Email */}
+            <div>
+              <label className="sr-only">Correo electrónico</label>
               <input
                 type="email"
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-0 py-3 bg-transparent border-b border-white/10 text-white text-base placeholder-gray-600 focus:border-white/30 focus:outline-none transition"
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
+                className="w-full px-5 py-3.5 bg-white/[0.03] border border-white/[0.06] rounded-apple-lg text-[15px] text-[#F5F5F7] placeholder-[#6E6E73] focus:border-[#2997FF]/40 focus:outline-none focus:bg-white/[0.04] transition-all duration-200"
                 placeholder="Correo electrónico"
                 required
               />
             </div>
 
+            {/* Password */}
             <div>
+              <label className="sr-only">Contraseña</label>
               <input
                 type="password"
                 value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full px-0 py-3 bg-transparent border-b border-white/10 text-white text-base placeholder-gray-600 focus:border-white/30 focus:outline-none transition"
+                onChange={(e) =>
+                  setFormData({ ...formData, password: e.target.value })
+                }
+                className="w-full px-5 py-3.5 bg-white/[0.03] border border-white/[0.06] rounded-apple-lg text-[15px] text-[#F5F5F7] placeholder-[#6E6E73] focus:border-[#2997FF]/40 focus:outline-none focus:bg-white/[0.04] transition-all duration-200"
                 placeholder="Contraseña"
                 required
               />
             </div>
 
-            <div className="flex items-center gap-2 pt-2">
-              <input
-                type="checkbox"
-                id="terminos"
-                checked={aceptaTerminos}
-                onChange={(e) => setAceptaTerminos(e.target.checked)}
-                className="w-4 h-4 rounded border-white/20 bg-transparent checked:bg-white checked:border-white"
-              />
-              <label htmlFor="terminos" className="text-xs text-gray-500">
-                Acepto los <a href="#" className="text-gray-300 hover:text-white">términos</a> y{' '}
-                <a href="#" className="text-gray-300 hover:text-white">política de privacidad</a>
-              </label>
-            </div>
-
-            <button
+            {/* Submit */}
+            <motion.button
               type="submit"
-              disabled={!aceptaTerminos}
-              className={`w-full py-3 mt-4 rounded-full font-medium text-sm transition-all ${
-                aceptaTerminos ? 'bg-white text-black hover:bg-gray-200' : 'bg-white/20 text-gray-500 cursor-not-allowed'
-              }`}
+              disabled={loading}
+              whileTap={{ scale: 0.97 }}
+              className="w-full py-3.5 bg-[#2997FF] text-white rounded-full text-[15px] font-medium hover:bg-[#40A9FF] transition-all duration-250 hover:shadow-[0_0_24px_rgba(41,151,255,0.2)] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {role === 'comensal' ? 'Comenzar' : 'Registrar restaurante'}
-            </button>
+              {loading ? 'Registrando...' : 'Registrar restaurante'}
+            </motion.button>
+
+            {/* Divider */}
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-white/[0.06]" />
+              </div>
+              <div className="relative flex justify-center text-[12px]">
+                <span className="px-4 bg-[#000000] text-[#6E6E73]">o</span>
+              </div>
+            </div>
+
+            {/* Login link */}
+            <p className="text-center text-[14px] text-[#A1A1A6]">
+              ¿Ya tienes cuenta?{' '}
+              <button
+                type="button"
+                onClick={() => navigate('/login')}
+                className="text-[#2997FF] hover:text-[#40A9FF] font-medium transition-colors"
+              >
+                Inicia sesión
+              </button>
+            </p>
+
+            <p className="text-center mt-4 text-[12px] text-[#6E6E73]">
+              Al registrarte aceptas nuestros términos y política de privacidad.
+            </p>
           </form>
-
-          <div className="relative my-8">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-white/10"></div>
-            </div>
-            <div className="relative flex justify-center text-xs">
-              <span className="px-3 bg-black text-gray-600">o</span>
-            </div>
-          </div>
-
-          <button className="w-full py-3 rounded-full border border-white/10 text-sm text-gray-300 hover:bg-white/5 transition">
-            Continuar con Google
-          </button>
-        </div>
+        </motion.div>
       </div>
 
       <Footer />

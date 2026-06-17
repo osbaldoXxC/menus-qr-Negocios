@@ -1,0 +1,50 @@
+- generic [ref=e8]:
+  - banner [ref=e9]:
+    - generic [ref=e11]:
+      - generic [ref=e12] [cursor=pointer]:
+        - generic [ref=e13]: 🌮
+        - generic [ref=e14]: MexxicanMX
+      - generic [ref=e15]:
+        - button "Alternar tema" [ref=e16] [cursor=pointer]: ☀️ Día
+        - button "Perfil" [ref=e17] [cursor=pointer]
+        - button "Cerrar sesión" [ref=e18] [cursor=pointer]
+  - generic [ref=e19]:
+    - generic [ref=e29]: 📷
+    - heading "Escanea para comer" [level=1] [ref=e30]
+    - paragraph [ref=e31]: Apunta con tu cámara al código QR de la mesa para ver el menú digital al instante.
+    - button "Simular Escaneo 📷" [ref=e32] [cursor=pointer]
+    - paragraph [ref=e33]: Seguro • Rápido • Sin Contacto
+  - contentinfo [ref=e34]:
+    - generic [ref=e35]:
+      - generic [ref=e36]:
+        - generic [ref=e37]:
+          - generic [ref=e38]:
+            - generic [ref=e39]: 🌮
+            - generic [ref=e40]: MexxicanMX
+          - paragraph [ref=e41]: Motor de descubrimiento gastronómico impulsado por IA. Encuentra tu platillo perfecto.
+        - generic [ref=e42]:
+          - heading "Producto" [level=4] [ref=e43]
+          - list [ref=e44]:
+            - listitem [ref=e45]:
+              - button "Cómo funciona" [ref=e46] [cursor=pointer]
+            - listitem [ref=e47]:
+              - button "Precios" [ref=e48] [cursor=pointer]
+            - listitem [ref=e49]:
+              - button "Para restaurantes" [ref=e50] [cursor=pointer]
+        - generic [ref=e51]:
+          - heading "Compañía" [level=4] [ref=e52]
+          - list [ref=e53]:
+            - listitem [ref=e54]:
+              - button "Blog" [ref=e55] [cursor=pointer]
+            - listitem [ref=e56]:
+              - button "Contacto" [ref=e57] [cursor=pointer]
+        - generic [ref=e58]:
+          - heading "Legal" [level=4] [ref=e59]
+          - list [ref=e60]:
+            - listitem [ref=e61]:
+              - button "Privacidad" [ref=e62] [cursor=pointer]
+            - listitem [ref=e63]:
+              - button "Términos" [ref=e64] [cursor=pointer]
+      - generic [ref=e65]:
+        - paragraph [ref=e66]: © 2026 MexxicanMX. Todos los derechos reservados.
+        - paragraph [ref=e67]: Hecho con 🌶️ en México

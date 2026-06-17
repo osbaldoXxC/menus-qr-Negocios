@@ -1,165 +1,225 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
+import { comensalService } from '../../services/comensal';
+
+const PLATILLOS_DUMMY = [
+  {
+    platillo_id: 'd1',
+    nombre: 'Tacos al Pastor Especiales',
+    restaurante_nombre: 'El Fogón de México',
+    restaurante_id: '1',
+    precio: 120,
+    emoji: '🌮',
+    porcentaje_match: 98,
+    motivo_match: 'Te encantan los sabores picositos y este adobo es legendario. Preparado al carbón con piña miel.',
+    ingredientes: ['Carne de cerdo', 'Piña', 'Cilantro', 'Cebolla', 'Tortilla a mano'],
+    ubicacion: 'Av. Reforma 123, CDMX'
+  },
+  {
+    platillo_id: 'd2',
+    nombre: 'Bowl Keto Energético',
+    restaurante_nombre: 'Green Point',
+    restaurante_id: '2',
+    precio: 185,
+    emoji: '🥑',
+    porcentaje_match: 92,
+    motivo_match: 'Ideal para tu dieta baja en carbohidratos. Frescura y proteína en cada bocado.',
+    ingredientes: ['Salmón', 'Aguacate', 'Espinacas', 'Huevo pochado', 'Semillas de cáñamo'],
+    ubicacion: 'Colonia Roma Norte, CDMX'
+  },
+  {
+    platillo_id: 'd3',
+    nombre: 'Pizza de Masa Madre',
+    restaurante_nombre: 'Pizza Nostra',
+    restaurante_id: '3',
+    precio: 210,
+    emoji: '🍕',
+    porcentaje_match: 85,
+    motivo_match: 'Buscas algo para compartir y esta pizza artesanal es la mejor puntuada de la zona.',
+    ingredientes: ['Harina integral', 'Mozzarella di bufala', 'Albahaca fresca', 'Tomate San Marzano'],
+    ubicacion: 'Polanco, CDMX'
+  },
+  {
+    platillo_id: 'd4',
+    nombre: 'Hamburguesa Trufada',
+    restaurante_nombre: 'Burger Lab',
+    restaurante_id: '4',
+    precio: 245,
+    emoji: '🍔',
+    porcentaje_match: 89,
+    motivo_match: 'Un gusto culposo con ingredientes premium. La mayonesa de trufa es el toque secreto.',
+    ingredientes: ['Carne Wagyu', 'Aceite de trufa', 'Queso Gouda', 'Pan Brioche'],
+    ubicacion: 'Santa Fe, CDMX'
+  }
+];
 
 export function Descubrir() {
   const navigate = useNavigate();
+  const [platillos, setPlatillos] = useState<any[]>(PLATILLOS_DUMMY);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
-  const [touchStart, setTouchStart] = useState(0);
-  const [touchEnd, setTouchEnd] = useState(0);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  const platillos = [
-    { id: 1, nombre: "Tacos al Pastor", restaurante: "Taquería El Mexa", distancia: "1.2 km", precio: "$120", rating: 4.8, imagen: "🌮", descripcion: "Tacos de pastor con piña, cebolla y cilantro" },
-    { id: 2, nombre: "Quesadillas de Huitlacoche", restaurante: "La Casa del Maíz", distancia: "800 m", precio: "$90", rating: 4.6, imagen: "🫔", descripcion: "Quesadillas con huitlacoche, queso Oaxaca y salsa verde" },
-    { id: 3, nombre: "Chiles en Nogada", restaurante: "El Poblano", distancia: "2.5 km", precio: "$250", rating: 4.9, imagen: "🌶️", descripcion: "Chiles rellenos con nogada, granada y perejil" },
-    { id: 4, nombre: "Tostadas de Ceviche", restaurante: "Mariscos El Puerto", distancia: "1.5 km", precio: "$160", rating: 4.7, imagen: "🐟", descripcion: "Tostadas con ceviche de pescado, aguacate y salsa roja" },
-    { id: 5, nombre: "Pozole Rojo", restaurante: "Fonda Doña Lupe", distancia: "950 m", precio: "$140", rating: 4.8, imagen: "🍲", descripcion: "Pozole rojo con carne de cerdo, lechuga, rábano y tostadas" },
-  ];
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchStart(e.targetTouches[0].clientX);
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    setTouchEnd(e.targetTouches[0].clientX);
-  };
-
-  const handleTouchEnd = () => {
-    if (touchStart - touchEnd > 50) {
-      handleDislike();
-    }
-    if (touchEnd - touchStart > 50) {
-      handleLike();
-    }
-    setTouchStart(0);
-    setTouchEnd(0);
-  };
-
-  const handleLike = () => {
-    setSwipeDirection('right');
-    setTimeout(() => {
-      if (currentIndex < platillos.length - 1) {
-        setCurrentIndex(prev => prev + 1);
-      } else {
-        setCurrentIndex(platillos.length);
+  useEffect(() => {
+    // Intentar cargar datos pero sin bloquear el renderizado inicial
+    const fetchReal = async () => {
+      try {
+        const respuestas = JSON.parse(localStorage.getItem('cuestionario') || '{}');
+        const data = await comensalService.searchMatches({
+          sabor_antojo: respuestas.sabor_antojo || 'Algo rico',
+          dieta: respuestas.dieta || 'ninguna',
+          alergias: respuestas.alergias || [],
+          ocasion: respuestas.ocasion || 'Solo',
+        }).catch(() => ({ resultados: [] }));
+        
+        if (data.resultados && data.resultados.length > 0) {
+          // Fusionar reales con dummy para variedad
+          setPlatillos(prev => [...data.resultados, ...prev.filter(d => !data.resultados.some((r: any) => r.platillo_id === d.platillo_id))]);
+        }
+      } catch (e) {
+        console.error('Fetch error:', e);
       }
-      setSwipeDirection(null);
-    }, 300);
-  };
+    };
+    fetchReal();
+  }, []);
 
-  const handleDislike = () => {
-    setSwipeDirection('left');
-    setTimeout(() => {
-      if (currentIndex < platillos.length - 1) {
-        setCurrentIndex(prev => prev + 1);
-      } else {
-        setCurrentIndex(platillos.length);
-      }
-      setSwipeDirection(null);
-    }, 300);
+  const nextPlatillo = () => {
+    setCurrentIndex(prev => prev + 1);
+    setExpandedId(null);
   };
 
   const currentPlatillo = platillos[currentIndex];
 
   if (!currentPlatillo) {
     return (
-      <div className="min-h-screen bg-black text-white">
+      <div className="bg-black text-[#F5F5F7] min-h-screen flex flex-col">
         <Header />
-        <div className="flex items-center justify-center min-h-[calc(100vh-120px)] pt-20 px-4">
-          <div className="text-center">
-            <div className="text-5xl mb-4">🎉</div>
-            <h2 className="text-xl font-bold mb-2">¡No hay más platillos!</h2>
-            <p className="text-gray-400 text-sm mb-6">Ya viste todos los platillos cerca de ti</p>
-            <button 
-              onClick={() => navigate('/')} 
-              className="px-5 py-2.5 bg-gradient-to-r from-orange-500 to-red-500 rounded-full text-sm font-semibold"
-            >
-              Volver al inicio
-            </button>
-          </div>
-        </div>
+        <main className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-7xl mb-6">🏜️</motion.div>
+          <h2 className="text-2xl font-bold mb-4">¡Has explorado todo!</h2>
+          <p className="text-[#A1A1A6] mb-8">No quedan más platillos por hoy. ¿Quieres volver a buscar?</p>
+          <button
+            onClick={() => navigate('/cuestionario')}
+            className="px-10 py-4 bg-white text-black rounded-full font-bold hover:scale-105 transition-transform"
+          >
+            🔄 Volver a empezar
+          </button>
+        </main>
         <Footer />
       </div>
     );
   }
 
+  const isFlipped = expandedId === currentPlatillo.platillo_id;
+
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="bg-black text-[#F5F5F7] min-h-screen flex flex-col overflow-hidden">
       <Header />
       
-      <div className="pt-20 pb-24 px-4 min-h-screen flex items-center justify-center">
-        <div className="w-full max-w-sm mx-auto">
-          <div 
-            className={`relative bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl overflow-hidden shadow-2xl border border-gray-700 transition-all duration-300 ${
-              swipeDirection === 'right' ? 'animate-swipe-right' : swipeDirection === 'left' ? 'animate-swipe-left' : ''
-            }`}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
+      <main className="flex-1 flex flex-col items-center justify-center p-6 relative">
+        <div className="relative w-full max-w-[360px] aspect-[3/4.5] perspective-1000">
+          <motion.div
+            key={currentPlatillo.platillo_id}
+            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0, rotateY: isFlipped ? 180 : 0 }}
+            transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+            style={{ transformStyle: 'preserve-3d', width: '100%', height: '100%' }}
+            onClick={() => setExpandedId(isFlipped ? null : currentPlatillo.platillo_id)}
+            className="cursor-pointer relative"
           >
-            <div className="h-64 flex items-center justify-center text-7xl bg-gradient-to-br from-orange-500/20 to-red-500/20">
-              {currentPlatillo.imagen}
+            {/* FRONT SIDE */}
+            <div 
+              className="absolute inset-0 w-full h-full rounded-[2.5rem] bg-[#1C1C1E] border border-white/10 shadow-2xl overflow-hidden flex flex-col"
+              style={{ backfaceVisibility: 'hidden' }}
+            >
+              <div className="h-2/3 bg-gradient-to-br from-[#FF4A00]/20 to-[#FF8C00]/20 flex items-center justify-center relative">
+                <span className="text-9xl select-none">{currentPlatillo.emoji || '🌮'}</span>
+                <div className="absolute top-4 right-4 bg-black/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 text-sm font-bold text-[#FF4A00]">
+                  {currentPlatillo.porcentaje_match}% Match
+                </div>
+              </div>
+              <div className="p-8 flex-1 flex flex-col justify-between">
+                <div>
+                  <h2 className="text-3xl font-black mb-1 leading-tight">{currentPlatillo.nombre}</h2>
+                  <p className="text-[#FF4A00] font-bold text-sm uppercase tracking-wider">{currentPlatillo.restaurante_nombre}</p>
+                </div>
+                <p className="text-[#A1A1A6] text-sm leading-relaxed line-clamp-3">
+                  {currentPlatillo.motivo_match}
+                </p>
+                <div className="text-center text-[10px] text-[#6E6E73] uppercase tracking-[0.2em] mt-4">
+                  Toca para ver detalles
+                </div>
+              </div>
             </div>
-            
-            <div className="p-5">
-              <div className="flex justify-between items-start mb-2">
-                <h2 className="text-xl font-bold">{currentPlatillo.nombre}</h2>
-                <div className="flex items-center gap-1 bg-orange-500/20 px-2 py-0.5 rounded-full">
-                  <span className="text-orange-500 text-xs">★</span>
-                  <span className="text-xs font-semibold">{currentPlatillo.rating}</span>
+
+            {/* BACK SIDE (Flip) */}
+            <div 
+              className="absolute inset-0 w-full h-full rounded-[2.5rem] bg-[#1C1C1E] border border-white/20 shadow-2xl p-10 flex flex-col"
+              style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
+            >
+              <div className="flex-1">
+                <h3 className="text-[#FF4A00] font-bold text-xs uppercase tracking-widest mb-2">Acerca de este plato</h3>
+                <h2 className="text-2xl font-black mb-8">{currentPlatillo.nombre}</h2>
+                
+                <div className="space-y-6">
+                  <div>
+                    <span className="text-[#6E6E73] text-[10px] uppercase tracking-widest block mb-2">Ingredientes Clave</span>
+                    <div className="flex flex-wrap gap-2">
+                      {currentPlatillo.ingredientes?.map((ing: string) => (
+                        <span key={ing} className="px-3 py-1.5 rounded-full bg-white/5 border border-white/5 text-xs text-[#F5F5F7]">{ing}</span>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-[#6E6E73] text-[10px] uppercase tracking-widest block mb-1">Precio aproximado</span>
+                    <p className="text-4xl font-black text-white">${currentPlatillo.precio}</p>
+                  </div>
+                  <div>
+                    <span className="text-[#6E6E73] text-[10px] uppercase tracking-widest block mb-1">Ubicación</span>
+                    <p className="text-sm font-medium">📍 {currentPlatillo.ubicacion}</p>
+                  </div>
                 </div>
               </div>
               
-              <p className="text-orange-400 font-semibold text-sm mb-2">{currentPlatillo.restaurante}</p>
-              
-              <div className="flex gap-3 mb-3 text-xs text-gray-400">
-                <span>📍 {currentPlatillo.distancia}</span>
-                <span>💰 {currentPlatillo.precio}</span>
-              </div>
-              
-              <p className="text-gray-300 text-xs leading-relaxed">{currentPlatillo.descripcion}</p>
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/menu/${currentPlatillo.restaurante_id}`);
+                }}
+                className="w-full py-5 bg-white text-black rounded-full font-black text-sm transition-transform active:scale-95 shadow-lg"
+              >
+                Ver menú completo
+              </button>
             </div>
-          </div>
-
-          <div className="flex justify-center gap-6 mt-6">
-            <button 
-              onClick={handleDislike}
-              className="w-14 h-14 rounded-full bg-gray-800 hover:bg-red-500/20 border border-gray-700 text-2xl transition-all transform active:scale-95"
-            >
-              ✖️
-            </button>
-            <button 
-              onClick={handleLike}
-              className="w-14 h-14 rounded-full bg-gradient-to-r from-orange-500 to-red-500 text-2xl transition-all transform active:scale-95 shadow-lg shadow-orange-500/30"
-            >
-              ❤️
-            </button>
-          </div>
-
-          <div className="text-center mt-5">
-            <p className="text-gray-500 text-xs mb-1">👆 Desliza → para dar like | ← para pasar</p>
-            <p className="text-gray-600 text-xs">📱 También puedes usar los botones</p>
-            <p className="text-gray-600 text-xs mt-2">{platillos.length - currentIndex - 1} platillos restantes</p>
-          </div>
+          </motion.div>
         </div>
-      </div>
+
+        {/* CONTROLS */}
+        <div className="mt-12 flex gap-10">
+           <motion.button 
+             whileTap={{ scale: 0.8 }}
+             onClick={(e) => { e.stopPropagation(); nextPlatillo(); }} 
+             className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-2xl hover:bg-white/10 transition-colors"
+           >
+             👎
+           </motion.button>
+           <motion.button 
+             whileTap={{ scale: 0.8 }}
+             onClick={(e) => { e.stopPropagation(); nextPlatillo(); }} 
+             className="w-16 h-16 rounded-full bg-gradient-to-r from-[#FF2A54] to-[#FF4A00] flex items-center justify-center text-2xl shadow-xl shadow-[#FF2A54]/20 hover:scale-110 transition-transform"
+           >
+             ❤️
+           </motion.button>
+        </div>
+
+        <p className="mt-8 text-[#6E6E73] text-[10px] uppercase tracking-[0.3em]">
+          {platillos.length - currentIndex - 1} platillos restantes
+        </p>
+      </main>
 
       <Footer />
-
-      <style>{`
-        @keyframes swipeRight {
-          0% { transform: translateX(0) rotate(0deg); opacity: 1; }
-          100% { transform: translateX(200%) rotate(30deg); opacity: 0; }
-        }
-        @keyframes swipeLeft {
-          0% { transform: translateX(0) rotate(0deg); opacity: 1; }
-          100% { transform: translateX(-200%) rotate(-30deg); opacity: 0; }
-        }
-        .animate-swipe-right { animation: swipeRight 0.3s ease-out forwards; }
-        .animate-swipe-left { animation: swipeLeft 0.3s ease-out forwards; }
-      `}</style>
     </div>
   );
 }

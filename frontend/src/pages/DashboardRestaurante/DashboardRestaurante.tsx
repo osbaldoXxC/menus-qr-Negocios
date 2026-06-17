@@ -1,0 +1,207 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { authService } from '../../services/auth';
+import { restauranteService } from '../../services/restaurante';
+import { LayoutDashboard, QrCode, Utensils, Zap, ExternalLink, Copy, Download } from 'lucide-react';
+
+export function DashboardRestaurante() {
+  const navigate = useNavigate();
+  const [restauranteInfo, setRestauranteInfo] = useState<any>(null);
+  const [platillos, setPlatillos] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [info, platillosData] = await Promise.all([
+          restauranteService.getRestauranteInfo(),
+          restauranteService.getPlatillos(),
+        ]);
+        setRestauranteInfo(info);
+        setPlatillos(platillosData);
+      } catch (error) {
+        console.error('Error cargando datos:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center">
+        <div className="text-center">
+          <motion.div className="text-5xl" animate={{ scale: [1, 1.2, 1], rotate: [0, 10, -10, 0] }} transition={{ repeat: Infinity, duration: 1.5 }}>
+            🌮
+          </motion.div>
+          <p className="text-apple-text-tertiary mt-4 font-medium animate-pulse">Preparando tu dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const stats = [
+    { label: 'Platillos en menú', value: platillos.length, icon: Utensils, color: 'text-apple-blue', bg: 'bg-apple-blue/10' },
+    { label: 'Suscripción', value: 'Premium', icon: Zap, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+  ];
+
+  return (
+    <div className="py-12 px-6 lg:px-12 max-w-[1400px] mx-auto min-h-screen">
+      <motion.div
+        className="mb-12"
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-2">
+          Hola, {restauranteInfo?.nombre_dueño || 'Chef'} 👋
+        </h1>
+        <p className="text-lg text-apple-text-secondary dark:text-apple-dark-text-secondary font-medium">
+          Todo listo para gestionar <span className="text-apple-text dark:text-apple-dark-text font-bold">{restauranteInfo?.nombre_restaurante || 'tu restaurante'}</span>
+        </p>
+      </motion.div>
+
+      <div className="grid lg:grid-cols-3 gap-8">
+        {/* QR Section - Priority 1 */}
+        <motion.div 
+          className="lg:col-span-2 group relative p-10 rounded-[2.5rem] bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border shadow-apple-md hover:shadow-apple-lg transition-all duration-500 overflow-hidden"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <div className="absolute top-0 right-0 w-80 h-80 bg-apple-blue/5 blur-[100px] group-hover:bg-apple-blue/10 transition-all duration-500" />
+          
+          <div className="flex flex-col md:flex-row gap-10 items-center relative z-10">
+            <div className="w-56 h-56 bg-white p-5 rounded-[2.5rem] shadow-apple-xl flex-shrink-0 group-hover:scale-105 transition-transform duration-500">
+              <div className="w-full h-full bg-apple-bg-secondary rounded-2xl flex items-center justify-center border-2 border-dashed border-apple-border">
+                 <QrCode size={64} className="text-apple-text-tertiary" />
+              </div>
+            </div>
+
+            <div className="flex-1 text-center md:text-left">
+              <h2 className="text-3xl font-bold mb-4 tracking-tight">Tu Puerta Digital</h2>
+              <p className="text-apple-text-secondary dark:text-apple-dark-text-secondary text-lg mb-8 leading-relaxed font-medium">
+                Tus clientes pueden ver tu menú escaneando este código. Colócalo en tus mesas para una experiencia premium.
+              </p>
+              
+              <div className="flex flex-wrap gap-3 justify-center md:justify-start">
+                <button 
+                  onClick={() => navigate('/dashboard/qr')}
+                  className="flex items-center gap-2 px-6 py-3 bg-apple-blue text-white font-bold rounded-2xl hover:bg-apple-blue-hover shadow-apple-glow transition-all active:scale-95"
+                >
+                  <ExternalLink size={18} />
+                  Ver QR
+                </button>
+                <button className="flex items-center gap-2 px-6 py-3 bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border font-bold rounded-2xl hover:bg-apple-bg-tertiary transition-all active:scale-95">
+                  <Download size={18} />
+                  Descargar
+                </button>
+                <button 
+                  onClick={() => {
+                    const url = `${window.location.origin}/menu/${restauranteInfo?.id}`;
+                    navigator.clipboard.writeText(url);
+                  }}
+                  className="flex items-center gap-2 px-6 py-3 bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border font-bold rounded-2xl hover:bg-apple-bg-tertiary transition-all active:scale-95"
+                >
+                  <Copy size={18} />
+                  Copiar URL
+                </button>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Stats & Actions */}
+        <div className="space-y-6">
+          {stats.map((stat, i) => (
+            <motion.div
+              key={stat.label}
+              className="p-8 rounded-[2rem] bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border flex items-center gap-6 shadow-apple-sm group hover:shadow-apple-md transition-all duration-300"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 + (i * 0.1) }}
+            >
+              <div className={`w-16 h-16 rounded-2xl ${stat.bg} flex items-center justify-center ${stat.color} group-hover:scale-110 transition-transform duration-500`}>
+                <stat.icon size={28} />
+              </div>
+              <div>
+                <p className="text-[14px] text-apple-text-tertiary mb-0.5 font-bold uppercase tracking-wider">{stat.label}</p>
+                <p className="text-3xl font-bold tracking-tight">{stat.value}</p>
+              </div>
+            </motion.div>
+          ))}
+
+          <motion.div
+            className="p-8 rounded-[2rem] bg-apple-blue text-white shadow-apple-glow group cursor-pointer hover:scale-[1.02] transition-all active:scale-[0.98]"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            onClick={() => navigate('/dashboard/platillos/nuevo')}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-white/20 rounded-xl">
+                <PlusCircle size={24} />
+              </div>
+              <ChevronLeft className="rotate-180 opacity-60" size={24} />
+            </div>
+            <h3 className="text-xl font-bold mb-1">Nuevo Platillo</h3>
+            <p className="text-white/80 font-medium">Agrega algo nuevo hoy</p>
+          </motion.div>
+        </div>
+      </div>
+
+      {/* Quick Menu Overview */}
+      <motion.div
+        className="mt-12"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.5 }}
+      >
+        <div className="flex items-center justify-between mb-8 px-4">
+          <h2 className="text-2xl font-bold tracking-tight">Actividad reciente</h2>
+          <button 
+            onClick={() => navigate('/dashboard/platillos')}
+            className="text-apple-blue font-bold text-sm hover:underline"
+          >
+            Ver todo el menú
+          </button>
+        </div>
+        
+        <div className="grid md:grid-cols-3 gap-6">
+          {platillos.slice(0, 3).map((platillo, i) => (
+            <div key={platillo.id} className="p-6 rounded-[2rem] bg-apple-bg-secondary/50 dark:bg-apple-dark-bg-secondary/50 border border-apple-border dark:border-apple-dark-border backdrop-blur-sm group hover:bg-apple-bg-secondary dark:hover:bg-apple-dark-bg-secondary transition-all">
+              <div className="w-full aspect-video rounded-2xl bg-apple-bg-tertiary mb-4 overflow-hidden border border-apple-border dark:border-apple-dark-border">
+                {platillo.url_imagen ? (
+                  <img src={platillo.url_imagen} alt={platillo.nombre} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-apple-text-tertiary">
+                    <Utensils size={32} />
+                  </div>
+                )}
+              </div>
+              <h4 className="font-bold text-lg mb-1">{platillo.nombre}</h4>
+              <p className="text-apple-blue font-bold">{platillo.precio.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}</p>
+            </div>
+          ))}
+          {platillos.length === 0 && (
+            <div className="col-span-3 py-20 text-center rounded-[2.5rem] border-2 border-dashed border-apple-border">
+               <Utensils size={48} className="mx-auto text-apple-text-tertiary mb-4" />
+               <p className="text-apple-text-secondary text-lg font-medium">Aún no tienes platillos registrados.</p>
+               <button 
+                onClick={() => navigate('/dashboard/platillos/nuevo')}
+                className="mt-4 text-apple-blue font-bold"
+               >
+                 Empieza agregando uno aquí →
+               </button>
+            </div>
+          )}
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+// Fixed missing import in replacement
+import { PlusCircle, ChevronLeft } from 'lucide-react';

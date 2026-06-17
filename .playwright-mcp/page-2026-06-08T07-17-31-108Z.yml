@@ -1,0 +1,14 @@
+- generic [ref=e5]:
+  - generic [ref=e6]:
+    - generic [ref=e7]: 🌮
+    - heading "Registra tu restaurante" [level=1] [ref=e8]
+    - paragraph [ref=e9]: Comienza a vender más
+  - generic [ref=e10]:
+    - textbox "Nombre del dueño" [ref=e12]
+    - textbox "Nombre del restaurante" [ref=e14]
+    - textbox "Correo electrónico" [ref=e16]
+    - textbox "Contraseña" [ref=e18]
+    - button "Registrar restaurante" [ref=e19] [cursor=pointer]
+    - paragraph [ref=e20]:
+      - text: ¿Ya tienes cuenta?
+      - button "Inicia sesión" [ref=e21] [cursor=pointer]

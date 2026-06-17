@@ -3,7 +3,7 @@ const redisClient = require('../config/redis');
 const axios = require('axios');
 
 const createDish = async (req, res) => {
-  const { nombre, descripcion, precio, categoria_id, ingredientes, activo } = req.body;
+  const { nombre, descripcion, precio, categoria_id, categoria, ingredientes, activo } = req.body;
   const restaurante_id = req.user.id;
   
   // La URL de la imagen vendrá de multer-s3 si se subió un archivo
@@ -18,11 +18,27 @@ const createDish = async (req, res) => {
     return res.status(400).json({ mensaje: 'Nombre y precio son obligatorios' });
   }
 
-  // Validar que la categoría pertenezca al restaurante
-  if (categoria_id) {
+  let final_categoria_id = categoria_id;
+
+  // Si envían nombre de categoría en lugar de ID (como en el frontend actual)
+  if (!final_categoria_id && categoria) {
+    try {
+      // Buscar o crear la categoría para este restaurante
+      const catRes = await db.query(
+        'INSERT INTO categorias_restaurante (restaurante_id, nombre) VALUES ($1, $2) ON CONFLICT (restaurante_id, nombre) DO UPDATE SET nombre = EXCLUDED.nombre RETURNING id',
+        [restaurante_id, categoria]
+      );
+      final_categoria_id = catRes.rows[0].id;
+    } catch (err) {
+      console.error('Error al manejar categoría:', err);
+    }
+  }
+
+  // Validar que la categoría pertenezca al restaurante (si se pasó por ID)
+  if (final_categoria_id && !categoria) {
     const catCheck = await db.query(
       'SELECT id FROM categorias_restaurante WHERE id = $1 AND restaurante_id = $2',
-      [categoria_id, restaurante_id]
+      [final_categoria_id, restaurante_id]
     );
     if (catCheck.rows.length === 0) {
       return res.status(400).json({ mensaje: 'La categoría seleccionada no es válida para tu restaurante' });
@@ -39,7 +55,7 @@ const createDish = async (req, res) => {
       `INSERT INTO platillos (restaurante_id, nombre, descripcion, precio, categoria_id, url_imagen, activo, estado_ia) 
        VALUES ($1, $2, $3, $4, $5, $6, $7, 'pendiente') 
        RETURNING id`,
-      [restaurante_id, nombre, descripcion, precio, categoria_id, url_imagen, activo !== undefined ? activo : true]
+      [restaurante_id, nombre, descripcion, precio, final_categoria_id, url_imagen, activo !== undefined ? activo : true]
     );
 
     const platillo_id = dishRes.rows[0].id;

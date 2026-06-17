@@ -1,0 +1,69 @@
+- generic [ref=e8]:
+  - banner [ref=e9]:
+    - generic [ref=e11]:
+      - generic [ref=e12] [cursor=pointer]:
+        - generic [ref=e13]: 🌮
+        - generic [ref=e14]: MexxicanMX
+      - generic [ref=e15]:
+        - button "Alternar tema" [ref=e16] [cursor=pointer]: ☀️ Día
+        - button "Iniciar sesión" [ref=e17] [cursor=pointer]
+        - button "Registrarse" [ref=e18] [cursor=pointer]
+  - generic [ref=e21]:
+    - generic [ref=e22]:
+      - generic [ref=e23]: 🍽️
+      - heading "Registra tu restaurante" [level=1] [ref=e24]
+      - paragraph [ref=e25]: Únete a 500+ restaurantes que ya usan MexxicanMX
+    - generic [ref=e26]:
+      - generic [ref=e82]: Error interno del servidor
+      - generic [ref=e27]:
+        - generic [ref=e28]: Nombre del dueño
+        - textbox "Nombre del dueño" [ref=e29]: Heddi QA
+      - generic [ref=e30]:
+        - generic [ref=e31]: Nombre del restaurante
+        - textbox "Nombre del restaurante" [ref=e32]: Heddi's Kitchen
+      - generic [ref=e33]:
+        - generic [ref=e34]: Correo electrónico
+        - textbox "Correo electrónico" [ref=e35]: test_restaurant@heddi.com
+      - generic [ref=e36]:
+        - generic [ref=e37]: Contraseña
+        - textbox "Contraseña" [ref=e38]: Password123!
+      - button "Registrar restaurante" [ref=e39] [cursor=pointer]
+      - generic [ref=e44]: o
+      - paragraph [ref=e45]:
+        - text: ¿Ya tienes cuenta?
+        - button "Inicia sesión" [ref=e46] [cursor=pointer]
+      - paragraph [ref=e47]: Al registrarte aceptas nuestros términos y política de privacidad.
+  - contentinfo [ref=e48]:
+    - generic [ref=e49]:
+      - generic [ref=e50]:
+        - generic [ref=e51]:
+          - generic [ref=e52]:
+            - generic [ref=e53]: 🌮
+            - generic [ref=e54]: MexxicanMX
+          - paragraph [ref=e55]: Motor de descubrimiento gastronómico impulsado por IA. Encuentra tu platillo perfecto.
+        - generic [ref=e56]:
+          - heading "Producto" [level=4] [ref=e57]
+          - list [ref=e58]:
+            - listitem [ref=e59]:
+              - button "Cómo funciona" [ref=e60] [cursor=pointer]
+            - listitem [ref=e61]:
+              - button "Precios" [ref=e62] [cursor=pointer]
+            - listitem [ref=e63]:
+              - button "Para restaurantes" [ref=e64] [cursor=pointer]
+        - generic [ref=e65]:
+          - heading "Compañía" [level=4] [ref=e66]
+          - list [ref=e67]:
+            - listitem [ref=e68]:
+              - button "Blog" [ref=e69] [cursor=pointer]
+            - listitem [ref=e70]:
+              - button "Contacto" [ref=e71] [cursor=pointer]
+        - generic [ref=e72]:
+          - heading "Legal" [level=4] [ref=e73]
+          - list [ref=e74]:
+            - listitem [ref=e75]:
+              - button "Privacidad" [ref=e76] [cursor=pointer]
+            - listitem [ref=e77]:
+              - button "Términos" [ref=e78] [cursor=pointer]
+      - generic [ref=e79]:
+        - paragraph [ref=e80]: © 2026 MexxicanMX. Todos los derechos reservados.
+        - paragraph [ref=e81]: Hecho con 🌶️ en México

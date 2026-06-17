@@ -93,6 +93,18 @@ const deleteCategory = async (req, res) => {
   const restaurante_id = req.user.id;
 
   try {
+    // Verificar si la categoría tiene platillos vinculados
+    const dishCount = await db.query(
+      'SELECT COUNT(*) FROM platillos WHERE categoria_id = $1',
+      [id]
+    );
+
+    if (parseInt(dishCount.rows[0].count) > 0) {
+      return res.status(400).json({ 
+        mensaje: 'No puedes eliminar una categoría que tiene platillos vinculados. Por favor, reubica o elimina los platillos primero.' 
+      });
+    }
+
     const result = await db.query(
       'DELETE FROM categorias_restaurante WHERE id = $1 AND restaurante_id = $2 RETURNING id',
       [id, restaurante_id]

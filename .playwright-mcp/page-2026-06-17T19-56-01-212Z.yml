@@ -1,0 +1,58 @@
+- generic [ref=e74]:
+  - navigation [ref=e75]:
+    - generic [ref=e76]:
+      - generic [ref=e77]:
+        - generic [ref=e78]: 🌮
+        - generic [ref=e79]: MexxicanMX
+      - generic [ref=e80]: 1 / 4
+  - generic [ref=e84]:
+    - generic [ref=e85]:
+      - generic [ref=e86]:
+        - generic [ref=e87]: 🤤
+        - heading "¿Qué antojo tienes?" [level=2] [ref=e88]
+        - paragraph [ref=e89]: Describe con tus propias palabras lo que se te antoja comer hoy
+      - 'textbox "Ej: \"Quiero algo caldosito y muy picante para revivir el alma...\"" [active] [ref=e90]'
+      - generic [ref=e91]:
+        - button "🌶️ Picante" [ref=e92] [cursor=pointer]
+        - button "🍜 Caldosito" [ref=e93] [cursor=pointer]
+        - button "🍕 Italiana" [ref=e94] [cursor=pointer]
+        - button "🍣 Japonesa" [ref=e95] [cursor=pointer]
+        - button "🌮 Mexicana" [ref=e96] [cursor=pointer]
+        - button "🍔 Rápida" [ref=e97] [cursor=pointer]
+    - generic [ref=e98]:
+      - button "Cancelar" [ref=e99] [cursor=pointer]
+      - button "Continuar →" [disabled] [ref=e100]
+  - contentinfo [ref=e106]:
+    - generic [ref=e107]:
+      - generic [ref=e108]:
+        - generic [ref=e109]:
+          - generic [ref=e110]:
+            - generic [ref=e111]: 🌮
+            - generic [ref=e112]: MexxicanMX
+          - paragraph [ref=e113]: Motor de descubrimiento gastronómico impulsado por IA. Encuentra tu platillo perfecto.
+        - generic [ref=e114]:
+          - heading "Producto" [level=4] [ref=e115]
+          - list [ref=e116]:
+            - listitem [ref=e117]:
+              - button "Cómo funciona" [ref=e118] [cursor=pointer]
+            - listitem [ref=e119]:
+              - button "Precios" [ref=e120] [cursor=pointer]
+            - listitem [ref=e121]:
+              - button "Para restaurantes" [ref=e122] [cursor=pointer]
+        - generic [ref=e123]:
+          - heading "Compañía" [level=4] [ref=e124]
+          - list [ref=e125]:
+            - listitem [ref=e126]:
+              - button "Blog" [ref=e127] [cursor=pointer]
+            - listitem [ref=e128]:
+              - button "Contacto" [ref=e129] [cursor=pointer]
+        - generic [ref=e130]:
+          - heading "Legal" [level=4] [ref=e131]
+          - list [ref=e132]:
+            - listitem [ref=e133]:
+              - button "Privacidad" [ref=e134] [cursor=pointer]
+            - listitem [ref=e135]:
+              - button "Términos" [ref=e136] [cursor=pointer]
+      - generic [ref=e137]:
+        - paragraph [ref=e138]: © 2026 MexxicanMX. Todos los derechos reservados.
+        - paragraph [ref=e139]: Hecho con 🌶️ en México

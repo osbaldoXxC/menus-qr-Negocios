@@ -98,7 +98,7 @@ const getRestaurantInfo = async (req, res) => {
 
   try {
     const result = await db.query(
-      `SELECT r.id, r.nombre_negocio, r.email, r.plan, r.suscripcion_activa,
+      `SELECT r.id, r.nombre_negocio, r.email, r.plan, r.suscripcion_activa, r.nombre_dueno as "nombre_dueño",
               t.logo_url, t.banner_url, t.color_primario, t.color_fondo, 
               t.fuente_familia, t.layout_type, t.banner_promocional_activo, t.banner_promocional_texto
        FROM restaurantes r
