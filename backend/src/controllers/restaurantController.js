@@ -1,3 +1,5 @@
+const db = require('../config/db');
+const redisClient = require('../config/redis');
 const QRCode = require('qrcode');
 
 const generateQR = async (req, res) => {
@@ -6,7 +8,6 @@ const generateQR = async (req, res) => {
     const restaurante_id = req.user.id;
 
     // 2. Construir URL pública del menú
-    // En producción esto debería ser el dominio real
     const baseUrl = process.env.PUBLIC_MENU_URL || 'https://mexxican.mx/menu/';
     const url_menu = `${baseUrl}${restaurante_id}`;
 
@@ -32,6 +33,100 @@ const generateQR = async (req, res) => {
   }
 };
 
+const updateTheme = async (req, res) => {
+  const restaurante_id = req.user.id;
+  const {
+    logo_url,
+    banner_url,
+    color_primario,
+    color_fondo,
+    fuente_familia,
+    layout_type,
+    banner_promocional_activo,
+    banner_promocional_texto
+  } = req.body;
+
+  try {
+    // 1. Verificar si el restaurante es Premium (opcional, según lógica de negocio)
+    const restRes = await db.query('SELECT plan FROM restaurantes WHERE id = $1', [restaurante_id]);
+    if (restRes.rows[0].plan !== 'premium' && req.user.rol !== 'SUPER_ADMIN') {
+      return res.status(403).json({ mensaje: 'Esta funcionalidad solo está disponible para planes Premium' });
+    }
+
+    // 2. Upsert (Insertar o Actualizar) la configuración del tema
+    const query = `
+      INSERT INTO configuracion_tema (
+        restaurante_id, logo_url, banner_url, color_primario, color_fondo, 
+        fuente_familia, layout_type, banner_promocional_activo, banner_promocional_texto
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      ON CONFLICT (restaurante_id) DO UPDATE SET
+        logo_url = EXCLUDED.logo_url,
+        banner_url = EXCLUDED.banner_url,
+        color_primario = EXCLUDED.color_primario,
+        color_fondo = EXCLUDED.color_fondo,
+        fuente_familia = EXCLUDED.fuente_familia,
+        layout_type = EXCLUDED.layout_type,
+        banner_promocional_activo = EXCLUDED.banner_promocional_activo,
+        banner_promocional_texto = EXCLUDED.banner_promocional_texto,
+        updated_at = CURRENT_TIMESTAMP
+      RETURNING *;
+    `;
+
+    const values = [
+      restaurante_id, logo_url, banner_url, color_primario, color_fondo,
+      fuente_familia, layout_type, banner_promocional_activo, banner_promocional_texto
+    ];
+
+    const result = await db.query(query, values);
+
+    // 3. Invalidar caché del menú para que los cambios se vean reflejados instantáneamente
+    await redisClient.del(`cache:menu:${restaurante_id}`);
+
+    res.json({
+      mensaje: 'Configuración de marca actualizada correctamente',
+      tema: result.rows[0]
+    });
+
+  } catch (error) {
+    console.error('Error al actualizar tema:', error);
+    res.status(500).json({ mensaje: 'Error interno del servidor al guardar la configuración' });
+  }
+};
+
+const getInfo = async (req, res) => {
+  try {
+    const restaurante_id = req.user.id;
+
+    // Obtener datos básicos del restaurante
+    const restRes = await db.query(
+      `SELECT id, nombre_negocio, descripcion, email, suscripcion_activa, rol, plan, ultimo_pago, created_at
+       FROM restaurantes WHERE id = $1`,
+      [restaurante_id]
+    );
+
+    if (!restRes.rows.length) {
+      return res.status(404).json({ mensaje: 'Restaurante no encontrado' });
+    }
+
+    // Obtener configuración de tema si existe
+    const temaRes = await db.query(
+      `SELECT logo_url, banner_url, color_primario, color_fondo, fuente_familia, layout_type, banner_promocional_activo, banner_promocional_texto
+       FROM configuracion_tema WHERE restaurante_id = $1`,
+      [restaurante_id]
+    );
+
+    const restaurante = restRes.rows[0];
+    const tema = temaRes.rows[0] || null;
+
+    res.json({ restaurante, tema });
+  } catch (error) {
+    console.error('Error al obtener info del restaurante:', error);
+    res.status(500).json({ mensaje: 'Error interno al obtener información del restaurante' });
+  }
+};
+
 module.exports = {
   generateQR,
+  updateTheme,
+  getInfo
 };

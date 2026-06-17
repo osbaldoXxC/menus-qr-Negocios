@@ -1,221 +1,364 @@
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
+
+const fadeUpVariant = {
+  hidden: { opacity: 0, y: 32 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { delay: i * 0.12, duration: 0.6, ease: [0.16, 1, 0.3, 1] },
+  }),
+};
+
+const features = [
+  { icon: '🤖', title: 'IA que te conoce', desc: 'Aprende de tus gustos y recomienda platillos que realmente quieres probar.' },
+  { icon: '📱', title: 'Experiencia inmersiva', desc: 'Formato vertical tipo TikTok. Un platillo a la vez, sin distracciones.' },
+  { icon: '⚡', title: 'QR instantáneo', desc: 'Menús digitales que cargan en milisegundos. Sin apps, sin fricción.' },
+  { icon: '🔒', title: 'Privacidad total', desc: 'Tus datos protegidos. Sin anuncios, sin trackers invasivos.' },
+];
+
+const stats = [
+  { value: '10K+', label: 'Comensales activos' },
+  { value: '500+', label: 'Restaurantes' },
+  { value: '50K+', label: 'Platillos recomendados' },
+  { value: '98%', label: 'Satisfacción' },
+];
 
 export function Landing() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="bg-[#000000] text-[#F5F5F7] min-h-screen">
       <Header />
 
-      {/* Hero Section */}
-      <div className="pt-32 pb-20 px-4 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-orange-900/20 via-black to-black"></div>
-        <div className="absolute inset-0 opacity-20 bg-repeat" style={{
-          backgroundImage: `radial-gradient(circle at 2px 2px, #F05A28 1px, transparent 1px)`,
-          backgroundSize: '40px 40px'
-        }}></div>
-        
-        <div className="relative max-w-7xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-orange-500/10 border border-orange-500/30 text-orange-400 px-4 py-2 rounded-full text-sm font-semibold mb-6 backdrop-blur-sm">
-            <span className="text-lg">🔥</span>
-            Motor de Descubrimiento con IA
-            <span className="text-xs bg-orange-500/20 px-2 py-0.5 rounded-full">Beta</span>
-          </div>
+      {/* ── Hero ────────────────────────────────────────────────── */}
+      <section className="relative min-h-[92vh] flex items-center justify-center overflow-hidden">
+        {/* Background gradients */}
+        <div className="absolute inset-0 bg-mesh" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-[#2997FF] opacity-[0.03] blur-[120px] rounded-full" />
+        <div className="absolute bottom-0 right-0 w-[500px] h-[400px] bg-[#FF6B35] opacity-[0.03] blur-[100px] rounded-full" />
 
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold mb-6 leading-tight">
-            ¿Antojo? <br />
-            <span className="bg-gradient-to-r from-orange-500 via-red-500 to-orange-500 bg-clip-text text-transparent">
-              Nosotros te llevamos
-            </span>
-          </h1>
-
-          <p className="text-xl text-gray-400 max-w-2xl mx-auto mb-10">
-            Desliza, haz match y descubre tu próximo platillo favorito. 
-            IA que aprende de tus gustos como Netflix, pero para tu paladar mexicano.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button 
-              onClick={() => navigate('/register?role=comensal')}
-              className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold py-4 px-10 rounded-full text-lg transition-all transform hover:scale-105 shadow-xl shadow-orange-500/30"
+        <div className="relative z-10 max-w-[1200px] mx-auto px-5 md:px-8 pt-20 pb-10">
+          <div className="text-center max-w-[680px] mx-auto">
+            {/* Badge */}
+            <motion.div
+              className="inline-flex items-center gap-2 mb-8 px-4 py-2 glass-light rounded-full text-sm font-medium text-[#A1A1A6]"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, ease: 'easeOut' }}
             >
-              🌮 Quiero comer
-            </button>
-            <button 
-              onClick={() => navigate('/register?role=restaurante')}
-              className="border-2 border-orange-500 text-orange-500 hover:bg-orange-500/10 font-bold py-4 px-10 rounded-full text-lg transition-all transform hover:scale-105"
+              <span className="w-2 h-2 rounded-full bg-[#2997FF] animate-pulse" />
+              Motor de Descubrimiento con IA
+              <span className="text-[11px] px-2 py-0.5 bg-[#2997FF]/10 text-[#2997FF] rounded-full font-semibold">Beta</span>
+            </motion.div>
+
+            {/* Heading */}
+            <motion.h1
+              className="text-[3.25rem] md:text-[5rem] lg:text-[5.5rem] font-extrabold leading-[1.02] tracking-[-0.025em] mb-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
             >
-              🍽️ Soy restaurante
-            </button>
-          </div>
+              ¿Antojo?
+              <br />
+              <span className="text-gradient-apple">
+                Nosotros te llevamos
+              </span>
+            </motion.h1>
 
-          <div className="mt-16 flex flex-wrap justify-center gap-8 md:gap-16">
-            <div>
-              <div className="text-3xl font-bold text-orange-500">10K+</div>
-              <div className="text-gray-500 text-sm">Comensales activos</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-orange-500">500+</div>
-              <div className="text-gray-500 text-sm">Restaurantes</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-orange-500">50K+</div>
-              <div className="text-gray-500 text-sm">Platillos recomendados</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-orange-500">98%</div>
-              <div className="text-gray-500 text-sm">Satisfacción</div>
-            </div>
-          </div>
+            <motion.p
+              className="text-[17px] md:text-[19px] text-[#A1A1A6] leading-relaxed max-w-[520px] mx-auto mb-10"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.25, ease: 'easeOut' }}
+            >
+              Desliza, haz match y descubre tu próximo platillo favorito.
+              IA que aprende de tus gustos como Netflix, pero para tu paladar mexicano.
+            </motion.p>
 
-          <div className="mt-16">
-            <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-8 text-white max-w-md mx-auto shadow-2xl border border-gray-700">
-              <div className="flex justify-center space-x-8 mb-4">
-                <span className="text-4xl animate-bounce">🌮</span>
-                <span className="text-4xl animate-bounce" style={{animationDelay: '0.1s'}}>🥑</span>
-                <span className="text-4xl animate-bounce" style={{animationDelay: '0.2s'}}>🌯</span>
-                <span className="text-4xl animate-bounce" style={{animationDelay: '0.3s'}}>🍉</span>
-              </div>
-              <p className="text-center text-sm text-gray-400">
-                ✨ Desliza para descubrir | 1,234 comensales activos ahora ✨
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+            {/* CTAs */}
+            <motion.div
+              className="flex flex-col sm:flex-row gap-3 justify-center"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.4, ease: 'easeOut' }}
+            >
+              <button
+                onClick={() => navigate('/cuestionario')}
+                className="btn-apple btn-apple-primary text-[15px] py-3.5 px-8"
+              >
+                🌮 Quiero comer
+              </button>
+              <button
+                onClick={() => navigate('/register')}
+                className="btn-apple btn-apple-outline text-[15px] py-3.5 px-8"
+              >
+                🍽️ Soy restaurante
+              </button>
+            </motion.div>
 
-      {/* Cómo funciona - Sección */}
-      <div className="py-20 px-4 bg-gradient-to-b from-black to-gray-900">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold mb-4">
-              ¿Cómo funciona <span className="text-orange-500">MexxicanMX</span>?
-            </h2>
-            <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-              Tres pasos simples para encontrar tu platillo perfecto
+            {/* Stats */}
+            <motion.div
+              className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-10"
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            >
+              {stats.map((stat) => (
+                <div key={stat.label} className="text-center">
+                  <div className="text-[28px] md:text-[32px] font-bold text-[#2997FF] tracking-[-0.015em] mb-1">
+                    {stat.value}
+                  </div>
+                  <div className="text-[13px] text-[#86868B]">{stat.label}</div>
+                </div>
+              ))}
+            </motion.div>
+
+            {/* Floating emoji cards */}
+            <motion.div
+              className="mt-16 glass rounded-apple-lg p-6 flex justify-center gap-6 max-w-md mx-auto"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.8 }}
+            >
+              {['🌮', '🥑', '🌯', '🍉'].map((emoji, i) => (
+                <motion.span
+                  key={emoji}
+                  className="text-4xl"
+                  animate={{ y: [0, -8, 0] }}
+                  transition={{ repeat: Infinity, duration: 3, delay: i * 0.2 }}
+                >
+                  {emoji}
+                </motion.span>
+              ))}
+            </motion.div>
+            <p className="text-[12px] text-[#6E6E73] mt-3">
+              ✨ {Intl.NumberFormat().format(1234)} comensales activos ahora
             </p>
           </div>
-          
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center group">
-              <div className="w-20 h-20 bg-orange-500/10 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:bg-orange-500/20 transition-all group-hover:scale-110">
-                <span className="text-3xl">1️⃣</span>
-              </div>
-              <h3 className="text-xl font-bold mb-3">Configura tus gustos</h3>
-              <p className="text-gray-400">Selecciona tus preferencias, alergias y tipo de comida favorita en segundos</p>
-            </div>
-            <div className="text-center group">
-              <div className="w-20 h-20 bg-orange-500/10 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:bg-orange-500/20 transition-all group-hover:scale-110">
-                <span className="text-3xl">2️⃣</span>
-              </div>
-              <h3 className="text-xl font-bold mb-3">Desliza y descubre</h3>
-              <p className="text-gray-400">Navega por platillos en formato vertical tipo TikTok, da like o next</p>
-            </div>
-            <div className="text-center group">
-              <div className="w-20 h-20 bg-orange-500/10 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:bg-orange-500/20 transition-all group-hover:scale-110">
-                <span className="text-3xl">3️⃣</span>
-              </div>
-              <h3 className="text-xl font-bold mb-3">Ordena y disfruta</h3>
-              <p className="text-gray-400">Haz match con el platillo, ordena directo y recógelo o pide delivery</p>
-            </div>
-          </div>
         </div>
-      </div>
 
-      {/* Features */}
-      <div className="py-20 px-4 bg-black">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl md:text-5xl font-bold text-center mb-16">
-            Más que un menú, <span className="text-orange-500">una experiencia</span>
-          </h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 border border-gray-800 hover:border-orange-500/50 transition-all hover:transform hover:-translate-y-2">
-              <div className="text-4xl mb-4">🤖</div>
-              <h3 className="text-xl font-bold mb-2">IA que te conoce</h3>
-              <p className="text-gray-400 text-sm">Aprende de tus swipes y te recomienda platillos que sí te van a gustar</p>
-            </div>
-            <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 border border-gray-800 hover:border-orange-500/50 transition-all hover:transform hover:-translate-y-2">
-              <div className="text-4xl mb-4">📱</div>
-              <h3 className="text-xl font-bold mb-2">Formato TikTok</h3>
-              <p className="text-gray-400 text-sm">Contenido vertical, rápido y adictivo. Un platillo a la vez</p>
-            </div>
-            <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 border border-gray-800 hover:border-orange-500/50 transition-all hover:transform hover:-translate-y-2">
-              <div className="text-4xl mb-4">⚡</div>
-              <h3 className="text-xl font-bold mb-2">QR instantáneo</h3>
-              <p className="text-gray-400 text-sm">Menús digitales que cargan en menos de 1 segundo</p>
-            </div>
-            <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 border border-gray-800 hover:border-orange-500/50 transition-all hover:transform hover:-translate-y-2">
-              <div className="text-4xl mb-4">🔒</div>
-              <h3 className="text-xl font-bold mb-2">100% Seguro</h3>
-              <p className="text-gray-400 text-sm">Tus datos protegidos con encriptación de nivel bancario</p>
-            </div>
-          </div>
-        </div>
-      </div>
+        {/* Bottom gradient fade */}
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#000000] to-transparent pointer-events-none" />
+      </section>
 
-      {/* Para restaurantes */}
-      <div className="py-20 px-4 bg-gradient-to-r from-orange-900/20 to-red-900/20">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div>
-              <div className="inline-flex items-center gap-2 bg-orange-500/20 text-orange-400 px-3 py-1 rounded-full text-sm mb-4">
-                <span>🏢</span> Para restaurantes
-              </div>
-              <h2 className="text-3xl md:text-4xl font-bold mb-6">
-                Llega a más comensales con <span className="text-orange-500">MexxicanMX SaaS</span>
-              </h2>
-              <ul className="space-y-4 mb-8">
-                <li className="flex items-start gap-3">
-                  <span className="text-orange-500 text-xl">✓</span>
-                  <span className="text-gray-300">Panel administrativo completo para gestionar tu menú</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="text-orange-500 text-xl">✓</span>
-                  <span className="text-gray-300">Códigos QR para cada mesa - Menús digitales interactivos</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="text-orange-500 text-xl">✓</span>
-                  <span className="text-gray-300">IA que promociona tus platillos con comensales afines</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="text-orange-500 text-xl">✓</span>
-                  <span className="text-gray-300">Analytics en tiempo real - Qué platillos venden más</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="text-orange-500 text-xl">✓</span>
-                  <span className="text-gray-300">Soporte 24/7 y actualizaciones automáticas</span>
-                </li>
-              </ul>
-              <button 
-                onClick={() => navigate('/register?role=restaurante')}
-                className="bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-3 px-8 rounded-full hover:shadow-xl transition-all"
+      {/* ── Cómo funciona ──────────────────────────────────────── */}
+      <section className="bg-[#000000]">
+        <div className="max-w-[1200px] mx-auto px-5 md:px-8 py-24 md:py-32">
+          <motion.div
+            className="text-center mb-16 md:mb-20"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-100px' }}
+            variants={fadeUpVariant}
+            custom={0}
+          >
+            <span className="text-[13px] font-semibold text-[#2997FF] uppercase tracking-[0.05em] mb-4 block">
+              Así funciona
+            </span>
+            <h2 className="text-[2.25rem] md:text-[3rem] font-bold tracking-[-0.02em] mb-4">
+              Descubre en segundos
+            </h2>
+            <p className="text-[17px] text-[#A1A1A6] max-w-[520px] mx-auto">
+              Tres pasos simples para encontrar el platillo que tu paladar merece
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-8 md:gap-12">
+            {[
+              { step: '01', title: 'Cuéntanos tu antojo', desc: 'Responde 4 preguntas rápidas sobre tus gustos, dieta y alergias.' },
+              { step: '02', title: 'Desliza y descubre', desc: 'La IA te muestra platillos uno por uno. Dale like o pasa al siguiente.' },
+              { step: '03', title: 'Disfruta tu match', desc: 'Encuentra el platillo perfecto, ve el menú completo y ordena.' },
+            ].map((item, i) => (
+              <motion.div
+                key={item.step}
+                className="text-center group"
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: '-100px' }}
+                variants={fadeUpVariant}
+                custom={i + 1}
               >
-                Comenzar ahora → 
+                <div className="w-20 h-20 mx-auto mb-6 rounded-apple-xl bg-[#2997FF]/5 border border-[#2997FF]/10 flex items-center justify-center text-2xl font-bold text-[#2997FF] group-hover:scale-105 group-hover:bg-[#2997FF]/10 transition-all duration-300">
+                  {item.step}
+                </div>
+                <h3 className="text-[19px] font-semibold mb-3 tracking-[-0.01em]">{item.title}</h3>
+                <p className="text-[15px] text-[#A1A1A6] leading-relaxed max-w-[260px] mx-auto">
+                  {item.desc}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Features ────────────────────────────────────────────── */}
+      <section className="bg-[#1D1D1F]">
+        <div className="max-w-[1200px] mx-auto px-5 md:px-8 py-24 md:py-32">
+          <motion.div
+            className="text-center mb-16 md:mb-20"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-100px' }}
+            variants={fadeUpVariant}
+            custom={0}
+          >
+            <h2 className="text-[2.25rem] md:text-[3rem] font-bold tracking-[-0.02em] mb-4">
+              Más que un menú, <span className="text-gradient-apple">una experiencia</span>
+            </h2>
+            <p className="text-[17px] text-[#A1A1A6]">
+              Tecnología de punta para que comer sea extraordinario
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {features.map((feature, i) => (
+              <motion.div
+                key={feature.title}
+                className="bg-[#000000] rounded-apple-lg p-8 border border-white/[0.04] hover:border-white/[0.08] hover:-translate-y-1 transition-all duration-300 cursor-default"
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: '-50px' }}
+                variants={fadeUpVariant}
+                custom={i}
+              >
+                <span className="text-4xl mb-5 block">{feature.icon}</span>
+                <h3 className="text-[17px] font-semibold mb-2">{feature.title}</h3>
+                <p className="text-[14px] text-[#A1A1A6] leading-relaxed">{feature.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Para restaurantes ──────────────────────────────────── */}
+      <section className="bg-[#000000]">
+        <div className="max-w-[1200px] mx-auto px-5 md:px-8 py-24 md:py-32">
+          <div className="grid md:grid-cols-2 gap-12 md:gap-16 items-center">
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-100px' }}
+              variants={fadeUpVariant}
+              custom={0}
+            >
+              <span className="text-[13px] font-semibold text-[#FF6B35] uppercase tracking-[0.05em] mb-4 block">
+                Para restaurantes
+              </span>
+              <h2 className="text-[2rem] md:text-[2.5rem] font-bold tracking-[-0.02em] mb-6 leading-[1.15]">
+                Llega a más comensales con{' '}
+                <span className="text-gradient-apple">MexxicanMX</span>
+              </h2>
+              <ul className="space-y-5 mb-10">
+                {[
+                  'Panel administrativo completo para gestionar tu menú',
+                  'Códigos QR para cada mesa con menús digitales interactivos',
+                  'IA que promociona tus platillos con comensales afines',
+                  'Analytics en tiempo real de popularidad y tendencias',
+                  'Personalización white-label con tus colores y marca',
+                ].map((item) => (
+                  <li key={item} className="flex items-start gap-3 text-[15px] text-[#A1A1A6]">
+                    <span className="text-[#2997FF] mt-0.5 flex-shrink-0">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <button
+                onClick={() => navigate('/register')}
+                className="btn-apple btn-apple-primary text-[15px] py-3.5 px-8"
+              >
+                Comenzar ahora →
               </button>
-            </div>
-            <div className="relative">
-              <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-8 border border-gray-700">
-                <div className="text-center">
-                  <div className="text-6xl mb-4">📊</div>
-                  <h3 className="text-2xl font-bold mb-2">Dashboard en tiempo real</h3>
-                  <p className="text-gray-400 mb-4">Visualiza tus ventas, popularidad de platillos y más</p>
-                  <div className="bg-black/50 rounded-xl p-4">
-                    <div className="flex justify-between mb-2">
-                      <span className="text-sm">Tacos al pastor</span>
-                      <span className="text-orange-500">🔥 234 ordenes</span>
-                    </div>
-                    <div className="w-full bg-gray-700 rounded-full h-2">
-                      <div className="bg-orange-500 h-2 rounded-full" style={{width: '85%'}}></div>
-                    </div>
+            </motion.div>
+
+            <motion.div
+              className="glass rounded-apple-lg p-8 md:p-10"
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-100px' }}
+              variants={fadeUpVariant}
+              custom={1}
+            >
+              <div className="text-center">
+                <div className="text-7xl mb-6">📊</div>
+                <h3 className="text-[19px] font-semibold mb-3">Dashboard en tiempo real</h3>
+                <p className="text-[14px] text-[#A1A1A6] mb-6">
+                  Visualiza tus ventas, popularidad de platillos y más
+                </p>
+                <div className="bg-[#000000]/50 rounded-apple-lg p-5">
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-[14px] font-medium">Tacos al pastor</span>
+                    <span className="text-[13px] text-[#FF6B35] font-semibold">🔥 234 órdenes</span>
+                  </div>
+                  <div className="w-full bg-white/[0.06] rounded-full h-1.5 overflow-hidden">
+                    <motion.div
+                      className="h-full rounded-full bg-gradient-to-r from-[#2997FF] to-[#40A9FF]"
+                      initial={{ width: 0 }}
+                      whileInView={{ width: '85%' }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 1, delay: 0.3, ease: 'easeOut' }}
+                    />
+                  </div>
+                  <div className="flex justify-between items-center mt-4">
+                    <span className="text-[14px] font-medium">Pozole rojo</span>
+                    <span className="text-[13px] text-[#FF6B35] font-semibold">🔥 189 órdenes</span>
+                  </div>
+                  <div className="w-full bg-white/[0.06] rounded-full h-1.5 overflow-hidden mt-2">
+                    <motion.div
+                      className="h-full rounded-full bg-gradient-to-r from-[#2997FF] to-[#40A9FF]"
+                      initial={{ width: 0 }}
+                      whileInView={{ width: '72%' }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 1, delay: 0.5, ease: 'easeOut' }}
+                    />
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
-      </div>
+      </section>
+
+      {/* ── CTA Final ───────────────────────────────────────────── */}
+      <section className="bg-gradient-to-b from-[#1D1D1F] to-[#000000]">
+        <div className="max-w-[1200px] mx-auto px-5 md:px-8 py-24 md:py-32 text-center">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-100px' }}
+            variants={fadeUpVariant}
+            custom={0}
+          >
+            <h2 className="text-[2.25rem] md:text-[3.5rem] font-bold tracking-[-0.02em] mb-4">
+              ¿Listo para descubrir tu{' '}
+              <span className="text-gradient-apple">próximo antojo</span>?
+            </h2>
+            <p className="text-[17px] text-[#A1A1A6] mb-10 max-w-[500px] mx-auto">
+              Miles de platillos te esperan. Comienza ahora mismo gratis.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <button
+                onClick={() => navigate('/cuestionario')}
+                className="btn-apple btn-apple-primary text-[15px] py-3.5 px-8"
+              >
+                🌮 Descubrir platillos
+              </button>
+              <button
+                onClick={() => navigate('/register')}
+                className="btn-apple btn-apple-outline text-[15px] py-3.5 px-8"
+              >
+                🍽️ Registrar restaurante
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      </section>
 
       <Footer />
     </div>

@@ -1,44 +1,116 @@
+import { useNavigate } from 'react-router-dom';
+
 export function Footer() {
+  const navigate = useNavigate();
+
   return (
-    <footer className="bg-black border-t border-gray-800 py-12 px-4 relative z-10">
-      <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8 text-center md:text-left">
-          <div>
-            <div className="flex items-center gap-2 justify-center md:justify-start mb-4">
+    <footer className="bg-black border-t border-white/[0.08] backdrop-blur-sm">
+      <div className="mx-auto max-w-[1400px] px-5 md:px-6 lg:px-8">
+        {/* Main grid */}
+        <div className="py-12 md:py-16 grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-10">
+          {/* Brand */}
+          <div className="col-span-2 md:col-span-1">
+            <div className="flex items-center gap-2.5 mb-4">
               <span className="text-2xl">🌮</span>
-              <span className="font-bold bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">
-                MexxicanMX
-              </span>
+              <span className="text-[17px] font-semibold text-[#F5F5F7]">MexxicanMX</span>
             </div>
-            <p className="text-gray-500 text-sm">Descubre los mejores sabores de México con IA</p>
+            <p className="text-[13px] text-[#86868B] leading-relaxed max-w-[240px]">
+              Motor de descubrimiento gastronómico impulsado por IA. Encuentra tu platillo perfecto.
+            </p>
           </div>
+
+          {/* Product */}
           <div>
-            <h4 className="font-semibold text-white mb-4">Producto</h4>
-            <ul className="space-y-2 text-sm text-gray-500">
-              <li><a href="/como-funciona" className="hover:text-orange-500 transition">Cómo funciona</a></li>
-              <li><a href="/precios" className="hover:text-orange-500 transition">Precios</a></li>
-              <li><a href="/para-restaurantes" className="hover:text-orange-500 transition">Para restaurantes</a></li>
+            <h4 className="text-[13px] font-semibold text-[#F5F5F7] mb-4 tracking-[-0.01em]">
+              Producto
+            </h4>
+            <ul className="space-y-2.5">
+              <li>
+                <button
+                  onClick={() => navigate('/como-funciona')}
+                  className="text-[13px] text-[#A1A1A6] hover:text-[#F5F5F7] transition-colors duration-200"
+                >
+                  Cómo funciona
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => navigate('/precios')}
+                  className="text-[13px] text-[#A1A1A6] hover:text-[#F5F5F7] transition-colors duration-200"
+                >
+                  Precios
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => navigate('/para-restaurantes')}
+                  className="text-[13px] text-[#A1A1A6] hover:text-[#F5F5F7] transition-colors duration-200"
+                >
+                  Para restaurantes
+                </button>
+              </li>
             </ul>
           </div>
+
+          {/* Company */}
           <div>
-            <h4 className="font-semibold text-white mb-4">Compañía</h4>
-            <ul className="space-y-2 text-sm text-gray-500">
-              <li><a href="#" className="hover:text-orange-500 transition">Blog</a></li>
-              <li><a href="#" className="hover:text-orange-500 transition">Prensa</a></li>
-              <li><a href="#" className="hover:text-orange-500 transition">Contacto</a></li>
+            <h4 className="text-[13px] font-semibold text-[#F5F5F7] mb-4 tracking-[-0.01em]">
+              Compañía
+            </h4>
+            <ul className="space-y-2.5">
+              <li>
+                <button
+                  onClick={() => navigate('/landing')}
+                  className="text-[13px] text-[#A1A1A6] hover:text-[#F5F5F7] transition-colors duration-200"
+                >
+                  Blog
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => navigate('/landing')}
+                  className="text-[13px] text-[#A1A1A6] hover:text-[#F5F5F7] transition-colors duration-200"
+                >
+                  Contacto
+                </button>
+              </li>
             </ul>
           </div>
+
+          {/* Legal */}
           <div>
-            <h4 className="font-semibold text-white mb-4">Legal</h4>
-            <ul className="space-y-2 text-sm text-gray-500">
-              <li><a href="#" className="hover:text-orange-500 transition">Términos</a></li>
-              <li><a href="#" className="hover:text-orange-500 transition">Privacidad</a></li>
-              <li><a href="#" className="hover:text-orange-500 transition">Cookies</a></li>
+            <h4 className="text-[13px] font-semibold text-[#F5F5F7] mb-4 tracking-[-0.01em]">
+              Legal
+            </h4>
+            <ul className="space-y-2.5">
+              <li>
+                <button
+                  onClick={() => navigate('/landing')}
+                  className="text-[13px] text-[#A1A1A6] hover:text-[#F5F5F7] transition-colors duration-200"
+                >
+                  Privacidad
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => navigate('/landing')}
+                  className="text-[13px] text-[#A1A1A6] hover:text-[#F5F5F7] transition-colors duration-200"
+                >
+                  Términos
+                </button>
+              </li>
             </ul>
           </div>
         </div>
-        <div className="text-center text-gray-600 text-sm pt-8 border-t border-gray-800">
-          © 2024 MexxicanMX - Motor de Descubrimiento Gastronómico con IA
+
+        {/* Bottom bar */}
+        <div className="py-5 border-t border-white/[0.06] flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-[12px] text-[#6E6E73]">
+            © {new Date().getFullYear()} MexxicanMX. Todos los derechos reservados.
+          </p>
+          <p className="text-[12px] text-[#6E6E73]">
+            Hecho con 🌶️ en México
+          </p>
         </div>
       </div>
     </footer>
