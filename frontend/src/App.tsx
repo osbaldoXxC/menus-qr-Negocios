@@ -5,6 +5,7 @@ import { authService } from './services/auth';
 import { ThemeProvider } from './context/ThemeContext';
 import { MainLayout } from './pages/components/MainLayout';
 import { WelcomeSplash } from './pages/components/WelcomeSplash';
+import { Logo } from './pages/components/Logo';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Lazy-loaded pages
@@ -30,7 +31,7 @@ function PageLoader() {
   return (
     <div className="min-h-screen bg-black text-white flex items-center justify-center">
       <div className="text-center">
-        <div className="text-4xl animate-pulse">🌮</div>
+        <Logo size={64} className="animate-pulse mb-4" />
         <p className="text-gray-500 mt-2">Cargando...</p>
       </div>
     </div>

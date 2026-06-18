@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { Logo } from './Logo';
 
 export function Footer() {
   return (
@@ -9,7 +10,7 @@ export function Footer() {
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <div className="flex items-center gap-2.5 mb-4">
-              <span className="text-2xl">🌮</span>
+              <Logo size={28} />
               <span className="text-[17px] font-bold text-apple-text dark:text-apple-dark-text">MexxicanMX</span>
             </div>
             <p className="text-[13px] text-apple-text-secondary leading-relaxed max-w-[240px] font-medium">

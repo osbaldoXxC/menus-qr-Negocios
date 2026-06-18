@@ -15,6 +15,7 @@ import {
   Moon,
   Home
 } from 'lucide-react';
+import { Logo } from './Logo';
 import { authService } from '../../services/auth';
 import { ThemeContext } from '../../context/ThemeContext';
 
@@ -112,21 +113,29 @@ export function Sidebar() {
     <div className="flex flex-col h-full py-6 px-4">
       {/* Logo & Toggle */}
       <div className={`flex items-center mb-10 ${collapsed ? 'justify-center' : 'justify-between px-2'}`}>
-        {!collapsed && (
-          <Link to="/" className="flex items-center gap-2">
-            <span className="text-2xl">🌮</span>
+        <Link to="/" className="flex items-center gap-2">
+          <Logo size={collapsed ? 32 : 28} />
+          {!collapsed && (
             <span className="text-lg font-bold tracking-tight text-apple-text dark:text-apple-dark-text">
               MexxicanMX
             </span>
-          </Link>
-        )}
-        {!isMobile && (
+          )}
+        </Link>
+        {!isMobile && !collapsed && (
           <button 
             onClick={() => setCollapsed(!collapsed)}
             className="p-1.5 rounded-lg bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary text-apple-text-secondary hover:text-apple-text transition-colors"
           >
             <ChevronLeft className={`transition-transform duration-300 ${collapsed ? 'rotate-180' : ''}`} size={18} />
           </button>
+        )}
+        {!isMobile && collapsed && (
+           <button 
+           onClick={() => setCollapsed(!collapsed)}
+           className="absolute -right-3 top-20 p-1 rounded-full bg-apple-blue text-white shadow-lg z-50"
+         >
+           <ChevronLeft className="rotate-180" size={14} />
+         </button>
         )}
       </div>
 
@@ -192,7 +201,7 @@ export function Sidebar() {
       {isMobile && (
         <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-apple-bg/80 dark:bg-apple-dark-bg/80 backdrop-blur-xl border-b border-apple-border dark:border-apple-dark-border z-40 flex items-center justify-between px-6">
           <Link to="/" className="flex items-center gap-2">
-            <span className="text-xl">🌮</span>
+            <Logo size={24} />
             <span className="text-base font-bold tracking-tight text-apple-text dark:text-apple-dark-text">MexxicanMX</span>
           </Link>
           <button 

@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { authService } from '../../services/auth';
 import { ThemeContext } from '../../context/ThemeContext';
+import { Logo } from '../components/Logo';
 
 export function Login() {
   const navigate = useNavigate();
@@ -66,16 +67,9 @@ export function Login() {
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
       >
         {/* Logo */}
-        <div className="text-center mb-10">
-          <motion.div
-            className="text-5xl mb-5 inline-block"
-            initial={{ scale: 0 }}
-            animate={{ scale: 1, rotate: [0, -8, 8, 0] }}
-            transition={{ duration: 0.6, ease: 'easeOut' }}
-          >
-            🌮
-          </motion.div>
-          <h1 className="text-[1.8rem] font-black tracking-tighter text-[#1D1D1F] dark:text-[#F5F5F7] mb-2">
+        <div className="flex flex-col items-center mb-10 text-center">
+          <Logo size={64} className="mb-4" />
+          <h1 className="text-[1.8rem] font-black tracking-tighter text-[#1D1D1F] dark:text-[#F5F5F7] mb-1">
             Bienvenido de vuelta
           </h1>
           <p className="text-[14px] text-[#86868B] dark:text-[#A1A1A6]">

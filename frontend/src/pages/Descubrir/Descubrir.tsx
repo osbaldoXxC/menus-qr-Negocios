@@ -2,6 +2,7 @@ import { useState, useEffect, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo } from 'framer-motion';
 import { ThemeContext } from '../../context/ThemeContext';
+import { Logo } from '../components/Logo';
 import { comensalService } from '../../services/comensal';
 
 const PLATILLOS_DUMMY = [
@@ -231,8 +232,8 @@ export function Descubrir() {
     return (
       <div className="min-h-screen bg-white dark:bg-black text-[#1D1D1F] dark:text-[#F5F5F7] flex flex-col transition-colors duration-300">
         <nav className="fixed top-0 left-0 right-0 z-50 h-[60px] flex items-center justify-between px-6 border-b border-black/[0.06] dark:border-white/[0.06] backdrop-blur-xl bg-white/80 dark:bg-black/80">
-          <Link to="/" className="flex items-center gap-2"><span className="text-xl">🌮</span><span className="font-semibold text-[15px]">MexxicanMX</span></Link>
-          <button onClick={toggleTheme} className="p-2 text-[#86868B] dark:text-[#A1A1A6] hover:text-[#1D1D1F] dark:hover:text-white rounded-lg transition-colors">{isDark ? '☀️' : '🌙'}</button>
+          <Link to="/" className="flex items-center gap-2"><Logo size={24} /><span className="font-semibold text-[15px]">MexxicanMX</span></Link>
+          <button onClick={toggleTheme} className="p-2 text-[#86868B] dark:text-[#A1A1A6] hover:text-[#1D1D1F] dark:hover:text-white rounded-lg transition-colors">{theme === 'dark' ? '☀️' : '🌙'}</button>
         </nav>
         <main className="flex-1 flex flex-col items-center justify-center p-6 text-center pt-20">
           <motion.div initial={{ scale: 0 }} animate={{ scale: 1, rotate: [0, 10, -10, 0] }} transition={{ duration: 0.6 }} className="text-8xl mb-8">🎉</motion.div>
@@ -254,7 +255,7 @@ export function Descubrir() {
       {/* ── NAVBAR ── */}
       <nav className="fixed top-0 left-0 right-0 z-50 h-[60px] flex items-center justify-between px-5 md:px-8 border-b border-black/[0.06] dark:border-white/[0.06] backdrop-blur-xl bg-[#F5F5F7]/80 dark:bg-[#050505]/80 transition-colors duration-300">
         <Link to="/" className="flex items-center gap-2 group select-none">
-          <span className="text-xl group-hover:rotate-12 transition-transform duration-300">🌮</span>
+          <Logo size={24} className="group-hover:rotate-12 transition-transform duration-300" />
           <span className="font-semibold text-[15px] tracking-tight">MexxicanMX</span>
         </Link>
 
