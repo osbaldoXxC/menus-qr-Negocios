@@ -1,5 +1,7 @@
 import api from './api';
 
+const AUTH_CHANGE_EVENT = 'auth_change';
+
 export const authService = {
   register: async (data: {
     nombre_dueño: string;
@@ -17,6 +19,7 @@ export const authService = {
       localStorage.setItem('access_token', response.data.access_token);
       localStorage.setItem('rol', response.data.rol);
       localStorage.setItem('restaurante_id', response.data.restaurante_id);
+      window.dispatchEvent(new Event(AUTH_CHANGE_EVENT));
     }
     return response.data;
   },
@@ -25,6 +28,7 @@ export const authService = {
     localStorage.removeItem('access_token');
     localStorage.removeItem('rol');
     localStorage.removeItem('restaurante_id');
+    window.dispatchEvent(new Event(AUTH_CHANGE_EVENT));
     window.location.href = '/';
   },
 
@@ -33,6 +37,15 @@ export const authService = {
       rol: localStorage.getItem('rol'),
       restaurante_id: localStorage.getItem('restaurante_id'),
       isAuthenticated: !!localStorage.getItem('access_token'),
+    };
+  },
+
+  onAuthChange: (callback: () => void) => {
+    window.addEventListener(AUTH_CHANGE_EVENT, callback);
+    window.addEventListener('storage', callback); // For cross-tab sync
+    return () => {
+      window.removeEventListener(AUTH_CHANGE_EVENT, callback);
+      window.removeEventListener('storage', callback);
     };
   },
 

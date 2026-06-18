@@ -47,12 +47,6 @@ const updateTheme = async (req, res) => {
   } = req.body;
 
   try {
-    // 1. Verificar si el restaurante es Premium (opcional, según lógica de negocio)
-    const restRes = await db.query('SELECT plan FROM restaurantes WHERE id = $1', [restaurante_id]);
-    if (restRes.rows[0].plan !== 'premium' && req.user.rol !== 'SUPER_ADMIN') {
-      return res.status(403).json({ mensaje: 'Esta funcionalidad solo está disponible para planes Premium' });
-    }
-
     // 2. Upsert (Insertar o Actualizar) la configuración del tema
     const query = `
       INSERT INTO configuracion_tema (
@@ -118,8 +112,32 @@ const getRestaurantInfo = async (req, res) => {
   }
 };
 
+const uploadBrandingImage = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ mensaje: 'No se subió ninguna imagen' });
+    }
+
+    let url_imagen = req.file.location;
+
+    if (process.env.CLOUDFRONT_DOMAIN) {
+      const s3Url = new URL(req.file.location);
+      url_imagen = `${process.env.CLOUDFRONT_DOMAIN}${s3Url.pathname}`;
+    }
+
+    res.json({
+      mensaje: 'Imagen subida correctamente',
+      url_imagen
+    });
+  } catch (error) {
+    console.error('Error al procesar la imagen de branding:', error);
+    res.status(500).json({ mensaje: 'Error interno al procesar la imagen' });
+  }
+};
+
 module.exports = {
   generateQR,
   updateTheme,
-  getRestaurantInfo
+  getRestaurantInfo,
+  uploadBrandingImage
 };

@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { restauranteService } from '../../services/restaurante';
-import { Plus, Search, MoreVertical, Edit2, Trash2, Eye, EyeOff } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Eye, EyeOff, Utensils } from 'lucide-react';
 
 export function MiMenu() {
   const navigate = useNavigate();
   const [platillos, setPlatillos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [deletingId, setDeletingId] = useState<string | number | null>(null);
 
   useEffect(() => {
     cargarPlatillos();
@@ -25,6 +26,35 @@ export function MiMenu() {
     }
   };
 
+  const handleEliminar = async (id: string | number) => {
+    if (!window.confirm('¿Estás seguro de que deseas eliminar este platillo?')) return;
+    
+    setDeletingId(id);
+    try {
+      await restauranteService.eliminarPlatillo(id);
+      setPlatillos(prev => prev.filter(p => p.id !== id));
+    } catch (error) {
+      console.error('Error eliminando platillo:', error);
+      alert('No se pudo eliminar el platillo');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleToggleStatus = async (platillo: any) => {
+    try {
+      const formData = new FormData();
+      formData.append('activo', (!platillo.activo).toString());
+      await restauranteService.actualizarPlatillo(platillo.id, formData);
+      
+      setPlatillos(prev => prev.map(p => 
+        p.id === platillo.id ? { ...p, activo: !platillo.activo } : p
+      ));
+    } catch (error) {
+      console.error('Error actualizando estado:', error);
+    }
+  };
+
   const filteredPlatillos = platillos.filter(p => 
     p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (p.categoria && p.categoria.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -33,7 +63,14 @@ export function MiMenu() {
   if (loading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
-        <motion.div className="text-4xl" animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 1 }}>
+        <motion.div 
+          className="text-4xl" 
+          animate={{ 
+            scale: [1, 1.2, 1],
+            rotate: [0, 10, -10, 0]
+          }} 
+          transition={{ repeat: Infinity, duration: 1.5 }}
+        >
           🌮
         </motion.div>
       </div>
@@ -50,13 +87,13 @@ export function MiMenu() {
             Administra tus platillos, precios y disponibilidad.
           </p>
         </div>
-        <button
-          onClick={() => navigate('/dashboard/platillos/nuevo')}
-          className="flex items-center gap-2 px-6 py-4 bg-apple-blue text-white font-bold rounded-2xl shadow-apple-md hover:bg-apple-blue-hover transition-all active:scale-95"
+        <Link
+          to="/dashboard/platillos/nuevo"
+          className="flex items-center gap-2 px-6 py-4 bg-apple-blue text-white font-bold rounded-2xl shadow-apple-md hover:bg-apple-blue-hover transition-all active:scale-95 text-center justify-center"
         >
           <Plus size={20} />
           Nuevo Platillo
-        </button>
+        </Link>
       </div>
 
       {/* Toolbar */}
@@ -68,7 +105,7 @@ export function MiMenu() {
             placeholder="Buscar platillo o categoría..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border rounded-2xl focus:ring-2 focus:ring-apple-blue outline-none transition-all font-medium"
+            className="w-full pl-12 pr-4 py-3.5 bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border rounded-2xl focus:ring-2 focus:ring-apple-blue outline-none transition-all font-medium"
           />
         </div>
       </div>
@@ -84,12 +121,12 @@ export function MiMenu() {
           </div>
           <h2 className="text-2xl font-bold mb-2">No se encontraron platillos</h2>
           <p className="text-apple-text-secondary mb-8 font-medium">Prueba con otro término o agrega uno nuevo.</p>
-          <button
-            onClick={() => navigate('/dashboard/platillos/nuevo')}
-            className="text-apple-blue font-bold text-lg"
+          <Link
+            to="/dashboard/platillos/nuevo"
+            className="text-apple-blue font-bold text-lg hover:underline"
           >
             Agregar platillo ahora →
-          </button>
+          </Link>
         </motion.div>
       ) : (
         <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
@@ -102,7 +139,7 @@ export function MiMenu() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ delay: i * 0.05 }}
-                className="group flex flex-col overflow-hidden rounded-[2.5rem] bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border shadow-apple-sm transition-all duration-500 hover:shadow-apple-xl hover:border-apple-blue/30"
+                className={`group flex flex-col overflow-hidden rounded-[2.5rem] bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border shadow-apple-sm transition-all duration-500 hover:shadow-apple-xl hover:border-apple-blue/30 ${!platillo.activo ? 'opacity-75 grayscale-[0.5]' : ''}`}
               >
                 <div className="relative h-64 overflow-hidden bg-apple-bg-tertiary">
                   {platillo.url_imagen ? (
@@ -118,10 +155,19 @@ export function MiMenu() {
                     </div>
                   )}
                   <div className="absolute top-4 right-4 flex gap-2">
-                    <button className="p-2.5 rounded-xl bg-black/40 backdrop-blur-md text-white border border-white/20 hover:bg-black/60 transition-colors">
+                    <button 
+                      onClick={() => navigate(`/dashboard/platillos/editar/${platillo.id}`)}
+                      className="p-2.5 rounded-xl bg-black/40 backdrop-blur-md text-white border border-white/20 hover:bg-apple-blue transition-colors"
+                      title="Editar"
+                    >
                       <Edit2 size={18} />
                     </button>
-                    <button className="p-2.5 rounded-xl bg-black/40 backdrop-blur-md text-white border border-white/20 hover:bg-red-500/80 transition-colors">
+                    <button 
+                      onClick={() => handleEliminar(platillo.id)}
+                      disabled={deletingId === platillo.id}
+                      className="p-2.5 rounded-xl bg-black/40 backdrop-blur-md text-white border border-white/20 hover:bg-red-500 transition-colors disabled:opacity-50"
+                      title="Eliminar"
+                    >
                       <Trash2 size={18} />
                     </button>
                   </div>
@@ -133,14 +179,14 @@ export function MiMenu() {
                 </div>
 
                 <div className="p-8 flex-1 flex flex-col">
-                  <div className="flex justify-between items-start mb-4">
+                  <div className="flex justify-between items-start mb-4 gap-4">
                     <h3 className="text-2xl font-bold tracking-tight group-hover:text-apple-blue transition-colors">{platillo.nombre}</h3>
-                    <span className="text-xl font-black text-apple-blue">
+                    <span className="text-xl font-black text-apple-blue whitespace-nowrap">
                       {platillo.precio.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}
                     </span>
                   </div>
                   
-                  <p className="text-apple-text-secondary dark:text-apple-dark-text-secondary font-medium leading-relaxed mb-8 flex-1">
+                  <p className="text-apple-text-secondary dark:text-apple-dark-text-secondary font-medium leading-relaxed mb-8 flex-1 line-clamp-3">
                     {platillo.descripcion || 'Sin descripción disponible.'}
                   </p>
 
@@ -151,7 +197,10 @@ export function MiMenu() {
                         {platillo.activo !== false ? 'Disponible' : 'Pausado'}
                       </span>
                     </div>
-                    <button className="flex items-center gap-2 text-apple-text-secondary hover:text-apple-blue transition-colors font-bold text-sm">
+                    <button 
+                      onClick={() => handleToggleStatus(platillo)}
+                      className={`flex items-center gap-2 font-bold text-sm transition-colors ${platillo.activo !== false ? 'text-apple-text-secondary hover:text-red-500' : 'text-apple-blue hover:text-apple-blue-hover'}`}
+                    >
                       {platillo.activo !== false ? <EyeOff size={16} /> : <Eye size={16} />}
                       {platillo.activo !== false ? 'Pausar' : 'Activar'}
                     </button>
@@ -165,5 +214,3 @@ export function MiMenu() {
     </div>
   );
 }
-
-import { Utensils } from 'lucide-react';

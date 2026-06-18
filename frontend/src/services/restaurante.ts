@@ -20,54 +20,45 @@ export const restauranteService = {
     return response.data;
   },
 
+  // Actualizar platillo
+  actualizarPlatillo: async (id: string | number, formData: FormData) => {
+    const response = await api.put(`/menu/platillos/${id}`, formData);
+    return response.data;
+  },
+
+  // Eliminar platillo
+  eliminarPlatillo: async (id: string | number) => {
+    const response = await api.delete(`/menu/platillos/${id}`);
+    return response.data;
+  },
+
   getPlatillos: async () => {
     try {
-      const restaurante_id = localStorage.getItem('restaurante_id');
-      if (!restaurante_id) {
-        throw new Error('Restaurante no autenticado');
-      }
-      const response = await api.get(`/public/menu/${restaurante_id}`);
-      const data = response.data;
+      // Usar la ruta privada para ver TODOS los platillos (incluyendo inactivos)
+      const response = await api.get('/menu/platillos');
+      const platillos = response.data;
 
       const normalizeImageUrl = (url: string | null | undefined) => {
         if (!url) return '';
         const trimmed = url.trim();
         if (!trimmed) return '';
 
-        // Descarta rutas de API o rutas de menú que no son imágenes
-        if (/\/public\/menu\//i.test(trimmed) || /\/api\/public\/menu\//i.test(trimmed)) {
-          console.warn('Invalid image URL detected, ignoring:', trimmed);
-          return '';
-        }
-
+        // Si ya es una URL absoluta (S3/CloudFront), devolverla tal cual
         if (/^https?:\/\//i.test(trimmed)) return trimmed;
-        if (/^\/\//.test(trimmed)) return `http:${trimmed}`;
-        return `http://localhost:4000${trimmed.startsWith('/') ? '' : '/'}${trimmed}`;
+        
+        // Fallback para imágenes locales servidas por el backend
+        const baseUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:4000';
+        return `${baseUrl}${trimmed.startsWith('/') ? '' : '/'}${trimmed}`;
       };
 
-      // Transformar la respuesta pública en una lista plana de platillos
-      const platillos = data.categorias?.flatMap((categoria: any) =>
-        categoria.platillos.map((platillo: any) => {
-          const normalizedUrl = normalizeImageUrl(platillo.url_imagen);
-          return {
-            id: platillo.id,
-            nombre: platillo.nombre,
-            descripcion: platillo.descripcion,
-            precio: platillo.precio,
-            url_imagen: normalizedUrl,
-            categoria: categoria.nombre,
-          };
-        })
-      ) || [];
-
-      console.log('🍽️ Platillos obtenidos:', platillos);
-      return platillos;
+      return platillos.map((p: any) => ({
+        ...p,
+        url_imagen: normalizeImageUrl(p.url_imagen),
+        categoria: p.categoria_nombre // El backend devuelve categoria_nombre en la ruta privada
+      }));
     } catch (error) {
-      console.warn('Error fetching platillos, using mock data:', error);
-      return [
-        { id: 'm1', nombre: 'Taco de Asada Mock', descripcion: 'Simulación de platillo.', precio: 45, categoria: 'Tacos' },
-        { id: 'm2', nombre: 'Agua de Horchata Mock', descripcion: 'Bebida refrescante simulada.', precio: 30, categoria: 'Bebidas' }
-      ];
+      console.error('Error fetching platillos:', error);
+      throw error;
     }
   },
 
@@ -97,4 +88,21 @@ export const restauranteService = {
       };
     }
   },
+
+  uploadBrandingImage: async (file: File) => {
+    const formData = new FormData();
+    formData.append('imagen', file);
+    const response = await api.post('/restaurants/upload-branding', formData);
+    return response.data;
+  },
+
+  getCategorias: async () => {
+    try {
+      const response = await api.get('/categories');
+      return response.data;
+    } catch (error) {
+      console.warn('Error fetching categories:', error);
+      return [];
+    }
+  }
 };

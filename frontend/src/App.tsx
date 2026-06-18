@@ -4,11 +4,11 @@ import { ProtectedRoute } from './pages/components/ProtectedRoute';
 import { authService } from './services/auth';
 import { ThemeProvider } from './context/ThemeContext';
 import { MainLayout } from './pages/components/MainLayout';
+import { WelcomeSplash } from './pages/components/WelcomeSplash';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// Lazy-loaded pages for better performance
-const Landing = lazy(() => import('./pages/Landing/Landing').then(m => ({ default: m.Landing })));
-const NoSabesQueComer = lazy(() => import('./pages/Landing/NoSabesQueComer').then(m => ({ default: m.NoSabesQueComer })));
+// Lazy-loaded pages
+const HomeDiners = lazy(() => import('./pages/Landing/NoSabesQueComer').then(m => ({ default: m.NoSabesQueComer })));
 const PublicMenu = lazy(() => import('./pages/PublicMenu/PublicMenu').then(m => ({ default: m.PublicMenu })));
 const Register = lazy(() => import('./pages/Register/Register').then(m => ({ default: m.Register })));
 const Login = lazy(() => import('./pages/Login/Login').then(m => ({ default: m.Login })));
@@ -26,7 +26,6 @@ const Configuracion = lazy(() => import('./pages/Configuracion/Configuracion').t
 const Perfil = lazy(() => import('./pages/Perfil/Perfil').then(m => ({ default: m.Perfil })));
 const NotFound = lazy(() => import('./pages/NotFound/NotFound').then(m => ({ default: m.NotFound })));
 
-// Loading spinner for lazy-loaded pages
 function PageLoader() {
   return (
     <div className="min-h-screen bg-black text-white flex items-center justify-center">
@@ -38,21 +37,16 @@ function PageLoader() {
   );
 }
 
-// Smart home redirect: authenticated users go to their dashboard, guests see restaurant landing
 function HomeRedirect() {
   const { isAuthenticated, rol } = authService.getCurrentUser();
   const userRol = rol?.toLowerCase() || '';
 
-  if (!isAuthenticated) {
-    return <Navigate to="/landing" replace />;
-  }
-
-  if (userRol === 'restaurante' || userRol === 'super_admin') {
+  if (isAuthenticated && (userRol === 'restaurante' || userRol === 'super_admin')) {
     return <Navigate to="/dashboard/restaurante" replace />;
   }
 
-  // If a comensal is logged in, they go to discovery
-  return <Navigate to="/no-sabes-que-comer" replace />;
+  // Por defecto, la raíz es para Comensales
+  return <HomeDiners />;
 }
 
 function AnimatedRoutes() {
@@ -62,46 +56,40 @@ function AnimatedRoutes() {
     <AnimatePresence mode="wait">
       <motion.div
         key={location.pathname}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -10 }}
-        transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
         className="w-full min-h-full"
       >
         <Suspense fallback={<PageLoader />}>
           <Routes location={location}>
-            {/* Home - smart redirect based on auth status */}
+            {/* Root: Experience for Diners */}
             <Route path="/" element={<HomeRedirect />} />
 
-            {/* Public marketing pages (no auth required) */}
-            <Route path="/landing" element={<Landing />} />
-            <Route path="/no-sabes-que-comer" element={<NoSabesQueComer />} />
-            <Route path="/como-funciona" element={<ComoFunciona />} />
+            {/* Business Section */}
             <Route path="/para-restaurantes" element={<ParaRestaurantes />} />
+            <Route path="/como-funciona" element={<ComoFunciona />} />
             <Route path="/precios" element={<Precios />} />
 
-            {/* Public Digital Menu (Real) */}
-            <Route path="/menu/:restaurant_id" element={<PublicMenu />} />
-
-            {/* QR scanning (public, optional restaurant ID) */}
-            <Route path="/escanear/:id?" element={<EscanearQR />} />
-
-            {/* Auth pages (redirect to dashboard if already logged in) */}
+            {/* Auth */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
 
-            {/* Comensal pages (auth recommended) */}
+            {/* Diner Experience */}
             <Route path="/descubrir" element={<Descubrir />} />
             <Route path="/cuestionario" element={<CuestionarioIA />} />
+            <Route path="/menu/:restaurant_id" element={<PublicMenu />} />
+            <Route path="/escanear/:id?" element={<EscanearQR />} />
 
-            {/* Profile (shared - any authenticated user) */}
+            {/* Shared Profile */}
             <Route path="/perfil" element={
               <ProtectedRoute allowedRoles={['COMENSAL', 'RESTAURANTE', 'SUPER_ADMIN']}>
                 <Perfil />
               </ProtectedRoute>
             } />
 
-            {/* Restaurant dashboard routes */}
+            {/* Dashboard */}
             <Route path="/dashboard/restaurante" element={
               <ProtectedRoute allowedRoles={['RESTAURANTE', 'SUPER_ADMIN']}>
                 <DashboardRestaurante />
@@ -117,6 +105,11 @@ function AnimatedRoutes() {
                 <NuevoPlatillo />
               </ProtectedRoute>
             } />
+            <Route path="/dashboard/platillos/editar/:id" element={
+              <ProtectedRoute allowedRoles={['RESTAURANTE', 'SUPER_ADMIN']}>
+                <NuevoPlatillo />
+              </ProtectedRoute>
+            } />
             <Route path="/dashboard/qr" element={
               <ProtectedRoute allowedRoles={['RESTAURANTE', 'SUPER_ADMIN']}>
                 <CodigoQR />
@@ -128,14 +121,12 @@ function AnimatedRoutes() {
               </ProtectedRoute>
             } />
 
-            {/* Super Admin route */}
             <Route path="/admin" element={
               <ProtectedRoute allowedRoles={['SUPER_ADMIN']}>
                 <DashboardRestaurante />
               </ProtectedRoute>
             } />
 
-            {/* Catch-all 404 */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
@@ -148,6 +139,7 @@ function App() {
   return (
     <ThemeProvider>
       <BrowserRouter>
+        <WelcomeSplash />
         <MainLayout>
           <AnimatedRoutes />
         </MainLayout>

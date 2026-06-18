@@ -82,7 +82,7 @@ export function CuestionarioIA() {
   };
 
   return (
-    <div className="bg-[var(--app-bg)] text-[var(--app-text)] min-h-screen transition-colors duration-500">
+    <div className="bg-white dark:bg-black text-[#1D1D1F] dark:text-[#F5F5F7] min-h-screen transition-colors duration-300">
       {/* Top Nav */}
       <nav className="fixed top-0 left-0 right-0 glass z-50 border-b border-[var(--app-border)]">
         <div className="px-4 py-3 flex items-center justify-between max-w-lg mx-auto">

@@ -1,5 +1,5 @@
 import { useContext, useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   LayoutDashboard, 
@@ -24,25 +24,27 @@ interface SidebarItemProps {
   ruta: string;
   active: boolean;
   collapsed: boolean;
-  onClick: () => void;
+  onClick?: () => void;
 }
 
 const SidebarItem = ({ icon: Icon, label, ruta, active, collapsed, onClick }: SidebarItemProps) => {
   return (
-    <motion.button
+    <Link
+      to={ruta}
       onClick={onClick}
       className={`
         w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group
         ${active 
           ? 'bg-apple-blue text-white shadow-apple-glow' 
-          : 'text-apple-text-secondary hover:text-apple-text hover:bg-apple-bg-secondary dark:hover:bg-apple-dark-bg-secondary'}
+          : 'text-apple-text-secondary dark:text-apple-dark-text-secondary hover:text-apple-text dark:hover:text-apple-dark-text hover:bg-apple-bg-secondary dark:hover:bg-apple-dark-bg-secondary'}
       `}
-      whileHover={{ x: active ? 0 : 4 }}
-      whileTap={{ scale: 0.98 }}
     >
-      <div className={`flex-shrink-0 ${active ? 'text-white' : 'text-apple-blue'}`}>
+      <motion.div 
+        className={`flex-shrink-0 ${active ? 'text-white' : 'text-apple-blue'}`}
+        whileHover={{ scale: 1.1 }}
+      >
         <Icon size={20} strokeWidth={active ? 2.5 : 2} />
-      </div>
+      </motion.div>
       {!collapsed && (
         <span className={`text-[14px] font-medium whitespace-nowrap overflow-hidden transition-opacity duration-300 ${active ? 'opacity-100' : 'opacity-90'}`}>
           {label}
@@ -54,7 +56,7 @@ const SidebarItem = ({ icon: Icon, label, ruta, active, collapsed, onClick }: Si
           className="ml-auto w-1.5 h-1.5 rounded-full bg-white"
         />
       )}
-    </motion.button>
+    </Link>
   );
 };
 
@@ -74,7 +76,13 @@ export function Sidebar() {
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    
+    const unsubscribe = authService.onAuthChange(() => setUser(authService.getCurrentUser()));
+    
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+      unsubscribe();
+    };
   }, []);
 
   const rol = user.rol?.toLowerCase() || '';
@@ -90,7 +98,6 @@ export function Sidebar() {
   const secondaryItems = [
     { icon: Settings, label: 'Configuración', ruta: '/dashboard/configuracion' },
     { icon: User, label: 'Mi Perfil', ruta: '/perfil' },
-    { icon: Home, label: 'Ver Landing', ruta: '/landing' },
   ];
 
   if (isSuperAdmin) {
@@ -99,7 +106,6 @@ export function Sidebar() {
 
   const handleLogout = () => {
     authService.logout();
-    navigate('/login');
   };
 
   const SidebarContent = () => (
@@ -107,12 +113,12 @@ export function Sidebar() {
       {/* Logo & Toggle */}
       <div className={`flex items-center mb-10 ${collapsed ? 'justify-center' : 'justify-between px-2'}`}>
         {!collapsed && (
-          <div className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-2">
             <span className="text-2xl">🌮</span>
             <span className="text-lg font-bold tracking-tight text-apple-text dark:text-apple-dark-text">
               MexxicanMX
             </span>
-          </div>
+          </Link>
         )}
         {!isMobile && (
           <button 
@@ -133,10 +139,7 @@ export function Sidebar() {
             {...item}
             active={location.pathname === item.ruta}
             collapsed={collapsed}
-            onClick={() => {
-              navigate(item.ruta);
-              if (isMobile) setShowMobileSidebar(false);
-            }}
+            onClick={() => isMobile && setShowMobileSidebar(false)}
           />
         ))}
 
@@ -149,10 +152,7 @@ export function Sidebar() {
             {...item}
             active={location.pathname === item.ruta}
             collapsed={collapsed}
-            onClick={() => {
-              navigate(item.ruta);
-              if (isMobile) setShowMobileSidebar(false);
-            }}
+            onClick={() => isMobile && setShowMobileSidebar(false)}
           />
         ))}
       </div>
@@ -191,10 +191,10 @@ export function Sidebar() {
       {/* Mobile Top Bar */}
       {isMobile && (
         <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-apple-bg/80 dark:bg-apple-dark-bg/80 backdrop-blur-xl border-b border-apple-border dark:border-apple-dark-border z-40 flex items-center justify-between px-6">
-          <div className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-2">
             <span className="text-xl">🌮</span>
             <span className="text-base font-bold tracking-tight text-apple-text dark:text-apple-dark-text">MexxicanMX</span>
-          </div>
+          </Link>
           <button 
             onClick={() => setShowMobileSidebar(true)}
             className="p-2 text-apple-text-secondary"
@@ -244,7 +244,10 @@ export function Sidebar() {
 
       {/* Page Content Margin Adjuster */}
       {!isMobile && (
-        <div style={{ width: collapsed ? 88 : 260 }} className="flex-shrink-0 transition-all duration-300" />
+        <div 
+          className="flex-shrink-0 transition-all duration-300" 
+          style={{ width: collapsed ? 88 : 260 }} 
+        />
       )}
       {isMobile && <div className="h-16" />}
     </>

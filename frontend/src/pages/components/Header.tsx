@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { authService } from '../../services/auth';
 import { ThemeContext } from '../../context/ThemeContext';
@@ -12,79 +12,73 @@ const menuVariants = {
 
 export function Header() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [user, setUser] = useState(authService.getCurrentUser());
 
   useEffect(() => {
-    const handleStorageChange = () => setUser(authService.getCurrentUser());
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    return authService.onAuthChange(() => setUser(authService.getCurrentUser()));
   }, []);
 
   const { theme, toggleTheme } = useContext(ThemeContext);
   const rol = user.rol?.toLowerCase() || '';
-  const isRestaurante = rol === 'restaurante';
-  const isSuperAdmin = rol === 'super_admin';
-  const isDashboardUser = isRestaurante || isSuperAdmin;
+  const isDashboardUser = rol === 'restaurante' || rol === 'super_admin';
 
-  const menuItems = isDashboardUser
-    ? [
-        { nombre: 'Dashboard', ruta: '/dashboard/restaurante' },
-        { nombre: 'Mi menú', ruta: '/dashboard/platillos' },
-        { nombre: 'Nuevo platillo', ruta: '/dashboard/platillos/nuevo' },
-        { nombre: 'QR restaurante', ruta: '/dashboard/qr' },
-        { nombre: 'Configuración', ruta: '/dashboard/configuracion' },
-        { nombre: 'Perfil', ruta: '/perfil' },
-        ...(isSuperAdmin ? [{ nombre: 'Admin Panel', ruta: '/admin' }] : []),
-      ]
-    : [
-        { nombre: 'Inicio', ruta: '/landing' },
-        { nombre: 'Cómo funciona', ruta: '/como-funciona' },
-        { nombre: 'Para restaurantes', ruta: '/para-restaurantes' },
-        { nombre: 'Precios', ruta: '/precios' },
-        { nombre: 'Descubrir', ruta: '/descubrir' },
-        { nombre: 'Cuestionario', ruta: '/cuestionario' },
-        { nombre: 'Escanear QR', ruta: '/escanear' },
-        ...(user.isAuthenticated ? [{ nombre: 'Perfil', ruta: '/perfil' }] : []),
-      ];
+  // Determinar si estamos en la sección de Negocios o Comensales
+  const isBusinessSection = ['/para-restaurantes', '/precios', '/como-funciona', '/login', '/register'].includes(location.pathname);
 
-  const handleNavigation = (ruta: string) => {
-    navigate(ruta);
+  // Menu Items según el contexto
+  const businessItems = [
+    { nombre: 'Inicio', ruta: '/para-restaurantes' },
+    { nombre: 'Cómo funciona', ruta: '/como-funciona' },
+    { nombre: 'Precios', ruta: '/precios' },
+    { nombre: 'Comensales', ruta: '/' },
+  ];
+
+  const consumerItems = [
+    { nombre: 'Inicio', ruta: '/' },
+    { nombre: 'Descubrir', ruta: '/descubrir' },
+    { nombre: 'Cuestionario IA', ruta: '/cuestionario' },
+    { nombre: 'Para Restaurantes', ruta: '/para-restaurantes' },
+  ];
+
+  const menuItems = isBusinessSection ? businessItems : consumerItems;
+
+  const handleLogout = () => {
+    authService.logout();
     setMenuAbierto(false);
   };
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 border-b border-[var(--app-border)] backdrop-blur-xl bg-[var(--app-bg)]/80">
+      <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/[0.06] backdrop-blur-xl bg-apple-bg/80 dark:bg-apple-dark-bg/80 transition-colors duration-300">
         <div className="mx-auto max-w-[1400px] px-5 md:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 md:h-[60px]">
+          <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <motion.div
-              className="flex items-center gap-2 cursor-pointer select-none"
-              onClick={() =>
-                handleNavigation(isDashboardUser ? '/dashboard/restaurante' : '/landing')
-              }
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.99 }}
+            <Link
+              to={isDashboardUser ? '/dashboard/restaurante' : (isBusinessSection ? '/para-restaurantes' : '/')}
+              className="flex items-center gap-2 cursor-pointer select-none group"
             >
-              <span className="text-xl leading-none">🌮</span>
-              <span className="text-[15px] font-semibold tracking-[-0.015em] text-[#F5F5F7]">
+              <motion.span className="text-xl leading-none group-hover:rotate-12 transition-transform">🌮</motion.span>
+              <span className="text-[15px] font-semibold tracking-tight text-apple-text dark:text-apple-dark-text">
                 MexxicanMX
               </span>
-            </motion.div>
+            </Link>
 
             {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center gap-0.5">
+            <nav className="hidden lg:flex items-center gap-1">
               {menuItems.map((item) => (
-                <motion.button
+                <Link
                   key={item.ruta}
-                  onClick={() => handleNavigation(item.ruta)}
-                  className="px-4 py-2 text-[13px] font-500 text-[#A1A1A6] hover:text-[#F5F5F7] rounded-md transition-colors duration-200"
-                  whileHover={{ y: -1 }}
-                  whileTap={{ y: 0 }}
+                  to={item.ruta}
+                  className={`px-4 py-2 text-[13px] font-medium rounded-lg transition-all duration-200 ${
+                    location.pathname === item.ruta 
+                      ? 'text-apple-blue bg-apple-blue/5' 
+                      : 'text-apple-text-secondary dark:text-apple-dark-text-secondary hover:text-apple-text dark:hover:text-apple-dark-text'
+                  }`}
                 >
                   {item.nombre}
-                </motion.button>
+                </Link>
               ))}
             </nav>
 
@@ -92,54 +86,55 @@ export function Header() {
             <div className="hidden md:flex items-center gap-3">
               <button
                 onClick={toggleTheme}
-                className="px-3.5 py-2 text-[13px] font-medium text-[#A1A1A6] hover:text-[#F5F5F7] rounded-lg transition-colors duration-200"
+                className="p-2 text-apple-text-secondary hover:text-apple-text transition-colors rounded-lg hover:bg-white/5"
                 aria-label="Alternar tema"
               >
-                {theme === 'dark' ? '☀️ Día' : '🌙 Noche'}
+                {theme === 'dark' ? '☀️' : '🌙'}
               </button>
+
               {!user.isAuthenticated ? (
                 <>
-                  <button
-                    onClick={() => handleNavigation('/login')}
-                    className="px-4 py-1.5 text-[13px] font-500 text-[#A1A1A6] hover:text-[#F5F5F7] transition-colors duration-200"
+                  <Link
+                    to="/login"
+                    className="px-4 py-2 text-[13px] font-medium text-apple-text-secondary hover:text-apple-text transition-colors"
                   >
                     Iniciar sesión
-                  </button>
-                  <button
-                    onClick={() => handleNavigation('/register')}
-                    className="px-6 py-1.5 text-[13px] font-500 bg-[#2997FF] text-white rounded-lg hover:bg-[#40A9FF] transition-all duration-200 hover:shadow-[0_4px_16px_rgba(41,151,255,0.2)]"
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="px-6 py-2 text-[13px] font-semibold bg-apple-blue text-white rounded-full hover:bg-apple-blue-hover transition-all duration-200 shadow-apple-sm hover:shadow-apple-glow"
                   >
-                    Registrarse
-                  </button>
+                    Empezar gratis
+                  </Link>
                 </>
               ) : (
-                <>
-                  <button
-                    onClick={() => handleNavigation('/perfil')}
-                    className="px-3.5 py-2 text-[13px] font-medium text-[#A1A1A6] hover:text-[#F5F5F7] rounded-lg transition-colors duration-200"
+                <div className="flex items-center gap-2">
+                  <Link
+                    to={isDashboardUser ? "/dashboard/restaurante" : "/perfil"}
+                    className="px-4 py-2 text-[13px] font-semibold bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary text-apple-text dark:text-apple-dark-text rounded-full border border-apple-border dark:border-apple-dark-border hover:bg-apple-bg-tertiary transition-all"
                   >
-                    Perfil
-                  </button>
+                    {isDashboardUser ? 'Panel Control' : 'Mi Perfil'}
+                  </Link>
                   <button
-                    onClick={() => {
-                      authService.logout();
-                      setUser(authService.getCurrentUser());
-                    }}
-                    className="px-4 py-2 text-[13px] font-medium text-[#FF453A] hover:text-[#FF6B6B] rounded-lg transition-colors duration-200"
+                    onClick={handleLogout}
+                    className="p-2 text-red-500 hover:text-red-600 transition-colors"
+                    title="Cerrar sesión"
                   >
-                    Cerrar sesión
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
                   </button>
-                </>
+                </div>
               )}
             </div>
 
             {/* Mobile Menu Toggle */}
             <button
               onClick={() => setMenuAbierto(!menuAbierto)}
-              className="md:hidden p-2 -mr-2 text-[#A1A1A6] hover:text-[#F5F5F7] transition-colors"
+              className="lg:hidden p-2 -mr-2 text-apple-text-secondary hover:text-apple-text transition-colors"
               aria-label="Menú"
             >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 {menuAbierto ? (
                   <path strokeLinecap="round" d="M6 18L18 6M6 6l12 12" />
                 ) : (
@@ -158,80 +153,74 @@ export function Header() {
               initial="hidden"
               animate="visible"
               exit="exit"
-              className="md:hidden border-t border-white/[0.06] bg-[#000000]/95 backdrop-blur-xl"
+              className="lg:hidden border-t border-apple-border dark:border-apple-dark-border bg-apple-bg/95 dark:bg-apple-dark-bg/95 backdrop-blur-xl"
             >
-              <div className="px-5 py-4 space-y-1">
+              <div className="px-5 py-6 space-y-2">
                 {menuItems.map((item) => (
-                  <button
+                  <Link
                     key={item.ruta}
-                    onClick={() => handleNavigation(item.ruta)}
-                    className="w-full text-left px-4 py-3 text-[15px] font-medium text-[#A1A1A6] hover:text-[#F5F5F7] hover:bg-white/[0.04] rounded-xl transition-all duration-200"
+                    to={item.ruta}
+                    onClick={() => setMenuAbierto(false)}
+                    className="block px-4 py-3 text-[15px] font-medium text-apple-text-secondary hover:text-apple-text hover:bg-apple-bg-secondary rounded-xl transition-all"
                   >
                     {item.nombre}
-                  </button>
+                  </Link>
                 ))}
-                <div className="h-px bg-white/[0.06] my-3" />
+
+                <div className="h-px bg-apple-border dark:bg-apple-dark-border my-4" />
+
                 {!user.isAuthenticated ? (
-                  <div className="space-y-2 pt-1">
-                    <button
-                      onClick={() => handleNavigation('/login')}
-                      className="w-full px-4 py-3 text-[15px] font-medium text-[#F5F5F7] hover:bg-white/[0.04] rounded-xl transition-all duration-200 text-center"
+                  <div className="grid grid-cols-2 gap-3 pt-2">
+                    <Link
+                      to="/login"
+                      onClick={() => setMenuAbierto(false)}
+                      className="flex items-center justify-center px-4 py-3 text-[15px] font-medium text-apple-text rounded-xl border border-apple-border dark:border-apple-dark-border"
                     >
-                      Iniciar sesión
-                    </button>
-                    <button
-                      onClick={() => handleNavigation('/register')}
-                      className="w-full px-4 py-3 text-[15px] font-medium bg-[#2997FF] text-white rounded-full hover:bg-[#40A9FF] transition-all duration-250"
+                      Entrar
+                    </Link>
+                    <Link
+                      to="/register"
+                      onClick={() => setMenuAbierto(false)}
+                      className="flex items-center justify-center px-4 py-3 text-[15px] font-semibold bg-apple-blue text-white rounded-xl shadow-apple-glow"
                     >
-                      Registrarse
-                    </button>
-                    <button
-                      onClick={() => {
-                        toggleTheme();
-                        setMenuAbierto(false);
-                      }}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-3 text-[15px] font-medium text-[#F5F5F7] bg-white/[0.04] rounded-xl hover:bg-white/[0.08] transition-all duration-200"
-                    >
-                      {theme === 'dark' ? '☀️ Modo día' : '🌙 Modo noche'}
-                    </button>
+                      Registro
+                    </Link>
                   </div>
                 ) : (
-                  <div className="space-y-2 pt-1">
-                    <button
-                      onClick={() => handleNavigation('/perfil')}
-                      className="w-full text-left px-4 py-3 text-[15px] font-medium text-[#F5F5F7] hover:bg-white/[0.04] rounded-xl transition-all duration-200"
+                  <div className="space-y-2 pt-2">
+                    <Link
+                      to={isDashboardUser ? "/dashboard/restaurante" : "/perfil"}
+                      onClick={() => setMenuAbierto(false)}
+                      className="block px-4 py-3 text-[15px] font-medium text-apple-text bg-apple-bg-secondary rounded-xl text-center"
                     >
-                      Perfil
-                    </button>
+                      {isDashboardUser ? 'Panel de Control' : 'Mi Perfil'}
+                    </Link>
                     <button
-                      onClick={() => {
-                        authService.logout();
-                        setUser(authService.getCurrentUser());
-                        setMenuAbierto(false);
-                      }}
-                      className="w-full px-4 py-3 text-[15px] font-medium text-[#FF453A] hover:bg-white/[0.04] rounded-xl transition-all duration-200"
+                      onClick={handleLogout}
+                      className="w-full px-4 py-3 text-[15px] font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition-all"
                     >
                       Cerrar sesión
                     </button>
-                    <button
-                      onClick={() => {
-                        toggleTheme();
-                        setMenuAbierto(false);
-                      }}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-3 text-[15px] font-medium text-[#F5F5F7] bg-white/[0.04] rounded-xl hover:bg-white/[0.08] transition-all duration-200"
-                    >
-                      {theme === 'dark' ? '☀️ Modo día' : '🌙 Modo noche'}
-                    </button>
                   </div>
                 )}
+
+                <button
+                  onClick={() => {
+                    toggleTheme();
+                    setMenuAbierto(false);
+                  }}
+                  className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-3 text-[15px] font-medium text-apple-text bg-apple-bg-secondary rounded-xl"
+                >
+                  {theme === 'dark' ? '☀️ Modo día' : '🌙 Modo noche'}
+                </button>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
       </header>
 
-      {/* Spacer */}
-      <div className="h-14 md:h-16" />
+      {/* Spacer para que el contenido no quede debajo del header fixed */}
+      <div className="h-16" />
     </>
   );
 }

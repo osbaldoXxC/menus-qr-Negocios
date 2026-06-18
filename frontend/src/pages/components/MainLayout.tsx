@@ -2,6 +2,7 @@ import { ReactNode, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
+import { Footer } from './Footer';
 import { authService } from '../../services/auth';
 
 interface MainLayoutProps {
@@ -13,16 +14,21 @@ export function MainLayout({ children }: MainLayoutProps) {
   const [user, setUser] = useState(authService.getCurrentUser());
 
   useEffect(() => {
-    const handleStorageChange = () => setUser(authService.getCurrentUser());
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    return authService.onAuthChange(() => setUser(authService.getCurrentUser()));
   }, []);
 
   const rol = user.rol?.toLowerCase() || '';
   const isDashboardUser = user.isAuthenticated && (rol === 'restaurante' || rol === 'super_admin');
   
-  // Si estamos en una ruta de dashboard o el usuario es de negocio, usamos Sidebar
-  const useSidebar = isDashboardUser && location.pathname.startsWith('/dashboard') || location.pathname === '/perfil' && isDashboardUser || location.pathname === '/admin';
+  // Dashboard routes use Sidebar
+  const useSidebar = isDashboardUser && (location.pathname.startsWith('/dashboard') || location.pathname === '/perfil' || location.pathname === '/admin');
+
+  // Routes that handle their own Header/Footer internally
+  const selfContainedRoutes = ['/', '/para-restaurantes', '/como-funciona', '/precios', '/descubrir', '/cuestionario', '/login', '/register'];
+  const isSelfContained = selfContainedRoutes.includes(location.pathname) || location.pathname.startsWith('/menu/');
+
+  // Hide footer in dashboard and self-contained routes
+  const showFooter = !useSidebar && !isSelfContained && !['/login', '/register'].includes(location.pathname);
 
   return (
     <div className={`flex min-h-screen relative overflow-hidden bg-apple-bg dark:bg-apple-dark-bg transition-colors duration-300 ${useSidebar ? 'flex-row' : 'flex-col'}`}>
@@ -35,14 +41,13 @@ export function MainLayout({ children }: MainLayoutProps) {
 
       {useSidebar ? (
         <Sidebar />
-      ) : (
+      ) : !isSelfContained ? (
         <Header />
-      )}
+      ) : null}
       
-      <main className={`flex-1 relative z-10 w-full transition-all duration-300 ${useSidebar ? 'min-h-screen' : ''}`}>
-        <div className="max-w-[1600px] mx-auto min-h-full">
-          {children}
-        </div>
+      <main className={`flex-1 relative z-10 w-full transition-all duration-300 ${useSidebar ? 'min-h-screen bg-apple-bg dark:bg-apple-dark-bg' : 'flex flex-col'}`}>
+        {children}
+        {showFooter && <Footer />}
       </main>
     </div>
   );

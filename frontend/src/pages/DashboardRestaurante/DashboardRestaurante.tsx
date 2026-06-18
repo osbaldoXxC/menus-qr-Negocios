@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { authService } from '../../services/auth';
 import { restauranteService } from '../../services/restaurante';
-import { LayoutDashboard, QrCode, Utensils, Zap, ExternalLink, Copy, Download } from 'lucide-react';
+import { LayoutDashboard, QrCode, Utensils, Zap, ExternalLink, Copy, Download, PlusCircle, ChevronRight, TrendingUp } from 'lucide-react';
 
 export function DashboardRestaurante() {
   const navigate = useNavigate();
@@ -33,7 +32,11 @@ export function DashboardRestaurante() {
     return (
       <div className="min-h-[80vh] flex items-center justify-center">
         <div className="text-center">
-          <motion.div className="text-5xl" animate={{ scale: [1, 1.2, 1], rotate: [0, 10, -10, 0] }} transition={{ repeat: Infinity, duration: 1.5 }}>
+          <motion.div 
+            className="text-5xl" 
+            animate={{ scale: [1, 1.2, 1], rotate: [0, 10, -10, 0] }} 
+            transition={{ repeat: Infinity, duration: 1.5 }}
+          >
             🌮
           </motion.div>
           <p className="text-apple-text-tertiary mt-4 font-medium animate-pulse">Preparando tu dashboard...</p>
@@ -44,6 +47,7 @@ export function DashboardRestaurante() {
 
   const stats = [
     { label: 'Platillos en menú', value: platillos.length, icon: Utensils, color: 'text-apple-blue', bg: 'bg-apple-blue/10' },
+    { label: 'Visitas este mes', value: '1,284', icon: TrendingUp, color: 'text-green-500', bg: 'bg-green-500/10' },
     { label: 'Suscripción', value: 'Premium', icon: Zap, color: 'text-amber-500', bg: 'bg-amber-500/10' },
   ];
 
@@ -59,14 +63,14 @@ export function DashboardRestaurante() {
           Hola, {restauranteInfo?.nombre_dueño || 'Chef'} 👋
         </h1>
         <p className="text-lg text-apple-text-secondary dark:text-apple-dark-text-secondary font-medium">
-          Todo listo para gestionar <span className="text-apple-text dark:text-apple-dark-text font-bold">{restauranteInfo?.nombre_restaurante || 'tu restaurante'}</span>
+          Todo listo para gestionar <span className="text-apple-text dark:text-apple-dark-text font-bold">{restauranteInfo?.nombre_negocio || 'tu restaurante'}</span>
         </p>
       </motion.div>
 
       <div className="grid lg:grid-cols-3 gap-8">
         {/* QR Section - Priority 1 */}
         <motion.div 
-          className="lg:col-span-2 group relative p-10 rounded-[2.5rem] bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border shadow-apple-md hover:shadow-apple-lg transition-all duration-500 overflow-hidden"
+          className="lg:col-span-2 group relative p-10 rounded-[2.5rem] bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border shadow-apple-sm hover:shadow-apple-xl transition-all duration-500 overflow-hidden"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
@@ -87,13 +91,13 @@ export function DashboardRestaurante() {
               </p>
               
               <div className="flex flex-wrap gap-3 justify-center md:justify-start">
-                <button 
-                  onClick={() => navigate('/dashboard/qr')}
+                <Link 
+                  to="/dashboard/qr"
                   className="flex items-center gap-2 px-6 py-3 bg-apple-blue text-white font-bold rounded-2xl hover:bg-apple-blue-hover shadow-apple-glow transition-all active:scale-95"
                 >
                   <ExternalLink size={18} />
                   Ver QR
-                </button>
+                </Link>
                 <button className="flex items-center gap-2 px-6 py-3 bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border font-bold rounded-2xl hover:bg-apple-bg-tertiary transition-all active:scale-95">
                   <Download size={18} />
                   Descargar
@@ -102,6 +106,7 @@ export function DashboardRestaurante() {
                   onClick={() => {
                     const url = `${window.location.origin}/menu/${restauranteInfo?.id}`;
                     navigator.clipboard.writeText(url);
+                    alert('URL copiada al portapapeles');
                   }}
                   className="flex items-center gap-2 px-6 py-3 bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border font-bold rounded-2xl hover:bg-apple-bg-tertiary transition-all active:scale-95"
                 >
@@ -127,28 +132,25 @@ export function DashboardRestaurante() {
                 <stat.icon size={28} />
               </div>
               <div>
-                <p className="text-[14px] text-apple-text-tertiary mb-0.5 font-bold uppercase tracking-wider">{stat.label}</p>
+                <p className="text-[11px] text-apple-text-tertiary mb-0.5 font-black uppercase tracking-widest">{stat.label}</p>
                 <p className="text-3xl font-bold tracking-tight">{stat.value}</p>
               </div>
             </motion.div>
           ))}
 
-          <motion.div
-            className="p-8 rounded-[2rem] bg-apple-blue text-white shadow-apple-glow group cursor-pointer hover:scale-[1.02] transition-all active:scale-[0.98]"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            onClick={() => navigate('/dashboard/platillos/nuevo')}
+          <Link
+            to="/dashboard/platillos/nuevo"
+            className="block p-8 rounded-[2rem] bg-apple-blue text-white shadow-apple-glow group hover:scale-[1.02] transition-all active:scale-[0.98]"
           >
             <div className="flex items-center justify-between mb-4">
               <div className="p-3 bg-white/20 rounded-xl">
                 <PlusCircle size={24} />
               </div>
-              <ChevronLeft className="rotate-180 opacity-60" size={24} />
+              <ChevronRight className="opacity-60" size={24} />
             </div>
             <h3 className="text-xl font-bold mb-1">Nuevo Platillo</h3>
             <p className="text-white/80 font-medium">Agrega algo nuevo hoy</p>
-          </motion.div>
+          </Link>
         </div>
       </div>
 
@@ -161,18 +163,19 @@ export function DashboardRestaurante() {
       >
         <div className="flex items-center justify-between mb-8 px-4">
           <h2 className="text-2xl font-bold tracking-tight">Actividad reciente</h2>
-          <button 
-            onClick={() => navigate('/dashboard/platillos')}
-            className="text-apple-blue font-bold text-sm hover:underline"
+          <Link 
+            to="/dashboard/platillos"
+            className="text-apple-blue font-bold text-sm hover:underline flex items-center gap-1"
           >
             Ver todo el menú
-          </button>
+            <ChevronRight size={16} />
+          </Link>
         </div>
         
         <div className="grid md:grid-cols-3 gap-6">
           {platillos.slice(0, 3).map((platillo, i) => (
-            <div key={platillo.id} className="p-6 rounded-[2rem] bg-apple-bg-secondary/50 dark:bg-apple-dark-bg-secondary/50 border border-apple-border dark:border-apple-dark-border backdrop-blur-sm group hover:bg-apple-bg-secondary dark:hover:bg-apple-dark-bg-secondary transition-all">
-              <div className="w-full aspect-video rounded-2xl bg-apple-bg-tertiary mb-4 overflow-hidden border border-apple-border dark:border-apple-dark-border">
+            <div key={platillo.id} className="p-6 rounded-[2.5rem] bg-apple-bg-secondary/50 dark:bg-apple-dark-bg-secondary/50 border border-apple-border dark:border-apple-dark-border backdrop-blur-sm group hover:bg-apple-bg-secondary dark:hover:bg-apple-dark-bg-secondary transition-all">
+              <div className="w-full aspect-square rounded-2xl bg-apple-bg-tertiary mb-4 overflow-hidden border border-apple-border dark:border-apple-dark-border">
                 {platillo.url_imagen ? (
                   <img src={platillo.url_imagen} alt={platillo.nombre} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                 ) : (
@@ -181,20 +184,25 @@ export function DashboardRestaurante() {
                   </div>
                 )}
               </div>
-              <h4 className="font-bold text-lg mb-1">{platillo.nombre}</h4>
-              <p className="text-apple-blue font-bold">{platillo.precio.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}</p>
+              <div className="flex justify-between items-start">
+                <div>
+                  <h4 className="font-bold text-lg mb-0.5">{platillo.nombre}</h4>
+                  <p className="text-apple-text-tertiary text-xs font-bold uppercase tracking-wider">{platillo.categoria}</p>
+                </div>
+                <p className="text-apple-blue font-black">{platillo.precio.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}</p>
+              </div>
             </div>
           ))}
           {platillos.length === 0 && (
-            <div className="col-span-3 py-20 text-center rounded-[2.5rem] border-2 border-dashed border-apple-border">
+            <div className="col-span-3 py-20 text-center rounded-[3rem] border-2 border-dashed border-apple-border bg-apple-bg-secondary/20">
                <Utensils size={48} className="mx-auto text-apple-text-tertiary mb-4" />
                <p className="text-apple-text-secondary text-lg font-medium">Aún no tienes platillos registrados.</p>
-               <button 
-                onClick={() => navigate('/dashboard/platillos/nuevo')}
-                className="mt-4 text-apple-blue font-bold"
+               <Link 
+                to="/dashboard/platillos/nuevo"
+                className="mt-4 text-apple-blue font-bold inline-block hover:underline"
                >
                  Empieza agregando uno aquí →
-               </button>
+               </Link>
             </div>
           )}
         </div>
@@ -202,6 +210,3 @@ export function DashboardRestaurante() {
     </div>
   );
 }
-
-// Fixed missing import in replacement
-import { PlusCircle, ChevronLeft } from 'lucide-react';
