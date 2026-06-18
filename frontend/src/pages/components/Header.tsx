@@ -59,7 +59,13 @@ export function Header() {
               to={isDashboardUser ? '/dashboard/restaurante' : (isBusinessSection ? '/para-restaurantes' : '/')}
               className="flex items-center gap-2 cursor-pointer select-none group"
             >
-              <motion.span className="text-xl leading-none group-hover:rotate-12 transition-transform">🌮</motion.span>
+              <motion.img
+                src="/favicon.svg"
+                alt="MexxicanMX Logo"
+                className="w-5 h-5 object-contain"
+                whileHover={{ rotate: 12 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              />
               <span className="text-[15px] font-semibold tracking-tight text-apple-text dark:text-apple-dark-text">
                 MexxicanMX
               </span>

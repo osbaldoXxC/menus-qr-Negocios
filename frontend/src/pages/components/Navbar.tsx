@@ -9,7 +9,7 @@ export function Navbar() {
         <div className="flex justify-between items-center">
           {/* Logo */}
           <div className="flex items-center space-x-2 cursor-pointer" onClick={() => navigate('/landing')}>
-            <span className="text-3xl">🌮</span>
+            <img src="/favicon.svg" alt="MexxicanMX Logo" className="w-8 h-8 object-contain" />
             <span className="text-2xl font-bold text-gradient-apple">
               MexxicanMX
             </span>

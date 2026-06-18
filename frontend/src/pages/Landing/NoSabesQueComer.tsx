@@ -1,6 +1,7 @@
 import { useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { Logo } from '../components/Logo';
 import { ThemeContext } from '../../context/ThemeContext';
 
 const stagger = {
@@ -43,7 +44,7 @@ export function NoSabesQueComer() {
       <header className="fixed top-0 left-0 right-0 z-50 border-b border-black/[0.06] dark:border-white/[0.06] backdrop-blur-xl bg-white/80 dark:bg-black/80 transition-colors duration-300">
         <div className="max-w-[1200px] mx-auto px-5 md:px-8 flex items-center justify-between h-[60px]">
           <Link to="/" className="flex items-center gap-2 group select-none">
-            <span className="text-xl group-hover:rotate-12 transition-transform duration-300">🌮</span>
+            <Logo size={22} className="group-hover:rotate-12 transition-transform duration-300" />
             <span className="text-[15px] font-semibold tracking-tight">MexxicanMX</span>
           </Link>
 
@@ -304,7 +305,7 @@ export function NoSabesQueComer() {
       <footer className="border-t border-black/[0.06] dark:border-white/[0.06] py-8 px-6">
         <div className="max-w-[1200px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <span className="text-lg">🌮</span>
+            <Logo size={18} />
             <span className="text-[14px] font-semibold">MexxicanMX</span>
             <span className="text-[12px] text-[#AEAEB2] dark:text-[#6E6E73] ml-2">© {new Date().getFullYear()}</span>
           </div>
