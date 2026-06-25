@@ -3,9 +3,20 @@ const redisClient = require('../config/redis');
 const axios = require('axios');
 
 const createDish = async (req, res) => {
-  const { nombre, descripcion, precio, categoria_id, ingredientes, activo } = req.body;
+  let { 
+    nombre, descripcion, precio, categoria_id, categoria, 
+    ingredientes_principales, complementos, activo 
+  } = req.body;
   const restaurante_id = req.user.id;
   
+  // Parsear JSON strings si vienen de FormData
+  try {
+    if (typeof ingredientes_principales === 'string') ingredientes_principales = JSON.parse(ingredientes_principales);
+    if (typeof complementos === 'string') complementos = JSON.parse(complementos);
+  } catch (e) {
+    console.warn('Error parseando ingredientes/complementos:', e);
+  }
+
   // La URL de la imagen vendrá de multer-s3 si se subió un archivo
   let url_imagen = req.file ? req.file.location : req.body.url_imagen;
 
@@ -18,14 +29,19 @@ const createDish = async (req, res) => {
     return res.status(400).json({ mensaje: 'Nombre y precio son obligatorios' });
   }
 
-  // Validar que la categoría pertenezca al restaurante
-  if (categoria_id) {
-    const catCheck = await db.query(
-      'SELECT id FROM categorias_restaurante WHERE id = $1 AND restaurante_id = $2',
-      [categoria_id, restaurante_id]
-    );
-    if (catCheck.rows.length === 0) {
-      return res.status(400).json({ mensaje: 'La categoría seleccionada no es válida para tu restaurante' });
+  let final_categoria_id = categoria_id;
+
+  // Si envían nombre de categoría en lugar de ID (como en el frontend actual)
+  if (!final_categoria_id && categoria) {
+    try {
+      // Buscar o crear la categoría para este restaurante
+      const catRes = await db.query(
+        'INSERT INTO categorias_restaurante (restaurante_id, nombre) VALUES ($1, $2) ON CONFLICT (restaurante_id, nombre) DO UPDATE SET nombre = EXCLUDED.nombre RETURNING id',
+        [restaurante_id, categoria]
+      );
+      final_categoria_id = catRes.rows[0].id;
+    } catch (err) {
+      console.error('Error al manejar categoría:', err);
     }
   }
 
@@ -36,33 +52,31 @@ const createDish = async (req, res) => {
 
     // 1. Insertar el platillo
     const dishRes = await client.query(
-      `INSERT INTO platillos (restaurante_id, nombre, descripcion, precio, categoria_id, url_imagen, activo, estado_ia) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, 'pendiente') 
+      `INSERT INTO platillos (restaurante_id, nombre, descripcion, precio, categoria_id, url_imagen, activo, estado_ia, ingredientes_principales, complementos) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 'pendiente', $8, $9) 
        RETURNING id`,
-      [restaurante_id, nombre, descripcion, precio, categoria_id, url_imagen, activo !== undefined ? activo : true]
+      [
+        restaurante_id, 
+        nombre, 
+        descripcion, 
+        precio, 
+        final_categoria_id, 
+        url_imagen, 
+        activo !== undefined ? (activo === 'true' || activo === true) : true,
+        JSON.stringify(ingredientes_principales || []),
+        JSON.stringify(complementos || [])
+      ]
     );
-
-    const platillo_id = dishRes.rows[0].id;
-
-    // 2. Manejar ingredientes
-    if (ingredientes && Array.isArray(ingredientes)) {
-      for (const ingrediente_id of ingredientes) {
-        await client.query(
-          'INSERT INTO receta_platillo (platillo_id, ingrediente_id) VALUES ($1, $2)',
-          [platillo_id, ingrediente_id]
-        );
-      }
-    }
 
     await client.query('COMMIT');
 
-    // 3. Invalidar caché
+    // 2. Invalidar caché
     await redisClient.del(`cache:menu:${restaurante_id}`);
     await redisClient.del('cache:busquedas_globales');
 
     res.status(201).json({
       mensaje: 'Platillo creado correctamente',
-      platillo_id
+      platillo_id: dishRes.rows[0].id
     });
 
   } catch (error) {
@@ -76,8 +90,19 @@ const createDish = async (req, res) => {
 
 const updateDish = async (req, res) => {
   const { id } = req.params;
-  const { nombre, descripcion, precio, categoria_id, ingredientes, activo } = req.body;
+  let { 
+    nombre, descripcion, precio, categoria_id, categoria,
+    ingredientes_principales, complementos, activo 
+  } = req.body;
   const restaurante_id = req.user.id;
+
+  // Parsear JSON strings si vienen de FormData
+  try {
+    if (typeof ingredientes_principales === 'string') ingredientes_principales = JSON.parse(ingredientes_principales);
+    if (typeof complementos === 'string') complementos = JSON.parse(complementos);
+  } catch (e) {
+    console.warn('Error parseando ingredientes/complementos en update:', e);
+  }
 
   // URL de imagen (si se sube nueva)
   let url_imagen = req.file ? req.file.location : req.body.url_imagen;
@@ -87,15 +112,14 @@ const updateDish = async (req, res) => {
     url_imagen = `${process.env.CLOUDFRONT_DOMAIN}${s3Url.pathname}`;
   }
 
-  // Validar categoría
-  if (categoria_id) {
-    const catCheck = await db.query(
-      'SELECT id FROM categorias_restaurante WHERE id = $1 AND restaurante_id = $2',
-      [categoria_id, restaurante_id]
+  // Manejar categoría por nombre si se envía
+  let final_categoria_id = categoria_id;
+  if (!final_categoria_id && categoria) {
+    const catRes = await db.query(
+      'INSERT INTO categorias_restaurante (restaurante_id, nombre) VALUES ($1, $2) ON CONFLICT (restaurante_id, nombre) DO UPDATE SET nombre = EXCLUDED.nombre RETURNING id',
+      [restaurante_id, categoria]
     );
-    if (catCheck.rows.length === 0) {
-      return res.status(400).json({ mensaje: 'La categoría seleccionada no es válida para tu restaurante' });
-    }
+    final_categoria_id = catRes.rows[0].id;
   }
 
   const client = await db.pool.connect();
@@ -111,28 +135,30 @@ const updateDish = async (req, res) => {
           precio = COALESCE($3, precio),
           categoria_id = COALESCE($4, categoria_id),
           url_imagen = COALESCE($5, url_imagen),
-          activo = COALESCE($6, activo)
-      WHERE id = $7 AND restaurante_id = $8
+          activo = COALESCE($6, activo),
+          ingredientes_principales = COALESCE($7, ingredientes_principales),
+          complementos = COALESCE($8, complementos)
+      WHERE id = $9 AND restaurante_id = $10
       RETURNING id
     `;
-    const updateValues = [nombre, descripcion, precio, categoria_id, url_imagen, activo, id, restaurante_id];
+    const updateValues = [
+      nombre, 
+      descripcion, 
+      precio, 
+      final_categoria_id, 
+      url_imagen, 
+      activo !== undefined ? (activo === 'true' || activo === true) : undefined, 
+      ingredientes_principales ? JSON.stringify(ingredientes_principales) : null,
+      complementos ? JSON.stringify(complementos) : null,
+      id, 
+      restaurante_id
+    ];
     
     const dishRes = await client.query(updateQuery, updateValues);
 
     if (dishRes.rows.length === 0) {
       await client.query('ROLLBACK');
       return res.status(404).json({ mensaje: 'Platillo no encontrado o no tienes permisos' });
-    }
-
-    // 2. Actualizar ingredientes (opcional: solo si se envían)
-    if (ingredientes && Array.isArray(ingredientes)) {
-      await client.query('DELETE FROM receta_platillo WHERE platillo_id = $1', [id]);
-      for (const ingrediente_id of ingredientes) {
-        await client.query(
-          'INSERT INTO receta_platillo (platillo_id, ingrediente_id) VALUES ($1, $2)',
-          [id, ingrediente_id]
-        );
-      }
     }
 
     await client.query('COMMIT');
@@ -206,7 +232,7 @@ const getPublicMenu = async (req, res) => {
 
     // 3. Obtener platillos con sus categorías ordenadas (solo activos)
     const dishesRes = await db.query(
-      `SELECT p.id, p.nombre, p.descripcion, p.precio, p.url_imagen, c.nombre as categoria_nombre, c.orden as categoria_orden
+      `SELECT p.id, p.nombre, p.descripcion, p.precio, p.url_imagen, p.ingredientes_principales, p.complementos, c.nombre as categoria_nombre, c.orden as categoria_orden
        FROM platillos p
        LEFT JOIN categorias_restaurante c ON p.categoria_id = c.id
        WHERE p.restaurante_id = $1 AND p.activo = true
@@ -248,7 +274,9 @@ const getPublicMenu = async (req, res) => {
         nombre: dish.nombre,
         descripcion: dish.descripcion,
         precio: dish.precio,
-        url_imagen: dish.url_imagen
+        url_imagen: dish.url_imagen,
+        ingredientes_principales: dish.ingredientes_principales,
+        complementos: dish.complementos
       });
     });
 
@@ -268,7 +296,7 @@ const getDishes = async (req, res) => {
 
   try {
     const result = await db.query(
-      `SELECT p.id, p.nombre, p.descripcion, p.precio, p.url_imagen, p.estado_ia, p.activo, c.nombre as categoria_nombre
+      `SELECT p.id, p.nombre, p.descripcion, p.precio, p.url_imagen, p.estado_ia, p.activo, p.ingredientes_principales, p.complementos, c.nombre as categoria_nombre
        FROM platillos p
        LEFT JOIN categorias_restaurante c ON p.categoria_id = c.id
        WHERE p.restaurante_id = $1

@@ -140,3 +140,11 @@ COMMENT ON TABLE platillos IS 'Información de los platillos. La IA está en esp
 COMMENT ON TABLE ingredientes_catalogo IS 'Catálogo global de ingredientes con metadatos de alérgenos y dieta.';
 COMMENT ON TABLE receta_platillo IS 'Relación detallada de ingredientes por platillo.';
 COMMENT ON TABLE interacciones_feed IS 'Registro de actividad de los comensales.';
+
+
+-- 12. ÍNDICES DE OPTIMIZACIÓN DE RENDIMIENTO
+CREATE INDEX IF NOT EXISTS idx_restaurantes_email ON restaurantes(email);
+CREATE INDEX IF NOT EXISTS idx_platillos_restaurante ON platillos(restaurante_id);
+CREATE INDEX IF NOT EXISTS idx_categorias_restaurante_id ON categorias_restaurante(restaurante_id);
+CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token ON refresh_tokens(token);
+CREATE INDEX IF NOT EXISTS idx_platillos_activo ON platillos(activo) WHERE activo = true;

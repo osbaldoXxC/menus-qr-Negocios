@@ -1,44 +1,115 @@
+import { Link } from 'react-router-dom';
+import { Logo } from './Logo';
+
 export function Footer() {
   return (
-    <footer className="bg-black border-t border-gray-800 py-12 px-4 relative z-10">
-      <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8 text-center md:text-left">
-          <div>
-            <div className="flex items-center gap-2 justify-center md:justify-start mb-4">
-              <span className="text-2xl">🌮</span>
-              <span className="font-bold bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">
-                MexxicanMX
-              </span>
+    <footer className="bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border-t border-apple-border dark:border-apple-dark-border backdrop-blur-xl transition-colors duration-500">
+      <div className="mx-auto max-w-[1400px] px-5 md:px-6 lg:px-8">
+        {/* Main grid */}
+        <div className="py-12 md:py-16 grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-10">
+          {/* Brand */}
+          <div className="col-span-2 md:col-span-1">
+            <div className="flex items-center gap-2.5 mb-4">
+              <Logo size={28} />
+              <span className="text-[17px] font-bold text-apple-text dark:text-apple-dark-text">MexxicanMX</span>
             </div>
-            <p className="text-gray-500 text-sm">Descubre los mejores sabores de México con IA</p>
+            <p className="text-[13px] text-apple-text-secondary leading-relaxed max-w-[240px] font-medium">
+              Motor de descubrimiento gastronómico impulsado por IA. Encuentra tu platillo perfecto.
+            </p>
           </div>
+
+          {/* Product */}
           <div>
-            <h4 className="font-semibold text-white mb-4">Producto</h4>
-            <ul className="space-y-2 text-sm text-gray-500">
-              <li><a href="/como-funciona" className="hover:text-orange-500 transition">Cómo funciona</a></li>
-              <li><a href="/precios" className="hover:text-orange-500 transition">Precios</a></li>
-              <li><a href="/para-restaurantes" className="hover:text-orange-500 transition">Para restaurantes</a></li>
+            <h4 className="text-[11px] font-black text-apple-text dark:text-apple-dark-text mb-4 uppercase tracking-[0.1em]">
+              Producto
+            </h4>
+            <ul className="space-y-2.5">
+              <li>
+                <Link
+                  to="/como-funciona"
+                  className="text-[13px] text-apple-text-secondary hover:text-apple-blue transition-colors duration-200 font-medium"
+                >
+                  Cómo funciona
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/precios"
+                  className="text-[13px] text-apple-text-secondary hover:text-apple-blue transition-colors duration-200 font-medium"
+                >
+                  Precios
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/para-restaurantes"
+                  className="text-[13px] text-apple-text-secondary hover:text-apple-blue transition-colors duration-200 font-medium"
+                >
+                  Para restaurantes
+                </Link>
+              </li>
             </ul>
           </div>
+
+          {/* Company */}
           <div>
-            <h4 className="font-semibold text-white mb-4">Compañía</h4>
-            <ul className="space-y-2 text-sm text-gray-500">
-              <li><a href="#" className="hover:text-orange-500 transition">Blog</a></li>
-              <li><a href="#" className="hover:text-orange-500 transition">Prensa</a></li>
-              <li><a href="#" className="hover:text-orange-500 transition">Contacto</a></li>
+            <h4 className="text-[11px] font-black text-apple-text dark:text-apple-dark-text mb-4 uppercase tracking-[0.1em]">
+              Compañía
+            </h4>
+            <ul className="space-y-2.5">
+              <li>
+                <Link
+                  to="/landing"
+                  className="text-[13px] text-apple-text-secondary hover:text-apple-blue transition-colors duration-200 font-medium"
+                >
+                  Blog
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/landing"
+                  className="text-[13px] text-apple-text-secondary hover:text-apple-blue transition-colors duration-200 font-medium"
+                >
+                  Contacto
+                </Link>
+              </li>
             </ul>
           </div>
+
+          {/* Legal */}
           <div>
-            <h4 className="font-semibold text-white mb-4">Legal</h4>
-            <ul className="space-y-2 text-sm text-gray-500">
-              <li><a href="#" className="hover:text-orange-500 transition">Términos</a></li>
-              <li><a href="#" className="hover:text-orange-500 transition">Privacidad</a></li>
-              <li><a href="#" className="hover:text-orange-500 transition">Cookies</a></li>
+            <h4 className="text-[11px] font-black text-apple-text dark:text-apple-dark-text mb-4 uppercase tracking-[0.1em]">
+              Legal
+            </h4>
+            <ul className="space-y-2.5">
+              <li>
+                <Link
+                  to="/landing"
+                  className="text-[13px] text-apple-text-secondary hover:text-apple-blue transition-colors duration-200 font-medium"
+                >
+                  Privacidad
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/landing"
+                  className="text-[13px] text-apple-text-secondary hover:text-apple-blue transition-colors duration-200 font-medium"
+                >
+                  Términos
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
-        <div className="text-center text-gray-600 text-sm pt-8 border-t border-gray-800">
-          © 2024 MexxicanMX - Motor de Descubrimiento Gastronómico con IA
+
+        {/* Bottom bar */}
+        <div className="py-5 border-t border-apple-border dark:border-apple-dark-border flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-[12px] text-apple-text-tertiary font-medium">
+            © {new Date().getFullYear()} MexxicanMX. Todos los derechos reservados.
+          </p>
+          <p className="text-[12px] text-apple-text-tertiary font-bold">
+            Hecho con 🌶️ en México
+          </p>
         </div>
       </div>
     </footer>
