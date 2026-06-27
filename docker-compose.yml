@@ -4,7 +4,7 @@ services:
     image: ankane/pgvector:latest
     environment:
       POSTGRES_USER: admin
-      POSTGRES_PASSWORD: pass}word123
+      POSTGRES_PASSWORD: password123
       POSTGRES_DB: mexxicanmx_db
     ports:
       - "5432:5432"
@@ -70,6 +70,21 @@ services:
       - app-network
     depends_on:
       - backend
+
+  admin:
+    build:
+      context: ./admin
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./admin:/app
+      - /app/node_modules
+    networks:
+      - app-network
+    depends_on:
+      - backend
+
 
   ai-engine:
     build:

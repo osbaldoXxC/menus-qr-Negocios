@@ -9,6 +9,7 @@ const {
 } = require('../controllers/categoryController');
 const authMiddleware = require('../middleware/authMiddleware');
 const roleMiddleware = require('../middleware/roleMiddleware');
+const activeRestaurantMiddleware = require('../middleware/activeRestaurantMiddleware');
 
 // Prefijo: /api/categories
 // Todos requieren autenticación y rol de Restaurante o Admin
@@ -17,9 +18,9 @@ router.use(authMiddleware);
 router.use(roleMiddleware(['RESTAURANTE', 'SUPER_ADMIN']));
 
 router.get('/', getCategories);
-router.post('/', createCategory);
-router.put('/orden', reorderCategories);
-router.put('/:id', updateCategory);
-router.delete('/:id', deleteCategory);
+router.post('/', activeRestaurantMiddleware, createCategory);
+router.put('/orden', activeRestaurantMiddleware, reorderCategories);
+router.put('/:id', activeRestaurantMiddleware, updateCategory);
+router.delete('/:id', activeRestaurantMiddleware, deleteCategory);
 
 module.exports = router;

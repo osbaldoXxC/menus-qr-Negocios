@@ -39,6 +39,10 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 require('./config/db');
 require('./config/redis');
 
+// Iniciar verificador de suscripciones expiradas
+const { initSubscriptionCheck } = require('./services/subscriptionCheck');
+initSubscriptionCheck();
+
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/menu', require('./routes/menuRoutes'));

@@ -11,12 +11,17 @@ CREATE TABLE IF NOT EXISTS restaurantes (
     descripcion TEXT,
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
+    nombre_dueno VARCHAR(255) DEFAULT '',
+    slug VARCHAR(255) UNIQUE,
     ubicacion_lat FLOAT,
     ubicacion_lng FLOAT,
     suscripcion_activa BOOLEAN DEFAULT true, -- Crítico para ABAC
     rol VARCHAR(50) NOT NULL DEFAULT 'RESTAURANTE', -- 'RESTAURANTE', 'SUPER_ADMIN'
     plan VARCHAR(50) DEFAULT 'basico', -- 'basico', 'premium'
     ultimo_pago DATE,
+    estado VARCHAR(50) DEFAULT 'pendiente', -- 'pendiente', 'aprobado', 'suspendido'
+    fecha_vencimiento TIMESTAMP WITH TIME ZONE,
+    dias_acceso_permitidos INTEGER DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -38,6 +43,7 @@ CREATE TABLE IF NOT EXISTS configuracion_tema (
     layout_type layout_style DEFAULT 'TARJETAS_DETALLADAS',
     banner_promocional_activo BOOLEAN DEFAULT false,
     banner_promocional_texto TEXT,
+    config_diseno JSONB DEFAULT '{}'::jsonb,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -82,6 +88,8 @@ CREATE TABLE IF NOT EXISTS platillos (
     activo BOOLEAN DEFAULT true, -- Soporte para pausado lógico
     vector_ia vector(768), -- Restaurado a vector_ia para compatibilidad con código actual
     estado_ia VARCHAR(50) DEFAULT 'pendiente', -- 'pendiente', 'procesando', 'completado'
+    ingredientes_principales JSONB DEFAULT '[]'::jsonb,
+    complementos JSONB DEFAULT '[]'::jsonb,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -148,3 +156,24 @@ CREATE INDEX IF NOT EXISTS idx_platillos_restaurante ON platillos(restaurante_id
 CREATE INDEX IF NOT EXISTS idx_categorias_restaurante_id ON categorias_restaurante(restaurante_id);
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token ON refresh_tokens(token);
 CREATE INDEX IF NOT EXISTS idx_platillos_activo ON platillos(activo) WHERE activo = true;
+
+-- 13. DATOS SEMILLA PARA TESTING Y DEMOSTRACIÓN (Password para todos: admin123)
+-- SuperAdmin
+INSERT INTO restaurantes (id, nombre_negocio, email, password_hash, rol, plan, estado, suscripcion_activa, slug)
+VALUES ('00000000-0000-0000-0000-000000000000', 'Administrador MexxicanMX', 'admin@mexxican.mx', '$2a$08$G7hDb7CT2ezCKrRO2MaFN.sPCWu7ikGPw7ivF69AGcth4xtqVWh/i', 'SUPER_ADMIN', 'premium', 'aprobado', true, 'administrador-mexxicanmx')
+ON CONFLICT (email) DO NOTHING;
+
+-- Restaurante Pendiente (Recién Registrado)
+INSERT INTO restaurantes (id, nombre_negocio, email, password_hash, rol, plan, estado, suscripcion_activa, dias_acceso_permitidos, slug)
+VALUES ('11111111-1111-1111-1111-111111111111', 'Taco Loco Centro', 'taco@test.com', '$2a$08$G7hDb7CT2ezCKrRO2MaFN.sPCWu7ikGPw7ivF69AGcth4xtqVWh/i', 'RESTAURANTE', 'basico', 'pendiente', false, 0, 'taco-loco-centro')
+ON CONFLICT (email) DO NOTHING;
+
+-- Restaurante Aprobado y Activo
+INSERT INTO restaurantes (id, nombre_negocio, email, password_hash, rol, plan, estado, suscripcion_activa, dias_acceso_permitidos, fecha_vencimiento, slug)
+VALUES ('22222222-2222-2222-2222-222222222222', 'Pizzería Bella Vista', 'pizza@test.com', '$2a$08$G7hDb7CT2ezCKrRO2MaFN.sPCWu7ikGPw7ivF69AGcth4xtqVWh/i', 'RESTAURANTE', 'premium', 'aprobado', true, 30, CURRENT_TIMESTAMP + INTERVAL '30 days', 'pizzeria-bella-vista')
+ON CONFLICT (email) DO NOTHING;
+
+-- Restaurante Suspendido
+INSERT INTO restaurantes (id, nombre_negocio, email, password_hash, rol, plan, estado, suscripcion_activa, dias_acceso_permitidos, slug)
+VALUES ('33333333-3333-3333-3333-333333333333', 'Sushi Master Express', 'sushi@test.com', '$2a$08$G7hDb7CT2ezCKrRO2MaFN.sPCWu7ikGPw7ivF69AGcth4xtqVWh/i', 'RESTAURANTE', 'basico', 'suspendido', false, 0, 'sushi-master-express')
+ON CONFLICT (email) DO NOTHING;

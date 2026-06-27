@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { restauranteService } from '../../services/restaurante';
-import { LayoutDashboard, QrCode, Utensils, Zap, ExternalLink, Copy, Download, PlusCircle, ChevronRight, TrendingUp } from 'lucide-react';
+import { LayoutDashboard, QrCode, Utensils, Zap, ExternalLink, Copy, Download, PlusCircle, ChevronRight, Calendar, Clock } from 'lucide-react';
 
 export function DashboardRestaurante() {
   const navigate = useNavigate();
   const [restauranteInfo, setRestauranteInfo] = useState<any>(null);
   const [platillos, setPlatillos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [diasRestantes, setDiasRestantes] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -19,6 +20,14 @@ export function DashboardRestaurante() {
         ]);
         setRestauranteInfo(info);
         setPlatillos(platillosData);
+
+        if (info?.fecha_vencimiento) {
+          const fechaVenc = new Date(info.fecha_vencimiento);
+          const hoy = new Date();
+          const diffTime = fechaVenc.getTime() - hoy.getTime();
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          setDiasRestantes(diffDays > 0 ? diffDays : 0);
+        }
       } catch (error) {
         console.error('Error cargando datos:', error);
       } finally {
@@ -47,12 +56,36 @@ export function DashboardRestaurante() {
 
   const stats = [
     { label: 'Platillos en menú', value: platillos.length, icon: Utensils, color: 'text-apple-blue', bg: 'bg-apple-blue/10' },
-    { label: 'Visitas este mes', value: '1,284', icon: TrendingUp, color: 'text-green-500', bg: 'bg-green-500/10' },
-    { label: 'Suscripción', value: 'Premium', icon: Zap, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+    { 
+      label: 'Acceso Restante', 
+      value: restauranteInfo?.fecha_vencimiento ? (diasRestantes !== null ? `${diasRestantes} días` : 'Calculando...') : 'Ilimitado', 
+      icon: Clock, 
+      color: diasRestantes !== null && diasRestantes <= 5 ? 'text-red-500' : 'text-green-500', 
+      bg: diasRestantes !== null && diasRestantes <= 5 ? 'bg-red-500/10' : 'bg-green-500/10' 
+    },
+    { label: 'Suscripción', value: restauranteInfo?.plan ? restauranteInfo.plan.toUpperCase() : 'Premium', icon: Zap, color: 'text-amber-500', bg: 'bg-amber-500/10' },
   ];
 
   return (
     <div className="py-12 px-6 lg:px-12 max-w-[1400px] mx-auto min-h-screen">
+      {restauranteInfo?.fecha_vencimiento && diasRestantes !== null && diasRestantes <= 5 && (
+        <motion.div
+          className="mb-8 p-6 rounded-[2rem] bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 flex items-center justify-between shadow-sm"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <div className="flex items-center gap-4">
+            <span className="text-3xl">⚠️</span>
+            <div>
+              <h3 className="font-bold text-lg mb-0.5">¡Tu periodo de acceso casi termina!</h3>
+              <p className="text-sm opacity-90 font-medium">
+                Te quedan solo <strong>{diasRestantes} {diasRestantes === 1 ? 'día' : 'días'}</strong> de servicio habilitado. Por favor, contacta a soporte para renovar tu suscripción y evitar que tu menú QR se desactive.
+              </p>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
       <motion.div
         className="mb-12"
         initial={{ opacity: 0, x: -20 }}
@@ -66,57 +99,65 @@ export function DashboardRestaurante() {
           Todo listo para gestionar <span className="text-apple-text dark:text-apple-dark-text font-bold">{restauranteInfo?.nombre_negocio || 'tu restaurante'}</span>
         </p>
       </motion.div>
-
-      <div className="grid lg:grid-cols-3 gap-8">
-        {/* QR Section - Priority 1 */}
-        <motion.div 
-          className="lg:col-span-2 group relative p-10 rounded-[2.5rem] bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border shadow-apple-sm hover:shadow-apple-xl transition-all duration-500 overflow-hidden"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <div className="absolute top-0 right-0 w-80 h-80 bg-apple-blue/5 blur-[100px] group-hover:bg-apple-blue/10 transition-all duration-500" />
-          
-          <div className="flex flex-col md:flex-row gap-10 items-center relative z-10">
-            <div className="w-56 h-56 bg-white p-5 rounded-[2.5rem] shadow-apple-xl flex-shrink-0 group-hover:scale-105 transition-transform duration-500">
-              <div className="w-full h-full bg-apple-bg-secondary rounded-2xl flex items-center justify-center border-2 border-dashed border-apple-border">
-                 <QrCode size={64} className="text-apple-text-tertiary" />
-              </div>
-            </div>
-
-            <div className="flex-1 text-center md:text-left">
-              <h2 className="text-3xl font-bold mb-4 tracking-tight">Tu Puerta Digital</h2>
-              <p className="text-apple-text-secondary dark:text-apple-dark-text-secondary text-lg mb-8 leading-relaxed font-medium">
-                Tus clientes pueden ver tu menú escaneando este código. Colócalo en tus mesas para una experiencia premium.
-              </p>
-              
-              <div className="flex flex-wrap gap-3 justify-center md:justify-start">
-                <Link 
-                  to="/dashboard/qr"
-                  className="flex items-center gap-2 px-6 py-3 bg-apple-blue text-white font-bold rounded-2xl hover:bg-apple-blue-hover shadow-apple-glow transition-all active:scale-95"
-                >
-                  <ExternalLink size={18} />
-                  Ver QR
-                </Link>
-                <button className="flex items-center gap-2 px-6 py-3 bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border font-bold rounded-2xl hover:bg-apple-bg-tertiary transition-all active:scale-95">
-                  <Download size={18} />
-                  Descargar
-                </button>
-                <button 
-                  onClick={() => {
-                    const url = `${window.location.origin}/menu/${restauranteInfo?.id}`;
-                    navigator.clipboard.writeText(url);
-                    alert('URL copiada al portapapeles');
-                  }}
-                  className="flex items-center gap-2 px-6 py-3 bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border font-bold rounded-2xl hover:bg-apple-bg-tertiary transition-all active:scale-95"
-                >
-                  <Copy size={18} />
-                  Copiar URL
-                </button>
-              </div>
-            </div>
-          </div>
-        </motion.div>
+ 
+       <div className="grid lg:grid-cols-3 gap-8">
+         {/* QR Section - Priority 1 */}
+         <motion.div 
+           className="lg:col-span-2 group relative p-10 rounded-[2.5rem] bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border shadow-apple-sm hover:shadow-apple-xl transition-all duration-500 overflow-hidden"
+           initial={{ opacity: 0, y: 20 }}
+           animate={{ opacity: 1, y: 0 }}
+           transition={{ delay: 0.1 }}
+         >
+           <div className="absolute top-0 right-0 w-80 h-80 bg-apple-blue/5 blur-[100px] group-hover:bg-apple-blue/10 transition-all duration-500" />
+           
+           <div className="flex flex-col md:flex-row gap-10 items-center relative z-10">
+             <div className="w-56 h-56 bg-white p-4 rounded-[2.5rem] shadow-apple-xl flex-shrink-0 group-hover:scale-105 transition-transform duration-500 flex items-center justify-center border border-apple-border">
+               {restauranteInfo ? (
+                 <img 
+                   src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`${window.location.origin}/menu/${restauranteInfo.slug || restauranteInfo.id}`)}`} 
+                   alt="Código QR del Menú" 
+                   className="w-full h-full object-contain"
+                 />
+               ) : (
+                 <div className="w-full h-full bg-apple-bg-secondary rounded-2xl flex items-center justify-center border-2 border-dashed border-apple-border">
+                    <QrCode size={64} className="text-apple-text-tertiary" />
+                 </div>
+               )}
+             </div>
+ 
+             <div className="flex-1 text-center md:text-left">
+               <h2 className="text-3xl font-bold mb-4 tracking-tight">Tu Puerta Digital</h2>
+               <p className="text-apple-text-secondary dark:text-apple-dark-text-secondary text-lg mb-8 leading-relaxed font-medium">
+                 Tus clientes pueden ver tu menú escaneando este código. Colócalo en tus mesas para una experiencia premium.
+               </p>
+               
+               <div className="flex flex-wrap gap-3 justify-center md:justify-start">
+                 <Link 
+                   to="/dashboard/qr"
+                   className="flex items-center gap-2 px-6 py-3 bg-apple-blue text-white font-bold rounded-2xl hover:bg-apple-blue-hover shadow-apple-glow transition-all active:scale-95"
+                 >
+                   <ExternalLink size={18} />
+                   Ver QR
+                 </Link>
+                 <button className="flex items-center gap-2 px-6 py-3 bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border font-bold rounded-2xl hover:bg-apple-bg-tertiary transition-all active:scale-95">
+                   <Download size={18} />
+                   Descargar
+                 </button>
+                 <button 
+                   onClick={() => {
+                     const url = `${window.location.origin}/menu/${restauranteInfo?.slug || restauranteInfo?.id}`;
+                     navigator.clipboard.writeText(url);
+                     alert('URL copiada al portapapeles');
+                   }}
+                   className="flex items-center gap-2 px-6 py-3 bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border font-bold rounded-2xl hover:bg-apple-bg-tertiary transition-all active:scale-95"
+                 >
+                   <Copy size={18} />
+                   Copiar URL
+                 </button>
+               </div>
+             </div>
+           </div>
+         </motion.div>
 
         {/* Stats & Actions */}
         <div className="space-y-6">

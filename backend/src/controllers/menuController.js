@@ -1,6 +1,15 @@
 const db = require('../config/db');
 const redisClient = require('../config/redis');
 const axios = require('axios');
+const s3Client = require('../config/s3');
+const { DeleteObjectCommand } = require('@aws-sdk/client-s3');
+const fs = require('fs');
+const path = require('path');
+
+const sanitizeText = (text) => {
+  if (typeof text !== 'string') return text;
+  return text.replace(/<script[^>]*>([\s\S]*?)<\/script>|<iframe[^>]*>([\s\S]*?)<\/iframe>|<object[^>]*>([\s\S]*?)<\/object>|javascript:/gi, '').trim();
+};
 
 const createDish = async (req, res) => {
   let { 
@@ -8,6 +17,9 @@ const createDish = async (req, res) => {
     ingredientes_principales, complementos, activo 
   } = req.body;
   const restaurante_id = req.user.id;
+  
+  nombre = sanitizeText(nombre);
+  descripcion = sanitizeText(descripcion);
   
   // Parsear JSON strings si vienen de FormData
   try {
@@ -72,6 +84,10 @@ const createDish = async (req, res) => {
 
     // 2. Invalidar caché
     await redisClient.del(`cache:menu:${restaurante_id}`);
+    const restSlugQuery = await db.query('SELECT slug FROM restaurantes WHERE id = $1', [restaurante_id]);
+    if (restSlugQuery.rows.length > 0 && restSlugQuery.rows[0].slug) {
+      await redisClient.del(`cache:menu:${restSlugQuery.rows[0].slug}`);
+    }
     await redisClient.del('cache:busquedas_globales');
 
     res.status(201).json({
@@ -81,6 +97,29 @@ const createDish = async (req, res) => {
 
   } catch (error) {
     await client.query('ROLLBACK');
+    
+    // Rollback de imagen del sistema de almacenamiento
+    if (req.file && req.file.key) {
+      try {
+        if (process.env.S3_BUCKET_NAME && process.env.AWS_ACCESS_KEY_ID) {
+          const deleteCommand = new DeleteObjectCommand({
+            Bucket: process.env.S3_BUCKET_NAME,
+            Key: req.file.key,
+          });
+          await s3Client.send(deleteCommand);
+          console.log('Imagen eliminada de S3 debido a rollback de BD:', req.file.key);
+        } else {
+          const localPath = path.join(__dirname, '../../uploads/dishes', path.basename(req.file.location));
+          if (fs.existsSync(localPath)) {
+            fs.unlinkSync(localPath);
+            console.log('Imagen local eliminada debido a rollback de BD:', localPath);
+          }
+        }
+      } catch (rollbackError) {
+        console.error('Error al realizar rollback de la imagen subida:', rollbackError);
+      }
+    }
+
     console.error('Error al crear platillo:', error);
     res.status(500).json({ mensaje: 'Error interno del servidor' });
   } finally {
@@ -95,6 +134,9 @@ const updateDish = async (req, res) => {
     ingredientes_principales, complementos, activo 
   } = req.body;
   const restaurante_id = req.user.id;
+
+  if (nombre) nombre = sanitizeText(nombre);
+  if (descripcion) descripcion = sanitizeText(descripcion);
 
   // Parsear JSON strings si vienen de FormData
   try {
@@ -163,6 +205,10 @@ const updateDish = async (req, res) => {
 
     await client.query('COMMIT');
     await redisClient.del(`cache:menu:${restaurante_id}`);
+    const restSlugQuery = await db.query('SELECT slug FROM restaurantes WHERE id = $1', [restaurante_id]);
+    if (restSlugQuery.rows.length > 0 && restSlugQuery.rows[0].slug) {
+      await redisClient.del(`cache:menu:${restSlugQuery.rows[0].slug}`);
+    }
 
     res.json({ mensaje: 'Platillo actualizado correctamente' });
 
@@ -190,6 +236,10 @@ const deleteDish = async (req, res) => {
     }
 
     await redisClient.del(`cache:menu:${restaurante_id}`);
+    const restSlugQuery2 = await db.query('SELECT slug FROM restaurantes WHERE id = $1', [restaurante_id]);
+    if (restSlugQuery2.rows.length > 0 && restSlugQuery2.rows[0].slug) {
+      await redisClient.del(`cache:menu:${restSlugQuery2.rows[0].slug}`);
+    }
 
     res.json({ mensaje: 'Platillo eliminado correctamente' });
   } catch (error) {
@@ -209,14 +259,26 @@ const getPublicMenu = async (req, res) => {
       return res.json(JSON.parse(cachedMenu));
     }
 
+    // Comprobar si es UUID o Slug
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(restaurant_id);
+    
+    if (!isUUID) {
+      const slugRegex = /^[a-z0-9-]{3,50}$/;
+      if (!slugRegex.test(restaurant_id)) {
+        return res.status(400).json({ mensaje: 'Identificador de restaurante o slug inválido' });
+      }
+    }
+
+    const queryField = isUUID ? 'r.id' : 'r.slug';
+
     // 2. PostgreSQL - Obtener info del restaurante y su tema
     const restRes = await db.query(
-      `SELECT r.nombre_negocio, r.suscripcion_activa, 
+      `SELECT r.id, r.nombre_negocio, r.suscripcion_activa, r.estado,
               t.logo_url, t.banner_url, t.color_primario, t.color_fondo, 
-              t.fuente_familia, t.layout_type, t.banner_promocional_activo, t.banner_promocional_texto
+              t.fuente_familia, t.layout_type, t.banner_promocional_activo, t.banner_promocional_texto, t.config_diseno
        FROM restaurantes r
        LEFT JOIN configuracion_tema t ON r.id = t.restaurante_id
-       WHERE r.id = $1`,
+       WHERE ${queryField} = $1`,
       [restaurant_id]
     );
 
@@ -226,9 +288,11 @@ const getPublicMenu = async (req, res) => {
 
     const restInfo = restRes.rows[0];
 
-    if (!restInfo.suscripcion_activa) {
-      return res.status(403).json({ mensaje: 'Restaurante no disponible temporalmente' });
+    if (restInfo.estado !== 'aprobado' || !restInfo.suscripcion_activa) {
+      return res.status(403).json({ mensaje: 'Menú no disponible o cuenta suspendida' });
     }
+
+    const realRestaurantId = restInfo.id;
 
     // 3. Obtener platillos con sus categorías ordenadas (solo activos)
     const dishesRes = await db.query(
@@ -237,7 +301,7 @@ const getPublicMenu = async (req, res) => {
        LEFT JOIN categorias_restaurante c ON p.categoria_id = c.id
        WHERE p.restaurante_id = $1 AND p.activo = true
        ORDER BY c.orden ASC, c.nombre ASC, p.nombre ASC`,
-      [restaurant_id]
+      [realRestaurantId]
     );
 
     // 4. Estructurar la respuesta
@@ -252,7 +316,8 @@ const getPublicMenu = async (req, res) => {
           fuente_familia: restInfo.fuente_familia,
           layout_type: restInfo.layout_type,
           banner_promocional_activo: restInfo.banner_promocional_activo,
-          banner_promocional_texto: restInfo.banner_promocional_texto
+          banner_promocional_texto: restInfo.banner_promocional_texto,
+          config_diseno: restInfo.config_diseno || {}
         }
       },
       categorias: []

@@ -10,17 +10,22 @@ export function MiMenu() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [deletingId, setDeletingId] = useState<string | number | null>(null);
+  const [restInfo, setRestInfo] = useState<any>(null);
 
   useEffect(() => {
-    cargarPlatillos();
+    cargarDatos();
   }, []);
 
-  const cargarPlatillos = async () => {
+  const cargarDatos = async () => {
     try {
-      const data = await restauranteService.getPlatillos();
-      setPlatillos(data);
+      const [platillosData, infoData] = await Promise.all([
+        restauranteService.getPlatillos(),
+        restauranteService.getRestauranteInfo()
+      ]);
+      setPlatillos(platillosData);
+      setRestInfo(infoData);
     } catch (error) {
-      console.error('Error cargando platillos:', error);
+      console.error('Error cargando datos del restaurante y platillos:', error);
     } finally {
       setLoading(false);
     }
@@ -77,8 +82,26 @@ export function MiMenu() {
     );
   }
 
+  const isSuspended = restInfo && (restInfo.estado === 'suspendido' || !restInfo.suscripcion_activa);
+
   return (
     <div className="py-12 px-6 lg:px-12 max-w-[1400px] mx-auto min-h-screen">
+      {/* Alerta de suspensión/inactividad */}
+      {isSuspended && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8 p-6 rounded-3xl bg-red-500/[0.08] border border-red-500/20 text-red-600 dark:text-red-400"
+        >
+          <h3 className="text-lg font-bold mb-1 flex items-center gap-2">
+            ⚠️ Cuenta Suspendida o Suscripción Expirada
+          </h3>
+          <p className="text-sm font-medium opacity-90 leading-relaxed">
+            Tu cuenta está en estado inactivo. Todos tus platillos han sido pausados de forma automática para el menú público y no es posible reactivarlos ni añadir nuevos hasta que la suscripción sea restaurada por el administrador.
+          </p>
+        </motion.div>
+      )}
+
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
         <div>
@@ -87,13 +110,23 @@ export function MiMenu() {
             Administra tus platillos, precios y disponibilidad.
           </p>
         </div>
-        <Link
-          to="/dashboard/platillos/nuevo"
-          className="flex items-center gap-2 px-6 py-4 bg-apple-blue text-white font-bold rounded-2xl shadow-apple-md hover:bg-apple-blue-hover transition-all active:scale-95 text-center justify-center"
-        >
-          <Plus size={20} />
-          Nuevo Platillo
-        </Link>
+        {!isSuspended ? (
+          <Link
+            to="/dashboard/platillos/nuevo"
+            className="flex items-center gap-2 px-6 py-4 bg-apple-blue text-white font-bold rounded-2xl shadow-apple-md hover:bg-apple-blue-hover transition-all active:scale-95 text-center justify-center"
+          >
+            <Plus size={20} />
+            Nuevo Platillo
+          </Link>
+        ) : (
+          <div
+            className="flex items-center gap-2 px-6 py-4 bg-gray-400 dark:bg-zinc-800 text-white dark:text-zinc-500 font-bold rounded-2xl cursor-not-allowed select-none text-center justify-center"
+            title="Suscripción inactiva"
+          >
+            <Plus size={20} />
+            Nuevo Platillo (Bloqueado)
+          </div>
+        )}
       </div>
 
       {/* Toolbar */}
@@ -192,18 +225,24 @@ export function MiMenu() {
 
                   <div className="flex items-center justify-between pt-6 border-t border-apple-border dark:border-apple-dark-border">
                     <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${platillo.activo !== false ? 'bg-green-500' : 'bg-red-500'}`} />
+                      <div className={`w-2 h-2 rounded-full ${(!isSuspended && platillo.activo !== false) ? 'bg-green-500' : 'bg-red-500'}`} />
                       <span className="text-[13px] font-bold uppercase tracking-wider text-apple-text-tertiary">
-                        {platillo.activo !== false ? 'Disponible' : 'Pausado'}
+                        {(!isSuspended && platillo.activo !== false) ? 'Disponible' : 'Pausado'}
                       </span>
                     </div>
-                    <button 
-                      onClick={() => handleToggleStatus(platillo)}
-                      className={`flex items-center gap-2 font-bold text-sm transition-colors ${platillo.activo !== false ? 'text-apple-text-secondary hover:text-red-500' : 'text-apple-blue hover:text-apple-blue-hover'}`}
-                    >
-                      {platillo.activo !== false ? <EyeOff size={16} /> : <Eye size={16} />}
-                      {platillo.activo !== false ? 'Pausar' : 'Activar'}
-                    </button>
+                    {!isSuspended ? (
+                      <button 
+                        onClick={() => handleToggleStatus(platillo)}
+                        className={`flex items-center gap-2 font-bold text-sm transition-colors ${platillo.activo !== false ? 'text-apple-text-secondary hover:text-red-500' : 'text-apple-blue hover:text-apple-blue-hover'}`}
+                      >
+                        {platillo.activo !== false ? <EyeOff size={16} /> : <Eye size={16} />}
+                        {platillo.activo !== false ? 'Pausar' : 'Activar'}
+                      </button>
+                    ) : (
+                      <span className="text-[12px] text-red-500 font-bold tracking-wider uppercase flex items-center gap-1 select-none">
+                        🔒 Deshabilitado
+                      </span>
+                    )}
                   </div>
                 </div>
               </motion.div>

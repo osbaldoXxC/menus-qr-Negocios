@@ -2,6 +2,11 @@ const db = require('../config/db');
 const redisClient = require('../config/redis');
 const QRCode = require('qrcode');
 
+const sanitizeText = (text) => {
+  if (typeof text !== 'string') return text;
+  return text.replace(/<script[^>]*>([\s\S]*?)<\/script>|<iframe[^>]*>([\s\S]*?)<\/iframe>|<object[^>]*>([\s\S]*?)<\/object>|javascript:/gi, '').trim();
+};
+
 const generateQR = async (req, res) => {
   try {
     // 1. Obtener restaurante_id del token (inyectado por authMiddleware)
@@ -43,16 +48,34 @@ const updateTheme = async (req, res) => {
     fuente_familia,
     layout_type,
     banner_promocional_activo,
-    banner_promocional_texto
+    banner_promocional_texto,
+    config_diseno
   } = req.body;
+
+  let sanitizedBannerTexto = banner_promocional_texto;
+  if (sanitizedBannerTexto) {
+    sanitizedBannerTexto = sanitizeText(sanitizedBannerTexto);
+  }
+
+  let sanitizedConfigDiseno = config_diseno;
+  if (sanitizedConfigDiseno && typeof sanitizedConfigDiseno === 'object') {
+    if (sanitizedConfigDiseno.informacion && typeof sanitizedConfigDiseno.informacion === 'object') {
+      if (sanitizedConfigDiseno.informacion.direccion) {
+        sanitizedConfigDiseno.informacion.direccion = sanitizeText(sanitizedConfigDiseno.informacion.direccion);
+      }
+      if (sanitizedConfigDiseno.informacion.ambiente) {
+        sanitizedConfigDiseno.informacion.ambiente = sanitizeText(sanitizedConfigDiseno.informacion.ambiente);
+      }
+    }
+  }
 
   try {
     // 2. Upsert (Insertar o Actualizar) la configuración del tema
     const query = `
       INSERT INTO configuracion_tema (
         restaurante_id, logo_url, banner_url, color_primario, color_fondo, 
-        fuente_familia, layout_type, banner_promocional_activo, banner_promocional_texto
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        fuente_familia, layout_type, banner_promocional_activo, banner_promocional_texto, config_diseno
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       ON CONFLICT (restaurante_id) DO UPDATE SET
         logo_url = EXCLUDED.logo_url,
         banner_url = EXCLUDED.banner_url,
@@ -62,19 +85,34 @@ const updateTheme = async (req, res) => {
         layout_type = EXCLUDED.layout_type,
         banner_promocional_activo = EXCLUDED.banner_promocional_activo,
         banner_promocional_texto = EXCLUDED.banner_promocional_texto,
+        config_diseno = EXCLUDED.config_diseno,
         updated_at = CURRENT_TIMESTAMP
       RETURNING *;
     `;
 
     const values = [
-      restaurante_id, logo_url, banner_url, color_primario, color_fondo,
-      fuente_familia, layout_type, banner_promocional_activo, banner_promocional_texto
+      restaurante_id,
+      logo_url,
+      banner_url,
+      color_primario,
+      color_fondo,
+      fuente_familia,
+      layout_type,
+      banner_promocional_activo,
+      sanitizedBannerTexto,
+      sanitizedConfigDiseno ? JSON.stringify(sanitizedConfigDiseno) : '{}'
     ];
 
     const result = await db.query(query, values);
 
     // 3. Invalidar caché del menú para que los cambios se vean reflejados instantáneamente
     await redisClient.del(`cache:menu:${restaurante_id}`);
+    
+    // Invalidar también la caché asociada al slug para evitar desincronizaciones en la vista pública
+    const restSlugQuery = await db.query('SELECT slug FROM restaurantes WHERE id = $1', [restaurante_id]);
+    if (restSlugQuery.rows.length > 0 && restSlugQuery.rows[0].slug) {
+      await redisClient.del(`cache:menu:${restSlugQuery.rows[0].slug}`);
+    }
 
     res.json({
       mensaje: 'Configuración de marca actualizada correctamente',
@@ -92,9 +130,9 @@ const getRestaurantInfo = async (req, res) => {
 
   try {
     const result = await db.query(
-      `SELECT r.id, r.nombre_negocio, r.email, r.plan, r.suscripcion_activa, r.nombre_dueno as "nombre_dueño",
+      `SELECT r.id, r.nombre_negocio, r.email, r.plan, r.suscripcion_activa, r.estado, r.fecha_vencimiento, r.nombre_dueno as "nombre_dueño", r.slug,
               t.logo_url, t.banner_url, t.color_primario, t.color_fondo, 
-              t.fuente_familia, t.layout_type, t.banner_promocional_activo, t.banner_promocional_texto
+              t.fuente_familia, t.layout_type, t.banner_promocional_activo, t.banner_promocional_texto, t.config_diseno
        FROM restaurantes r
        LEFT JOIN configuracion_tema t ON r.id = t.restaurante_id
        WHERE r.id = $1`,
