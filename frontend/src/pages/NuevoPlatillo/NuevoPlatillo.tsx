@@ -16,6 +16,13 @@ export function NuevoPlatillo() {
   const [imagenFile, setImagenFile] = useState<File | null>(null);
   
   const [categorias, setCategorias] = useState<any[]>([]);
+  const [cocinasCatalogo, setCocinasCatalogo] = useState<any[]>([]);
+  const [porcionesCatalogo, setPorcionesCatalogo] = useState<any[]>([]);
+  
+  const [nivelPicante, setNivelPicante] = useState<number>(0);
+  const [tamanoPorcionId, setTamanoPorcionId] = useState<string>('');
+  const [cocinasSeleccionadas, setCocinasSeleccionadas] = useState<string[]>([]);
+  const [customCocina, setCustomCocina] = useState<string>('');
 
   const [formData, setFormData] = useState({
     nombre: '',
@@ -29,9 +36,16 @@ export function NuevoPlatillo() {
   useEffect(() => {
     const init = async () => {
       try {
-        // Cargar categorías
-        const cats = await restauranteService.getCategorias();
+        // Cargar catálogos iniciales
+        const [cats, cocinas, porciones] = await Promise.all([
+          restauranteService.getCategorias(),
+          restauranteService.getCocinas(),
+          restauranteService.getPorciones()
+        ]);
+
         if (Array.isArray(cats)) setCategorias(cats);
+        if (Array.isArray(cocinas)) setCocinasCatalogo(cocinas);
+        if (Array.isArray(porciones)) setPorcionesCatalogo(porciones);
 
         // Si es edición, cargar datos del platillo
         if (isEdit) {
@@ -51,6 +65,14 @@ export function NuevoPlatillo() {
                 ? platillo.complementos 
                 : [''],
             });
+            setNivelPicante(platillo.nivel_picante !== undefined ? parseInt(platillo.nivel_picante) : 0);
+            setTamanoPorcionId(platillo.tamano_porcion_id || '');
+            
+            if (Array.isArray(platillo.cocinas)) {
+              // Mapear los IDs de las cocinas del platillo
+              const ids = platillo.cocinas.map((c: any) => c.id).filter(Boolean);
+              setCocinasSeleccionadas(ids);
+            }
             if (platillo.url_imagen) setImagenPreview(platillo.url_imagen);
           } else {
             setError('No se encontró el platillo para editar.');
@@ -110,6 +132,26 @@ export function NuevoPlatillo() {
     setFormData({ ...formData, complementos: nuevos });
   };
 
+  const toggleCocina = (idOrName: string) => {
+    if (cocinasSeleccionadas.includes(idOrName)) {
+      setCocinasSeleccionadas(cocinasSeleccionadas.filter(c => c !== idOrName));
+    } else {
+      setCocinasSeleccionadas([...cocinasSeleccionadas, idOrName]);
+    }
+  };
+
+  const addCustomCocina = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (customCocina.trim()) {
+      const cleanName = customCocina.trim();
+      // Evitar duplicados
+      if (!cocinasSeleccionadas.includes(cleanName)) {
+        setCocinasSeleccionadas([...cocinasSeleccionadas, cleanName]);
+      }
+      setCustomCocina('');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -123,6 +165,11 @@ export function NuevoPlatillo() {
       submitData.append('categoria', formData.categoria);
       submitData.append('ingredientes_principales', JSON.stringify(formData.ingredientes_principales.filter(i => i.trim())));
       submitData.append('complementos', JSON.stringify(formData.complementos.filter(c => c.trim())));
+      
+      // Nuevos campos
+      submitData.append('nivel_picante', nivelPicante.toString());
+      submitData.append('tamano_porcion_id', tamanoPorcionId);
+      submitData.append('cocinas', JSON.stringify(cocinasSeleccionadas));
 
       if (imagenFile) {
         submitData.append('imagen', imagenFile);
@@ -145,8 +192,8 @@ export function NuevoPlatillo() {
 
   if (fetching) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin text-4xl">🌮</div>
+      <div className="min-h-screen flex items-center justify-center bg-transparent">
+        <div className="animate-pulse text-6xl">🌮</div>
       </div>
     );
   }
@@ -285,6 +332,113 @@ export function NuevoPlatillo() {
                 ))}
               </datalist>
             </div>
+          </div>
+
+          {/* Tipo de Cocina (Múltiple Selección + Personalizado) */}
+          <div>
+            <label className="block text-sm font-bold text-apple-text-secondary dark:text-apple-dark-text-secondary mb-2">
+              Tipo de cocina
+            </label>
+            <div className="flex flex-wrap gap-2 mb-3">
+              {cocinasCatalogo.map((cocina) => {
+                const isSelected = cocinasSeleccionadas.includes(cocina.id);
+                return (
+                  <button
+                    key={cocina.id}
+                    type="button"
+                    onClick={() => toggleCocina(cocina.id)}
+                    className={`px-4 py-2 rounded-full text-xs font-semibold border transition-all ${
+                      isSelected
+                        ? 'bg-apple-blue text-white border-apple-blue shadow-apple-sm'
+                        : 'bg-black/[0.03] dark:bg-white/[0.04] border-apple-border dark:border-apple-dark-border text-apple-text-secondary hover:text-apple-text hover:bg-black/[0.06] dark:hover:bg-white/[0.08]'
+                    }`}
+                  >
+                    {cocina.nombre}
+                  </button>
+                );
+              })}
+              {/* Cocinas añadidas personalizadas */}
+              {cocinasSeleccionadas.filter(c => !cocinasCatalogo.some(cat => cat.id === c)).map((c, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => toggleCocina(c)}
+                  className="px-4 py-2 rounded-full text-xs font-semibold bg-emerald-500 text-white border border-emerald-500 shadow-apple-sm"
+                >
+                  {c} ✕
+                </button>
+              ))}
+            </div>
+
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={customCocina}
+                onChange={(e) => setCustomCocina(e.target.value)}
+                className="flex-1 px-4 py-2 bg-apple-bg-secondary dark:bg-apple-bg-secondary border border-apple-border dark:border-apple-dark-border rounded-xl text-xs focus:border-apple-blue/40 focus:outline-none transition-all duration-200"
+                placeholder="Ej: Fusión, Vegana..."
+              />
+              <button
+                type="button"
+                onClick={addCustomCocina}
+                className="px-4 py-2 bg-apple-blue text-white rounded-xl text-xs font-bold hover:bg-apple-blue-hover transition-colors"
+              >
+                + Añadir cocina
+              </button>
+            </div>
+          </div>
+
+          {/* Nivel de Picante */}
+          <div>
+            <label className="block text-sm font-bold text-apple-text-secondary dark:text-apple-dark-text-secondary mb-2">
+              Nivel de picante
+            </label>
+            <div className="flex items-center gap-4 py-1.5">
+              <button
+                type="button"
+                onClick={() => setNivelPicante(0)}
+                className={`px-3.5 py-2 rounded-full text-xs font-bold transition-all border ${
+                  nivelPicante === 0 
+                    ? 'bg-apple-blue/10 text-apple-blue border-apple-blue/20' 
+                    : 'bg-black/[0.03] dark:bg-white/[0.04] border-apple-border dark:border-apple-dark-border text-apple-text-secondary hover:text-apple-text'
+                }`}
+              >
+                No pica (0)
+              </button>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5].map((num) => (
+                  <button
+                    key={num}
+                    type="button"
+                    onClick={() => setNivelPicante(num)}
+                    className="text-2xl transition-transform hover:scale-125 focus:outline-none select-none"
+                  >
+                    <span className={num <= nivelPicante ? 'opacity-100 filter drop-shadow-[0_0_8px_rgba(230,57,70,0.55)]' : 'opacity-20 grayscale'}>
+                      🌶️
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Tamaño de Porción */}
+          <div>
+            <label className="block text-sm font-bold text-apple-text-secondary dark:text-apple-dark-text-secondary mb-2">
+              Tamaño de porción
+            </label>
+            <select
+              value={tamanoPorcionId}
+              onChange={(e) => setTamanoPorcionId(e.target.value)}
+              className="w-full px-5 py-4 bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border rounded-2xl text-[15px] focus:border-apple-blue/40 focus:ring-4 focus:ring-apple-blue/10 focus:outline-none transition-all duration-200"
+            >
+              <option value="">Selecciona el tamaño...</option>
+              {porcionesCatalogo.map((porc) => (
+                <option key={porc.id} value={porc.id}>
+                  {porc.nombre}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Ingredientes Principales */}

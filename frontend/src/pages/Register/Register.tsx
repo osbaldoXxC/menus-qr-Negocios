@@ -9,6 +9,10 @@ export function Register() {
   const { theme, toggleTheme } = useContext(ThemeContext);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [formData, setFormData] = useState({
     nombre_dueño: '',
     email: '',
@@ -16,10 +20,26 @@ export function Register() {
     nombre_negocio: '',
   });
 
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+
+    // Validación de contraseñas idénticas
+    if (formData.password !== confirmPassword) {
+      setError('Las contraseñas no coinciden. Por favor, verifícalas.');
+      setLoading(false);
+      return;
+    }
+
     try {
       await api.post('/auth/register', formData);
       navigate('/login', { state: { registered: true } });
@@ -47,6 +67,17 @@ export function Register() {
         <div className="absolute top-[-10%] left-[-5%] w-[45%] h-[50%] rounded-full bg-[#0071E3]/[0.06] dark:bg-[#2997FF]/[0.08] blur-[110px]" />
         <div className="absolute bottom-[-10%] right-[-5%] w-[40%] h-[45%] rounded-full bg-[#FF4A00]/[0.05] dark:bg-[#FF4A00]/[0.07] blur-[90px]" />
       </div>
+
+      {/* Back button */}
+      <motion.button
+        onClick={handleBack}
+        whileHover={{ x: -4 }}
+        whileTap={{ scale: 0.97 }}
+        className="fixed top-5 left-5 px-4 py-2.5 rounded-full bg-black/[0.05] dark:bg-white/[0.06] border border-black/[0.08] dark:border-white/[0.08] text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-white transition-all text-[14px] font-semibold flex items-center gap-2 z-10"
+      >
+        <span>←</span>
+        <span>Volver</span>
+      </motion.button>
 
       {/* Theme toggle */}
       <button
@@ -123,15 +154,43 @@ export function Register() {
             autoComplete="email"
           />
 
-          <input
-            type="password"
-            value={formData.password}
-            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            className={inputClass}
-            placeholder="Contraseña"
-            required
-            autoComplete="new-password"
-          />
+          <div className="relative">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              className={inputClass + ' pr-12'}
+              placeholder="Contraseña"
+              required
+              autoComplete="new-password"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-[#AEAEB2] dark:text-[#6E6E73] hover:text-[#86868B] dark:hover:text-[#A1A1A6] transition-colors select-none"
+            >
+              {showPassword ? '👁' : '👁‍🗨'}
+            </button>
+          </div>
+
+          <div className="relative">
+            <input
+              type={showConfirmPassword ? 'text' : 'password'}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className={inputClass + ' pr-12'}
+              placeholder="Confirmar contraseña"
+              required
+              autoComplete="new-password"
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-[#AEAEB2] dark:text-[#6E6E73] hover:text-[#86868B] dark:hover:text-[#A1A1A6] transition-colors select-none"
+            >
+              {showConfirmPassword ? '👁' : '👁‍🗨'}
+            </button>
+          </div>
 
           <motion.button
             type="submit"

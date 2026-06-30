@@ -12,6 +12,10 @@ interface Platillo {
   activo: boolean;
   ingredientes_principales?: string[];
   complementos?: string[];
+  nivel_picante?: number;
+  tamano_porcion_id?: string;
+  tamano_porcion_nombre?: string;
+  cocinas?: { id: string; nombre: string; }[];
 }
 
 interface Categoria {
@@ -483,12 +487,18 @@ function PlatilloCard({ platillo, layout, index, themeOptions }: {
     </div>
   );
 
+  const renderPicante = (level?: number) => {
+    if (!level || level <= 0) return null;
+    return '🌶️'.repeat(level);
+  };
+
   // Auto-detección inteligente de etiquetas
   const detectBadge = () => {
     const desc = platillo.descripcion?.toLowerCase() || '';
     const name = platillo.nombre?.toLowerCase() || '';
     if (desc.includes('nuevo') || name.includes('nuevo')) return 'Nuevo';
     if (desc.includes('oferta') || name.includes('oferta') || desc.includes('descuento') || desc.includes('promo')) return 'Oferta';
+    if (platillo.nivel_picante && platillo.nivel_picante >= 4) return 'Picante 🔥';
     if (desc.includes('🌶️') || desc.includes('picante') || name.includes('🌶️') || desc.includes('jalapeño') || desc.includes('chile')) return 'Picante';
     return null;
   };
@@ -521,6 +531,25 @@ function PlatilloCard({ platillo, layout, index, themeOptions }: {
             )}
           </div>
           <p className="text-[12px] mt-0.5 truncate" style={{ color: textSub }}>{platillo.descripcion}</p>
+          
+          {/* Nuevas propiedades en Lista Simple */}
+          <div className="flex flex-wrap items-center gap-2 mt-1 text-[10px] font-medium opacity-80" style={{ color: textSub }}>
+            {platillo.nivel_picante !== undefined && platillo.nivel_picante > 0 && (
+              <span className="text-red-500 filter drop-shadow-[0_0_4px_rgba(230,57,70,0.3)]">{renderPicante(platillo.nivel_picante)}</span>
+            )}
+            {platillo.nivel_picante !== undefined && platillo.nivel_picante > 0 && (platillo.tamano_porcion_nombre || (platillo.cocinas && platillo.cocinas.length > 0)) && (
+              <span>•</span>
+            )}
+            {platillo.tamano_porcion_nombre && (
+              <span>{platillo.tamano_porcion_nombre}</span>
+            )}
+            {platillo.tamano_porcion_nombre && platillo.cocinas && platillo.cocinas.length > 0 && (
+              <span>•</span>
+            )}
+            {platillo.cocinas && platillo.cocinas.length > 0 && (
+              <span>{platillo.cocinas.map(c => c.nombre).join(', ')}</span>
+            )}
+          </div>
         </div>
         <span className="font-black text-[16px] flex-shrink-0" style={{ color: primary }}>${platillo.precio}</span>
       </motion.div>
@@ -555,6 +584,12 @@ function PlatilloCard({ platillo, layout, index, themeOptions }: {
               {badgeLabel}
             </div>
           )}
+          {/* Nivel de Picante flotante en la esquina */}
+          {platillo.nivel_picante !== undefined && platillo.nivel_picante > 0 && (
+            <div className="absolute top-2.5 right-2.5 bg-black/40 backdrop-blur-md px-1.5 py-0.5 rounded-full text-[10px] select-none">
+              {renderPicante(platillo.nivel_picante)}
+            </div>
+          )}
           <div
             className="absolute bottom-2.5 right-2.5 px-2.5 py-1 rounded-full text-[12px] font-bold backdrop-blur-md shadow-sm"
             style={{ backgroundColor: `${primary}dd`, color: '#fff' }}
@@ -562,7 +597,17 @@ function PlatilloCard({ platillo, layout, index, themeOptions }: {
             ${platillo.precio}
           </div>
         </div>
-        <h3 className="font-bold text-[14px] text-center px-1 line-clamp-1" style={{ color: textMain }}>{platillo.nombre}</h3>
+        <div className="text-center px-1">
+          <h3 className="font-bold text-[14px] line-clamp-1" style={{ color: textMain }}>{platillo.nombre}</h3>
+          {(platillo.tamano_porcion_nombre || (platillo.cocinas && platillo.cocinas.length > 0)) && (
+            <p className="text-[10px] opacity-70 line-clamp-1 mt-0.5" style={{ color: textSub }}>
+              {[
+                platillo.tamano_porcion_nombre,
+                platillo.cocinas && platillo.cocinas.length > 0 ? platillo.cocinas.map(c => c.nombre).join(', ') : null
+              ].filter(Boolean).join(' • ')}
+            </p>
+          )}
+        </div>
       </motion.div>
     );
   }
@@ -610,9 +655,31 @@ function PlatilloCard({ platillo, layout, index, themeOptions }: {
           <h3 className="text-[1.15rem] font-black tracking-tight mb-2 pr-12" style={{ color: textMain }}>
             {platillo.nombre}
           </h3>
-          <p className="text-[13px] leading-relaxed mb-3" style={{ color: textSub }}>
+          <p className="text-[13px] leading-relaxed mb-3.5" style={{ color: textSub }}>
             {platillo.descripcion}
           </p>
+
+          {/* Picante, Cocina y Porción en Tarjetas Detalladas */}
+          <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5 mb-3.5 text-[11px] font-medium" style={{ color: textSub }}>
+            {platillo.nivel_picante !== undefined && platillo.nivel_picante > 0 && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-[9px] font-black tracking-wider uppercase opacity-60">Picante:</span>
+                <span className="text-sm filter drop-shadow-[0_0_4px_rgba(230,57,70,0.3)] select-none">{renderPicante(platillo.nivel_picante)}</span>
+              </div>
+            )}
+            {platillo.tamano_porcion_nombre && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-[9px] font-black tracking-wider uppercase opacity-60">Porción:</span>
+                <span className="font-bold">{platillo.tamano_porcion_nombre}</span>
+              </div>
+            )}
+            {platillo.cocinas && platillo.cocinas.length > 0 && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-[9px] font-black tracking-wider uppercase opacity-60">Cocina:</span>
+                <span className="font-bold">{platillo.cocinas.map(c => c.nombre).join(' • ')}</span>
+              </div>
+            )}
+          </div>
 
           {/* Ingredientes Principales */}
           {platillo.ingredientes_principales && platillo.ingredientes_principales.length > 0 && (

@@ -104,5 +104,25 @@ export const restauranteService = {
       console.warn('Error fetching categories:', error);
       return [];
     }
+  },
+
+  getCocinas: async () => {
+    try {
+      const response = await api.get('/categories/cocinas');
+      return response.data;
+    } catch (error) {
+      console.warn('Error fetching cocinas:', error);
+      return [];
+    }
+  },
+
+  getPorciones: async () => {
+    try {
+      const response = await api.get('/categories/porciones');
+      return response.data;
+    } catch (error) {
+      console.warn('Error fetching portion sizes:', error);
+      return [];
+    }
   }
 };

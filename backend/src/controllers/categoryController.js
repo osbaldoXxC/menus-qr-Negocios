@@ -156,10 +156,32 @@ const reorderCategories = async (req, res) => {
   }
 };
 
+const getCocinas = async (req, res) => {
+  try {
+    const result = await db.query('SELECT id, nombre FROM cocinas_catalogo ORDER BY nombre ASC');
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error al obtener cocinas:', error);
+    res.status(500).json({ mensaje: 'Error interno del servidor' });
+  }
+};
+
+const getPorciones = async (req, res) => {
+  try {
+    const result = await db.query('SELECT id, nombre FROM tamanos_porcion ORDER BY nombre ASC');
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error al obtener tamaños de porción:', error);
+    res.status(500).json({ mensaje: 'Error interno del servidor' });
+  }
+};
+
 module.exports = {
   createCategory,
   getCategories,
   updateCategory,
   deleteCategory,
-  reorderCategories
+  reorderCategories,
+  getCocinas,
+  getPorciones
 };
