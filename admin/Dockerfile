@@ -1,15 +1,15 @@
-FROM node:22-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
 COPY package*.json ./
-RUN if [ -f package.json ]; then \
-    npm install && \
-    npm install --os=linux --libc=musl --cpu=x64 @rolldown/binding-linux-x64-musl; \
-    fi
+
+# Optimizar instalación usando npm ci y Estándar de Node 18 para reuso de capas base
+RUN npm ci --quiet && \
+    npm install --os=linux --libc=musl --cpu=x64 @rolldown/binding-linux-x64-musl --quiet
 
 COPY . .
 
 EXPOSE 3001
 
-CMD ["sh", "-c", "if [ -f package.json ]; then npm run dev -- --host --port 3001; else tail -f /dev/null; fi"]
+CMD ["npm", "run", "dev", "--", "--host", "--port", "3001"]
