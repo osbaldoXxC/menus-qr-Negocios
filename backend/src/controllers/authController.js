@@ -1,6 +1,39 @@
 const db = require('../config/db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const redisClient = require('../config/redis');
+const axios = require('axios');
+
+// Función auxiliar para enviar correos con Resend
+const enviarCorreoResend = async (to, subject, htmlContent) => {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.warn('------------------------------------------------------------');
+    console.warn(`[OTP MOCK] Correo para: ${to}`);
+    console.warn(`[OTP MOCK] Asunto: ${subject}`);
+    console.warn(`[OTP MOCK] Contenido HTML:\n${htmlContent}`);
+    console.warn('------------------------------------------------------------');
+    return { mock: true };
+  }
+
+  try {
+    const response = await axios.post('https://api.resend.com/emails', {
+      from: 'MexxicanMX <onboarding@resend.dev>',
+      to: [to],
+      subject: subject,
+      html: htmlContent
+    }, {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error enviando correo con Resend:', error.response?.data || error.message);
+    throw new Error('Error al enviar el correo electrónico de verificación.');
+  }
+};
 
 const register = async (req, res) => {
   const { nombre_negocio, email, password, plan, nombre_dueño } = req.body;
@@ -20,15 +53,43 @@ const register = async (req, res) => {
     const salt = await bcrypt.genSalt(8);
     const password_hash = await bcrypt.hash(password, salt);
 
-    // 3. Insertar restaurante
+    // 3. Insertar restaurante (email_verificado queda en false por defecto)
     const newRest = await db.query(
-      'INSERT INTO restaurantes (nombre_negocio, email, password_hash, plan, nombre_dueno) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+      'INSERT INTO restaurantes (nombre_negocio, email, password_hash, plan, nombre_dueno, email_verificado) VALUES ($1, $2, $3, $4, $5, false) RETURNING id',
       [nombre_negocio, email, password_hash, plan || 'basico', nombre_dueño || '']
     );
 
+    const restId = newRest.rows[0].id;
+
+    // 4. Crear registro en la tabla de configuración de tema (obligatorio)
+    await db.query(
+      'INSERT INTO configuracion_tema (restaurante_id) VALUES ($1) ON CONFLICT DO NOTHING',
+      [restId]
+    );
+
+    // 5. Generar OTP de 6 dígitos
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // 6. Guardar OTP en Redis (expira en 5 minutos = 300s)
+    await redisClient.setEx(`otp:registro:${email}`, 300, otp);
+
+    // 7. Enviar OTP por correo con Resend
+    const htmlContent = `
+      <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #e1e1e1; border-radius: 12px;">
+        <h2 style="color: #2997FF; text-align: center;">¡Te damos la bienvenida a MexxicanMX!</h2>
+        <p>Gracias por registrar tu restaurante. Para completar el registro y verificar tu dirección de correo electrónico, utiliza el siguiente código de un solo uso (OTP):</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; background-color: #f5f5f7; padding: 10px 20px; border-radius: 8px; border: 1px solid #d2d2d7; color: #1d1d1f;">${otp}</span>
+        </div>
+        <p style="font-size: 12px; color: #86868b; text-align: center;">Este código es válido por 5 minutos. Si no solicitaste este código, puedes ignorar este correo de forma segura.</p>
+      </div>
+    `;
+    await enviarCorreoResend(email, 'Verifica tu cuenta - MexxicanMX', htmlContent);
+
     res.status(201).json({
-      mensaje: 'Registrado con éxito',
-      restaurante_id: newRest.rows[0].id
+      mensaje: 'Registrado con éxito. Por favor verifica tu correo con el código enviado.',
+      requiereVerificacion: true,
+      email
     });
   } catch (error) {
     console.error('Error en registro:', error);
@@ -44,32 +105,41 @@ const login = async (req, res) => {
   }
 
   try {
-    // 1. Buscar usuario (con índice activo en DB)
-    const result = await db.query('SELECT id, password_hash, rol, suscripcion_activa FROM restaurantes WHERE email = $1 LIMIT 1', [email]);
+    // 1. Buscar usuario
+    const result = await db.query('SELECT id, password_hash, rol, suscripcion_activa, email_verificado FROM restaurantes WHERE email = $1 LIMIT 1', [email]);
     if (result.rows.length === 0) {
       return res.status(401).json({ mensaje: 'Credenciales inválidas' });
     }
 
     const user = result.rows[0];
 
-    // 2. Comparar password (Costo optimizado a 8 rounds en registro)
+    // 2. Comparar password
     const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
       return res.status(401).json({ mensaje: 'Credenciales inválidas' });
     }
 
-    // 3. Verificar suscripción (Solo para restaurantes)
+    // 3. Verificar si el correo electrónico ha sido verificado (excluyendo SUPER_ADMIN)
+    if (!user.email_verificado && user.rol !== 'SUPER_ADMIN') {
+      return res.status(403).json({ 
+        mensaje: 'Tu correo electrónico no ha sido verificado.',
+        requiereVerificacion: true,
+        email
+      });
+    }
+
+    // 4. Verificar suscripción (Solo para restaurantes)
     if (!user.suscripcion_activa && user.rol !== 'SUPER_ADMIN') {
       return res.status(403).json({ mensaje: 'Suscripción inactiva. Contacte al administrador.' });
     }
 
-    // 4. Generar tokens en paralelo para reducir latencia
+    // 5. Generar tokens en paralelo
     const [accessToken, refreshToken] = await Promise.all([
       jwt.sign({ id: user.id, rol: user.rol }, process.env.JWT_SECRET, { expiresIn: '15m' }),
       jwt.sign({ id: user.id }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '7d' })
     ]);
 
-    // 5. Guardar Refresh Token de forma asíncrona (no bloqueante para la respuesta al cliente)
+    // 6. Guardar Refresh Token de forma asíncrona
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
     
@@ -78,7 +148,7 @@ const login = async (req, res) => {
       [user.id, refreshToken, expiresAt]
     ).catch(err => console.error('Error guardando refresh token (background):', err));
 
-    // 6. Responder inmediatamente
+    // 7. Responder inmediatamente
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -98,7 +168,176 @@ const login = async (req, res) => {
   }
 };
 
+// POST /api/auth/verify-email
+const verifyEmail = async (req, res) => {
+  const { email, codigo } = req.body;
+
+  if (!email || !codigo) {
+    return res.status(400).json({ mensaje: 'Email y código son requeridos' });
+  }
+
+  try {
+    // 1. Obtener código OTP desde Redis
+    const otpGuardado = await redisClient.get(`otp:registro:${email}`);
+    
+    if (!otpGuardado) {
+      return res.status(400).json({ mensaje: 'El código OTP ha expirado o es inválido' });
+    }
+
+    if (otpGuardado !== codigo) {
+      return res.status(400).json({ mensaje: 'El código OTP ingresado es incorrecto' });
+    }
+
+    // 2. Actualizar email_verificado en la base de datos
+    const result = await db.query(
+      'UPDATE restaurantes SET email_verificado = true WHERE email = $1 RETURNING id',
+      [email]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ mensaje: 'Restaurante no encontrado' });
+    }
+
+    // 3. Eliminar OTP de Redis
+    await redisClient.del(`otp:registro:${email}`);
+
+    res.json({ mensaje: 'Cuenta verificada con éxito. Ya puedes iniciar sesión.' });
+  } catch (error) {
+    console.error('Error en verificación de email:', error);
+    res.status(500).json({ mensaje: 'Error interno del servidor' });
+  }
+};
+
+// POST /api/auth/resend-verification
+const resendVerification = async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ mensaje: 'El email es requerido' });
+  }
+
+  try {
+    const result = await db.query('SELECT email_verificado FROM restaurantes WHERE email = $1', [email]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ mensaje: 'El email no está registrado' });
+    }
+
+    if (result.rows[0].email_verificado) {
+      return res.status(400).json({ mensaje: 'Este correo electrónico ya está verificado' });
+    }
+
+    // Generar nuevo OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    await redisClient.setEx(`otp:registro:${email}`, 300, otp);
+
+    const htmlContent = `
+      <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #e1e1e1; border-radius: 12px;">
+        <h2 style="color: #2997FF; text-align: center;">Tu nuevo código de verificación</h2>
+        <p>Has solicitado un nuevo código de verificación para tu cuenta. Utiliza el siguiente código OTP:</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; background-color: #f5f5f7; padding: 10px 20px; border-radius: 8px; border: 1px solid #d2d2d7; color: #1d1d1f;">${otp}</span>
+        </div>
+        <p style="font-size: 12px; color: #86868b; text-align: center;">Este código es válido por 5 minutos.</p>
+      </div>
+    `;
+    await enviarCorreoResend(email, 'Código de verificación - MexxicanMX', htmlContent);
+
+    res.json({ mensaje: 'Código de verificación reenviado con éxito.' });
+  } catch (error) {
+    console.error('Error al reenviar código:', error);
+    res.status(500).json({ mensaje: 'Error interno del servidor' });
+  }
+};
+
+// POST /api/auth/forgot-password
+const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ mensaje: 'El email es requerido' });
+  }
+
+  try {
+    // Verificar si el email existe
+    const result = await db.query('SELECT id FROM restaurantes WHERE email = $1', [email]);
+    if (result.rows.length === 0) {
+      // Por seguridad no confirmamos si existe, sólo indicamos que se ha enviado si el correo está registrado
+      return res.json({ mensaje: 'Si el correo está registrado, se enviará un código de verificación.' });
+    }
+
+    // Generar OTP de recuperación
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    await redisClient.setEx(`otp:recuperacion:${email}`, 300, otp);
+
+    const htmlContent = `
+      <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #e1e1e1; border-radius: 12px;">
+        <h2 style="color: #FF3B30; text-align: center;">Recuperación de Contraseña</h2>
+        <p>Has solicitado restablecer la contraseña de tu cuenta en MexxicanMX. Utiliza el siguiente código OTP de seguridad:</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; background-color: #fff2f2; padding: 10px 20px; border-radius: 8px; border: 1px solid #ffb3b3; color: #ff3b30;">${otp}</span>
+        </div>
+        <p>Si no has solicitado restablecer tu contraseña, te recomendamos verificar la seguridad de tu cuenta de inmediato.</p>
+        <p style="font-size: 12px; color: #86868b; text-align: center;">Este código expira en 5 minutos.</p>
+      </div>
+    `;
+    await enviarCorreoResend(email, 'Restablecer contraseña - MexxicanMX', htmlContent);
+
+    res.json({ mensaje: 'Si el correo está registrado, se enviará un código de verificación.' });
+  } catch (error) {
+    console.error('Error en recuperar contraseña:', error);
+    res.status(500).json({ mensaje: 'Error interno del servidor' });
+  }
+};
+
+// POST /api/auth/reset-password
+const resetPassword = async (req, res) => {
+  const { email, codigo, newPassword } = req.body;
+
+  if (!email || !codigo || !newPassword) {
+    return res.status(400).json({ mensaje: 'Email, código y nueva contraseña son requeridos' });
+  }
+
+  try {
+    // 1. Obtener OTP de Redis
+    const otpGuardado = await redisClient.get(`otp:recuperacion:${email}`);
+
+    if (!otpGuardado) {
+      return res.status(400).json({ mensaje: 'El código OTP ha expirado o es inválido' });
+    }
+
+    if (otpGuardado !== codigo) {
+      return res.status(400).json({ mensaje: 'El código OTP ingresado es incorrecto' });
+    }
+
+    // 2. Hashear nueva contraseña
+    const salt = await bcrypt.genSalt(8);
+    const password_hash = await bcrypt.hash(newPassword, salt);
+
+    // 3. Actualizar la contraseña en la base de datos
+    const result = await db.query(
+      'UPDATE restaurantes SET password_hash = $1 WHERE email = $2 RETURNING id',
+      [password_hash, email]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ mensaje: 'Restaurante no encontrado' });
+    }
+
+    // 4. Eliminar OTP de Redis
+    await redisClient.del(`otp:recuperacion:${email}`);
+
+    res.json({ mensaje: 'Contraseña restablecida con éxito. Ya puedes iniciar sesión con tu nueva contraseña.' });
+  } catch (error) {
+    console.error('Error al restablecer contraseña:', error);
+    res.status(500).json({ mensaje: 'Error interno del servidor' });
+  }
+};
+
 module.exports = {
   register,
-  login
+  login,
+  verifyEmail,
+  resendVerification,
+  forgotPassword,
+  resetPassword
 };

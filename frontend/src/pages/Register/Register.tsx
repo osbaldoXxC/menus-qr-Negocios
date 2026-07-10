@@ -22,7 +22,7 @@ export function Register() {
     setError('');
     try {
       await api.post('/auth/register', formData);
-      navigate('/login', { state: { registered: true } });
+      navigate('/verify-email', { state: { email: formData.email } });
     } catch (err: any) {
       setError(err.response?.data?.mensaje || err.response?.data?.error || 'Error al registrar. Intenta de nuevo.');
     } finally {
