@@ -60,11 +60,13 @@ api.interceptors.response.use(
         console.warn('⚠️ 401 detectado con mock-token. Continuando con fallbacks.');
         return Promise.reject(error);
       }
-      // Don't try to refresh if the failing call IS the refresh call itself
-      if (originalRequest.url === '/auth/refresh') {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('rol');
-        window.location.href = '/login';
+      // Don't try to refresh if the failing call IS the refresh call or the login call itself
+      if (originalRequest.url?.endsWith('/auth/refresh') || originalRequest.url?.endsWith('/auth/login')) {
+        if (originalRequest.url?.endsWith('/auth/refresh')) {
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('rol');
+          window.location.href = '/login';
+        }
         return Promise.reject(error);
       }
 

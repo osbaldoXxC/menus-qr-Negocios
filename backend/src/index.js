@@ -32,6 +32,12 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
+// Logger de peticiones para depuración
+app.use((req, res, next) => {
+  console.log(`[REQUEST] ${req.method} ${req.url} - Origin: ${req.headers.origin}`);
+  next();
+});
+
 // Servir archivos estáticos (Imágenes subidas localmente)
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
