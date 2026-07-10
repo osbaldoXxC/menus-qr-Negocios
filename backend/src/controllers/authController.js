@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const redisClient = require('../config/redis');
 const axios = require('axios');
+const crypto = require('crypto');
 
 // Función auxiliar para enviar correos con Resend
 const enviarCorreoResend = async (to, subject, htmlContent) => {
@@ -49,8 +50,8 @@ const register = async (req, res) => {
       return res.status(409).json({ mensaje: 'El email ya está registrado' });
     }
 
-    // 2. Hashear password
-    const salt = await bcrypt.genSalt(8);
+    // 2. Hashear password - A02 Criptografía: 12 rounds recomendado por OWASP
+    const salt = await bcrypt.genSalt(12);
     const password_hash = await bcrypt.hash(password, salt);
 
     // 3. Insertar restaurante (email_verificado queda en false por defecto)
@@ -139,14 +140,17 @@ const login = async (req, res) => {
       jwt.sign({ id: user.id }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '7d' })
     ]);
 
+    // OWASP A02: Criptografía - Hashear el Refresh Token antes de guardarlo en la base de datos
+    const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+
     // 6. Guardar Refresh Token de forma asíncrona
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
     
     db.query(
       'INSERT INTO refresh_tokens (restaurante_id, token, expires_at) VALUES ($1, $2, $3)',
-      [user.id, refreshToken, expiresAt]
-    ).catch(err => console.error('Error guardando refresh token (background):', err));
+      [user.id, tokenHash, expiresAt]
+    ).catch(err => console.error('Error guardando refresh token hash (background):', err));
 
     // 7. Responder inmediatamente
     res.cookie('refreshToken', refreshToken, {
@@ -309,8 +313,8 @@ const resetPassword = async (req, res) => {
       return res.status(400).json({ mensaje: 'El código OTP ingresado es incorrecto' });
     }
 
-    // 2. Hashear nueva contraseña
-    const salt = await bcrypt.genSalt(8);
+    // 2. Hashear nueva contraseña - A02 Criptografía: 12 rounds recomendado por OWASP
+    const salt = await bcrypt.genSalt(12);
     const password_hash = await bcrypt.hash(newPassword, salt);
 
     // 3. Actualizar la contraseña en la base de datos
@@ -333,11 +337,86 @@ const resetPassword = async (req, res) => {
   }
 };
 
+// POST /api/auth/refresh (Flujo de sesión OWASP A07)
+const refresh = async (req, res) => {
+  const refreshToken = req.cookies.refreshToken;
+
+  if (!refreshToken) {
+    return res.status(401).json({ mensaje: 'Acceso denegado. Token de actualización no proporcionado.' });
+  }
+
+  try {
+    // 1. Verificar la firma del JWT
+    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+
+    // 2. Hashear el token enviado para buscarlo en la base de datos de forma segura
+    const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+
+    // 3. Buscar el hash en la base de datos y que no esté vencido
+    const result = await db.query(
+      'SELECT restaurante_id FROM refresh_tokens WHERE token = $1 AND expires_at > NOW() LIMIT 1',
+      [tokenHash]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(401).json({ mensaje: 'Token de actualización inválido o revocado.' });
+    }
+
+    const restId = result.rows[0].restaurante_id;
+
+    // Obtener rol del restaurante para incluirlo en el nuevo access token
+    const userRes = await db.query('SELECT rol FROM restaurantes WHERE id = $1 LIMIT 1', [restId]);
+    if (userRes.rows.length === 0) {
+      return res.status(401).json({ mensaje: 'Usuario no encontrado.' });
+    }
+    const userRole = userRes.rows[0].rol;
+
+    // 4. Generar nuevo Access Token (15 minutos)
+    const newAccessToken = jwt.sign(
+      { id: restId, rol: userRole },
+      process.env.JWT_SECRET,
+      { expiresIn: '15m' }
+    );
+
+    res.json({ access_token: newAccessToken });
+  } catch (error) {
+    console.error('Error en refresh token:', error.message);
+    res.status(401).json({ mensaje: 'Token de actualización no válido.' });
+  }
+};
+
+// POST /api/auth/logout (Flujo de sesión OWASP A07)
+const logout = async (req, res) => {
+  const refreshToken = req.cookies.refreshToken;
+
+  try {
+    if (refreshToken) {
+      // Hashear el token para buscar y borrar de forma segura
+      const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+      await db.query('DELETE FROM refresh_tokens WHERE token = $1', [tokenHash]);
+    }
+    
+    // Limpiar la cookie en el cliente
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'Strict'
+    });
+
+    res.json({ mensaje: 'Sesión cerrada con éxito.' });
+  } catch (error) {
+    console.error('Error en logout:', error);
+    res.status(500).json({ mensaje: 'Error interno del servidor.' });
+  }
+};
+
 module.exports = {
   register,
   login,
   verifyEmail,
   resendVerification,
   forgotPassword,
-  resetPassword
+  resetPassword,
+  refresh,
+  logout
 };

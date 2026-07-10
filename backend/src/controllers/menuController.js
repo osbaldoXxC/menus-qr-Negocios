@@ -202,13 +202,19 @@ const getPublicMenu = async (req, res) => {
   const { restaurant_id } = req.params;
   const cacheKey = `cache:menu:${restaurant_id}`;
 
+  let cachedMenu = null;
   try {
-    // 1. Redis Cache
-    const cachedMenu = await redisClient.get(cacheKey);
-    if (cachedMenu) {
-      return res.json(JSON.parse(cachedMenu));
-    }
+    // 1. Redis Cache - Aislado para evitar caídas si Redis no responde
+    cachedMenu = await redisClient.get(cacheKey);
+  } catch (redisError) {
+    console.warn(`[Redis Read Error] Error al consultar caché para ${cacheKey}:`, redisError.message);
+  }
 
+  if (cachedMenu) {
+    return res.json(JSON.parse(cachedMenu));
+  }
+
+  try {
     // 2. PostgreSQL - Obtener info del restaurante y su tema
     const restRes = await db.query(
       `SELECT r.nombre_negocio, r.suscripcion_activa, 
@@ -280,8 +286,12 @@ const getPublicMenu = async (req, res) => {
       });
     });
 
-    // 5. Guardar en Redis (4h)
-    await redisClient.setEx(cacheKey, 14400, JSON.stringify(response));
+    // 5. Guardar en Redis (4h) - Aislado para evitar romper respuesta si Redis falla
+    try {
+      await redisClient.setEx(cacheKey, 14400, JSON.stringify(response));
+    } catch (redisError) {
+      console.warn(`[Redis Write Error] Error al guardar caché para ${cacheKey}:`, redisError.message);
+    }
 
     res.json(response);
 

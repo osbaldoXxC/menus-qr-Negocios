@@ -42,6 +42,8 @@ services:
       - REDIS_URL=${REDIS_URL}
       - JWT_SECRET=${JWT_SECRET}
       - REFRESH_TOKEN_SECRET=${REFRESH_TOKEN_SECRET}
+    volumes:
+      - uploads_data_prod:/app/uploads
     networks:
       - public-net
       - private-net
@@ -88,6 +90,7 @@ services:
 volumes:
   postgres_data_prod:
   redis_data_prod:
+  uploads_data_prod:
 
 networks:
   public-net:

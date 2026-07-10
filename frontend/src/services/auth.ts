@@ -24,7 +24,12 @@ export const authService = {
     return response.data;
   },
 
-  logout: () => {
+  logout: async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch (e) {
+      console.warn('Error al llamar logout en backend:', e);
+    }
     localStorage.removeItem('access_token');
     localStorage.removeItem('rol');
     localStorage.removeItem('restaurante_id');
