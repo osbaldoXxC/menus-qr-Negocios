@@ -62,6 +62,18 @@ services:
     depends_on:
       - backend
 
+  ai-engine:
+    build:
+      context: ./ai-engine
+      dockerfile: Dockerfile
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+    networks:
+      - private-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   admin:
     build:
       context: ./admin

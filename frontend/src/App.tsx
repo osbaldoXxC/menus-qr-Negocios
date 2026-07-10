@@ -25,6 +25,8 @@ const NuevoPlatillo = lazy(() => import('./pages/NuevoPlatillo/NuevoPlatillo').t
 const CodigoQR = lazy(() => import('./pages/CodigoQR/CodigoQR').then(m => ({ default: m.CodigoQR })));
 const Configuracion = lazy(() => import('./pages/Configuracion/Configuracion').then(m => ({ default: m.Configuracion })));
 const Perfil = lazy(() => import('./pages/Perfil/Perfil').then(m => ({ default: m.Perfil })));
+const VerifyEmail = lazy(() => import('./pages/Login/VerifyEmail').then(m => ({ default: m.VerifyEmail })));
+const RecuperarContrasena = lazy(() => import('./pages/Login/RecuperarContrasena').then(m => ({ default: m.RecuperarContrasena })));
 const NotFound = lazy(() => import('./pages/NotFound/NotFound').then(m => ({ default: m.NotFound })));
 
 function PageLoader() {
@@ -76,6 +78,8 @@ function AnimatedRoutes() {
             {/* Auth */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
+            <Route path="/recuperar-contrasena" element={<RecuperarContrasena />} />
 
             {/* Diner Experience */}
             <Route path="/descubrir" element={<Descubrir />} />

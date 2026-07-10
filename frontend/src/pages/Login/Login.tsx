@@ -28,6 +28,10 @@ export function Login() {
         navigate('/descubrir');
       }
     } catch (err: any) {
+      if (err.response?.data?.requiereVerificacion) {
+        navigate('/verify-email', { state: { email } });
+        return;
+      }
       setError(err.response?.data?.mensaje || 'Correo o contraseña incorrectos');
     } finally {
       setLoading(false);
@@ -117,6 +121,12 @@ export function Login() {
             >
               {showPassword ? '👁️' : '👁️‍🗨️'}
             </button>
+          </div>
+
+          <div className="flex justify-end px-1">
+            <Link to="/recuperar-contrasena" className="text-[12.5px] text-[#0071E3] dark:text-[#2997FF] hover:underline font-semibold transition-all">
+              ¿Olvidaste tu contraseña?
+            </Link>
           </div>
 
           <motion.button
