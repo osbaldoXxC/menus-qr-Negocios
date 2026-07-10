@@ -36,9 +36,7 @@ services:
       retries: 3
 
   backend:
-    build: 
-      context: ./backend
-      dockerfile: Dockerfile.dev
+    build: ./backend
     ports:
       - "${PORT:-4000}:4000"
     volumes:
@@ -62,9 +60,7 @@ services:
         condition: service_healthy
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile.dev
+    build: ./frontend
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
     volumes:
@@ -77,9 +73,7 @@ services:
       - backend
 
   admin:
-    build:
-      context: ./admin
-      dockerfile: Dockerfile.dev
+    build: ./admin
     ports:
       - "${ADMIN_PORT:-3001}:3001"
     volumes:
