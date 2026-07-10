@@ -66,6 +66,8 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
+    env_file:
+      - .env
     networks:
       - public-net
       - general-net
@@ -79,6 +81,8 @@ services:
     volumes:
       - ./admin:/app
       - /app/node_modules
+    env_file:
+      - .env
     networks:
       - public-net
       - general-net
