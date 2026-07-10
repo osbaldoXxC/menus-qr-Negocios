@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HexColorPicker } from 'react-colorful';
 import { restauranteService } from '../../services/restaurante';
-import { Palette, Layout, Type, Globe, CheckCircle2, AlertCircle, Upload, Image as ImageIcon, Moon, Sun, Sliders, Sparkles, Eye, EyeOff, Megaphone, MapPin, Store, Trash2 } from 'lucide-react';
+import { Palette, Layout, Type, Globe, CheckCircle2, AlertCircle, Upload, Image as ImageIcon, Moon, Sun, Sliders, Sparkles, Eye, EyeOff, Megaphone, MapPin, Store, Trash2, Map, Navigation } from 'lucide-react';
 
 const LAYOUTS = [
   { value: 'LISTA_SIMPLE', icon: '📋', label: 'Lista simple', desc: 'Minimalista y directo' },
@@ -94,6 +94,209 @@ export function Configuracion(): JSX.Element {
     updateDisenoApariencia('fondo_valor', nuevoGradiente);
   };
 
+  const [loadingLocation, setLoadingLocation] = useState(false);
+  const [showMap, setShowMap] = useState(false);
+  const [loadingMap, setLoadingMap] = useState(false);
+  const mapInstanceRef = useRef<any>(null);
+  const markerRef = useRef<any>(null);
+
+  const cargarLeaflet = (): Promise<any> => {
+    return new Promise((resolve, reject) => {
+      if ((window as any).L) {
+        resolve((window as any).L);
+        return;
+      }
+
+      if (!document.getElementById('leaflet-css')) {
+        const link = document.createElement('link');
+        link.id = 'leaflet-css';
+        link.rel = 'stylesheet';
+        link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+        document.head.appendChild(link);
+      }
+
+      const script = document.createElement('script');
+      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      script.async = true;
+      script.onload = () => {
+        resolve((window as any).L);
+      };
+      script.onerror = (err) => {
+        reject(err);
+      };
+      document.body.appendChild(script);
+    });
+  };
+
+  const inicializarMapa = async (latDefault = 19.4326, lonDefault = -99.1332) => {
+    try {
+      setLoadingMap(true);
+      const L = await cargarLeaflet();
+      
+      setTimeout(() => {
+        const mapContainer = document.getElementById('map-establecimiento');
+        if (!mapContainer) return;
+
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.remove();
+          mapInstanceRef.current = null;
+        }
+
+        // Solución para iconos perdidos de Leaflet en compilaciones/Vite
+        delete (L.Icon.Default.prototype as any)._getIconUrl;
+        L.Icon.Default.mergeOptions({
+          iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+          iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+          shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+        });
+
+        const map = L.map('map-establecimiento').setView([latDefault, lonDefault], 15);
+        mapInstanceRef.current = map;
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map);
+
+        const marker = L.marker([latDefault, lonDefault], {
+          draggable: true
+        }).addTo(map);
+        markerRef.current = marker;
+
+        const actualizarDireccionDesdeCoordenadas = async (lat: number, lng: number) => {
+          try {
+            const response = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+              {
+                headers: {
+                  "Accept-Language": "es"
+                }
+              }
+            );
+            const data = await response.json();
+            if (data && data.display_name) {
+              updateInformacion('direccion', data.display_name);
+            }
+          } catch (error) {
+            console.error("Error en reverse geocoding al mover marcador:", error);
+          }
+        };
+
+        marker.on('dragend', function () {
+          const position = marker.getLatLng();
+          actualizarDireccionDesdeCoordenadas(position.lat, position.lng);
+        });
+
+        map.on('click', function (e: any) {
+          const { lat, lng } = e.latlng;
+          marker.setLatLng([lat, lng]);
+          actualizarDireccionDesdeCoordenadas(lat, lng);
+        });
+
+        setLoadingMap(false);
+      }, 100);
+
+    } catch (error) {
+      console.error("Error al inicializar Leaflet:", error);
+      alert("No se pudo cargar el mapa. Verifica tu conexión a internet.");
+      setLoadingMap(false);
+    }
+  };
+
+  const buscarDireccionYAbrirMapa = async () => {
+    if (showMap) {
+      setShowMap(false);
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+      return;
+    }
+    
+    setShowMap(true);
+    const direccionActual = theme.config_diseno?.informacion?.direccion;
+    
+    if (direccionActual && direccionActual.trim() !== '') {
+      try {
+        setLoadingMap(true);
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(direccionActual)}&limit=1`
+        );
+        const data = await response.json();
+        if (data && data.length > 0) {
+          const lat = parseFloat(data[0].lat);
+          const lon = parseFloat(data[0].lon);
+          inicializarMapa(lat, lon);
+          return;
+        }
+      } catch (error) {
+        console.error("Error al buscar coordenadas de dirección existente:", error);
+      }
+    }
+    
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          inicializarMapa(position.coords.latitude, position.coords.longitude);
+        },
+        () => {
+          inicializarMapa();
+        }
+      );
+    } else {
+      inicializarMapa();
+    }
+  };
+
+  const obtenerUbicacionActual = () => {
+    if (!navigator.geolocation) {
+      alert("La geolocalización no está soportada por tu navegador.");
+      return;
+    }
+
+    setLoadingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
+            {
+              headers: {
+                "Accept-Language": "es"
+              }
+            }
+          );
+          const data = await response.json();
+          if (data && data.display_name) {
+            updateInformacion('direccion', data.display_name);
+            if (mapInstanceRef.current && markerRef.current) {
+              const newLatLng = [latitude, longitude] as [number, number];
+              mapInstanceRef.current.setView(newLatLng, 16);
+              markerRef.current.setLatLng(newLatLng);
+            }
+          } else {
+            alert("No pudimos obtener la dirección exacta, pero puedes buscarla en el mapa.");
+          }
+        } catch (error) {
+          console.error("Error en reverse geocoding:", error);
+          alert("Error al obtener la dirección escrita. Por favor escríbela manualmente.");
+        } finally {
+          setLoadingLocation(false);
+        }
+      },
+      (error) => {
+        console.error("Error de geolocalización:", error);
+        setLoadingLocation(false);
+        if (error.code === error.PERMISSION_DENIED) {
+          alert("Permiso de ubicación denegado. Por favor, actívalo o escribe tu dirección manualmente.");
+        } else {
+          alert("No pudimos obtener tu ubicación actual.");
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
   const [theme, setTheme] = useState<any>({
     logo_url: '',
     color_primario: '#2997FF',
@@ -143,6 +346,9 @@ export function Configuracion(): JSX.Element {
     document.head.appendChild(link);
     return () => {
       document.head.removeChild(link);
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+      }
     };
   }, []);
 
@@ -931,9 +1137,9 @@ export function Configuracion(): JSX.Element {
                 <div className="flex justify-between items-center ml-1">
                   <label className="text-sm font-bold text-apple-text-secondary">Esquinas de Botones</label>
                   <span className="text-xs font-mono font-bold bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border px-2 py-0.5 rounded-md">
-                    {theme.config_diseno?.apariencia?.border_radius_botones === '0px' ? 'Recto (0px)' :
-                     theme.config_diseno?.apariencia?.border_radius_botones === '8px' ? 'Suave (8px)' :
-                     theme.config_diseno?.apariencia?.border_radius_botones === '16px' ? 'Redondo (16px)' : 'Circular (Píldora)'}
+                    {theme.config_diseno?.apariencia?.border_radius_botones === '0px' ? 'Recto' :
+                     theme.config_diseno?.apariencia?.border_radius_botones === '8px' ? 'Suave' :
+                     theme.config_diseno?.apariencia?.border_radius_botones === '16px' ? 'Fuerte' : 'Píldora / Circular'}
                   </span>
                 </div>
                 <div className="grid grid-cols-4 gap-2">
@@ -957,6 +1163,20 @@ export function Configuracion(): JSX.Element {
                     </button>
                   ))}
                 </div>
+                {/* Ejemplo de Botón en Tiempo Real */}
+                <div className="p-4 rounded-2xl bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border flex flex-col items-center justify-center gap-2">
+                  <span className="text-[10px] text-apple-text-tertiary uppercase tracking-wider font-bold">Ejemplo visual del botón:</span>
+                  <button
+                    type="button"
+                    className="px-6 py-2.5 text-white font-bold text-xs transition-all shadow-md active:scale-95"
+                    style={{
+                      backgroundColor: theme.color_primario,
+                      borderRadius: theme.config_diseno?.apariencia?.border_radius_botones || '8px'
+                    }}
+                  >
+                    Ordenar Platillo
+                  </button>
+                </div>
               </div>
 
               {/* Redondeado Tarjetas */}
@@ -964,9 +1184,9 @@ export function Configuracion(): JSX.Element {
                 <div className="flex justify-between items-center ml-1">
                   <label className="text-sm font-bold text-apple-text-secondary">Esquinas de Tarjetas de Platillos</label>
                   <span className="text-xs font-mono font-bold bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border px-2 py-0.5 rounded-md">
-                    {theme.config_diseno?.apariencia?.border_radius_tarjetas === '0px' ? 'Recto (0px)' :
-                     theme.config_diseno?.apariencia?.border_radius_tarjetas === '12px' ? 'Suave (12px)' :
-                     theme.config_diseno?.apariencia?.border_radius_tarjetas === '24px' ? 'Redondo (24px)' : 'Extra Redondo (32px)'}
+                    {theme.config_diseno?.apariencia?.border_radius_tarjetas === '0px' ? 'Recto' :
+                     theme.config_diseno?.apariencia?.border_radius_tarjetas === '12px' ? 'Suave' :
+                     theme.config_diseno?.apariencia?.border_radius_tarjetas === '24px' ? 'Fuerte' : 'Circular'}
                   </span>
                 </div>
                 <div className="grid grid-cols-4 gap-2">
@@ -989,6 +1209,29 @@ export function Configuracion(): JSX.Element {
                       {card.label}
                     </button>
                   ))}
+                </div>
+                {/* Ejemplo de Tarjeta en Tiempo Real */}
+                <div className="p-4 rounded-2xl bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border flex flex-col items-center justify-center gap-2">
+                  <span className="text-[10px] text-apple-text-tertiary uppercase tracking-wider font-bold">Ejemplo visual de la tarjeta:</span>
+                  <div
+                    className="w-full max-w-[280px] bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border p-3 flex gap-3 shadow-apple-xs transition-all"
+                    style={{
+                      borderRadius: theme.config_diseno?.apariencia?.border_radius_tarjetas || '24px'
+                    }}
+                  >
+                    <div
+                      className="w-12 h-12 bg-apple-border dark:bg-apple-dark-border flex items-center justify-center text-lg flex-shrink-0"
+                      style={{
+                        borderRadius: `calc(${theme.config_diseno?.apariencia?.border_radius_tarjetas || '24px'} - 4px)`
+                      }}
+                    >
+                      🍕
+                    </div>
+                    <div className="flex-1 flex flex-col justify-center space-y-1.5">
+                      <div className="h-3 w-20 rounded-full bg-apple-text-secondary opacity-30" />
+                      <div className="h-2 w-28 rounded-full bg-apple-text-tertiary opacity-25" />
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -1157,10 +1400,11 @@ export function Configuracion(): JSX.Element {
               </h3>
 
               {/* Dirección Física */}
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <label className="text-sm font-bold text-apple-text-secondary ml-1 flex items-center gap-1.5">
                   <MapPin size={16} className="text-apple-blue" /> Dirección física del restaurante
                 </label>
+                
                 <div className="flex flex-col sm:flex-row gap-3">
                   <input
                     type="text"
@@ -1172,7 +1416,7 @@ export function Configuracion(): JSX.Element {
                   <div className="flex gap-2">
                     <button
                       type="submit"
-                      className="px-6 py-3.5 bg-apple-blue text-white rounded-2xl font-bold text-sm hover:bg-apple-blue-hover active:scale-95 transition-all shadow-apple-sm"
+                      className="px-6 py-3.5 bg-apple-blue text-white rounded-2xl font-bold text-sm hover:bg-apple-blue-hover active:scale-95 transition-all shadow-apple-sm flex-shrink-0"
                     >
                       Guardar
                     </button>
@@ -1184,12 +1428,65 @@ export function Configuracion(): JSX.Element {
                         className="px-4 py-3.5 bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border text-apple-text-secondary rounded-2xl font-bold text-sm hover:bg-apple-border-hover dark:hover:bg-apple-dark-border-hover active:scale-95 transition-all shadow-apple-xs flex items-center justify-center gap-2"
                         title="Probar en Google Maps"
                       >
-                        <MapPin size={16} className="text-red-500" />
-                        Maps
+                        <MapPin size={16} className="text-red-500 flex-shrink-0" />
+                        <span>Maps</span>
                       </a>
                     )}
                   </div>
                 </div>
+
+                {/* Botones de ubicación */}
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={obtenerUbicacionActual}
+                    disabled={loadingLocation}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-apple-blue/10 hover:bg-apple-blue/20 text-apple-blue rounded-xl text-xs font-bold transition-all disabled:opacity-50 active:scale-95"
+                  >
+                    {loadingLocation ? (
+                      <span className="w-3.5 h-3.5 border-2 border-apple-blue border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Navigation size={12} className="flex-shrink-0" />
+                    )}
+                    <span>Usar mi ubicación actual</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={buscarDireccionYAbrirMapa}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border text-apple-text-secondary hover:bg-apple-border-hover dark:hover:bg-apple-dark-border-hover rounded-xl text-xs font-bold transition-all active:scale-95"
+                  >
+                    <Map size={12} className="text-apple-blue flex-shrink-0" />
+                    <span>{showMap ? 'Ocultar Mapa' : 'Buscar en el Mapa'}</span>
+                  </button>
+                </div>
+
+                {/* Contenedor del Mapa */}
+                <AnimatePresence>
+                  {showMap && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="space-y-2 overflow-hidden"
+                    >
+                      <div className="relative rounded-2xl overflow-hidden border border-apple-border dark:border-apple-dark-border shadow-inner bg-apple-bg dark:bg-apple-dark-bg">
+                        {loadingMap && (
+                          <div className="absolute inset-0 bg-black/10 dark:bg-black/35 backdrop-blur-xs flex items-center justify-center z-[1000] text-xs font-bold text-apple-text">
+                            Cargando mapa interactivo...
+                          </div>
+                        )}
+                        <div 
+                          id="map-establecimiento" 
+                          className="w-full h-64 z-10" 
+                        />
+                      </div>
+                      <p className="text-[10px] text-apple-text-tertiary ml-1">
+                        💡 Arrastra el marcador rojo o haz clic en cualquier punto del mapa para seleccionar tu ubicación exacta y rellenar tu dirección automáticamente.
+                      </p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+                
                 <p className="text-[10px] text-apple-text-tertiary ml-1">Esta dirección se mostrará de forma destacada en el pie de página de tu menú digital.</p>
               </div>
 
@@ -1273,8 +1570,8 @@ export function Configuracion(): JSX.Element {
         </div>
 
         {/* Real-time Preview Column */}
-        <div className="flex-1 flex justify-center">
-          <div className="sticky top-12 w-full max-w-[360px]">
+        <div className="flex-1 flex justify-center xl:sticky xl:top-8 xl:self-start">
+          <div className="w-full max-w-[360px]">
              <div className="text-center mb-8">
                <h3 className="text-apple-text-tertiary text-[11px] font-black uppercase tracking-[0.3em] inline-flex items-center gap-2 px-4 py-2 rounded-full border border-apple-border dark:border-apple-dark-border">
                  <div className="w-1.5 h-1.5 rounded-full bg-apple-blue animate-pulse" />
