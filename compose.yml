@@ -3,18 +3,19 @@ services:
     container_name: mexxicanmx_db
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: password123
-      POSTGRES_DB: mexxicanmx_db
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/src/db/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
-      - app-network
+      - private-net
+      - general-net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin -d mexxicanmx_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 2s
       timeout: 2s
       retries: 3
@@ -22,11 +23,12 @@ services:
   redis:
     image: redis:alpine
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT:-6379}:6379"
     volumes:
       - redis_data:/data
     networks:
-      - app-network
+      - private-net
+      - general-net
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 2s
@@ -38,19 +40,21 @@ services:
       context: ./backend
       dockerfile: Dockerfile.dev
     ports:
-      - "4000:4000"
+      - "${PORT:-4000}:4000"
     volumes:
       - ./backend:/app
       - /app/node_modules
     env_file:
       - .env
     environment:
-      - DATABASE_URL=postgresql://admin:password123@postgres:5432/mexxicanmx_db
-      - REDIS_URL=redis://redis:6379
-      - JWT_SECRET=super_secret_key_123
-      - REFRESH_TOKEN_SECRET=refresh_secret_key_456
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - REFRESH_TOKEN_SECRET=${REFRESH_TOKEN_SECRET}
     networks:
-      - app-network
+      - public-net
+      - private-net
+      - general-net
     depends_on:
       postgres:
         condition: service_healthy
@@ -62,12 +66,13 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.dev
     ports:
-      - "3000:3000"
+      - "${FRONTEND_PORT:-3000}:3000"
     volumes:
       - ./frontend:/app
       - /app/node_modules
     networks:
-      - app-network
+      - public-net
+      - general-net
     depends_on:
       - backend
 
@@ -76,12 +81,13 @@ services:
       context: ./admin
       dockerfile: Dockerfile.dev
     ports:
-      - "3001:3001"
+      - "${ADMIN_PORT:-3001}:3001"
     volumes:
       - ./admin:/app
       - /app/node_modules
     networks:
-      - app-network
+      - public-net
+      - general-net
     depends_on:
       - backend
 
@@ -90,5 +96,9 @@ volumes:
   redis_data:
 
 networks:
-  app-network:
+  public-net:
+    driver: bridge
+  private-net:
+    driver: bridge
+  general-net:
     driver: bridge
