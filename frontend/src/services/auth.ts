@@ -19,6 +19,19 @@ export const authService = {
       localStorage.setItem('access_token', response.data.access_token);
       localStorage.setItem('rol', response.data.rol);
       localStorage.setItem('restaurante_id', response.data.restaurante_id);
+      localStorage.setItem('auth_method', 'local');
+      window.dispatchEvent(new Event(AUTH_CHANGE_EVENT));
+    }
+    return response.data;
+  },
+
+  loginWithCognito: async (idToken: string) => {
+    const response = await api.post('/auth/cognito', { idToken });
+    if (response.data.access_token) {
+      localStorage.setItem('access_token', response.data.access_token);
+      localStorage.setItem('rol', response.data.rol);
+      localStorage.setItem('restaurante_id', response.data.restaurante_id);
+      localStorage.setItem('auth_method', 'cognito');
       window.dispatchEvent(new Event(AUTH_CHANGE_EVENT));
     }
     return response.data;
@@ -28,6 +41,7 @@ export const authService = {
     localStorage.removeItem('access_token');
     localStorage.removeItem('rol');
     localStorage.removeItem('restaurante_id');
+    localStorage.removeItem('auth_method');
     window.dispatchEvent(new Event(AUTH_CHANGE_EVENT));
     window.location.href = '/';
   },

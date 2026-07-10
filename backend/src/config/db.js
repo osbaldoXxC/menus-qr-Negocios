@@ -34,6 +34,8 @@ const initDb = async () => {
       ALTER TABLE restaurantes ADD COLUMN IF NOT EXISTS suscripcion_activa BOOLEAN DEFAULT true;
       ALTER TABLE restaurantes ADD COLUMN IF NOT EXISTS fecha_vencimiento TIMESTAMP WITH TIME ZONE;
       ALTER TABLE restaurantes ADD COLUMN IF NOT EXISTS dias_acceso_permitidos INTEGER DEFAULT 0;
+      ALTER TABLE restaurantes ADD COLUMN IF NOT EXISTS reset_token VARCHAR(255);
+      ALTER TABLE restaurantes ADD COLUMN IF NOT EXISTS reset_token_expires TIMESTAMP WITH TIME ZONE;
     `);
 
     // 3. Crear tabla audit_logs si no existe
@@ -104,9 +106,10 @@ const initDb = async () => {
     console.error('Database migration error:', err);
   }
 };
-initDb();
+const initPromise = initDb();
 
 module.exports = {
   query: (text, params) => pool.query(text, params),
   pool,
+  initPromise,
 };

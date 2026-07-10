@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HexColorPicker } from 'react-colorful';
 import { restauranteService } from '../../services/restaurante';
-import { Palette, Layout, Type, Globe, CheckCircle2, AlertCircle, Upload, Image as ImageIcon, Moon, Sun, Sliders, Sparkles, Eye, EyeOff, Megaphone, MapPin, Store } from 'lucide-react';
+import { Palette, Layout, Type, Globe, CheckCircle2, AlertCircle, Upload, Image as ImageIcon, Moon, Sun, Sliders, Sparkles, Eye, EyeOff, Megaphone, MapPin, Store, Trash2 } from 'lucide-react';
 
 const LAYOUTS = [
   { value: 'LISTA_SIMPLE', icon: '📋', label: 'Lista simple', desc: 'Minimalista y directo' },
@@ -74,14 +74,16 @@ function colorWithOpacity(colorStr: string, opacity: number): string {
   return colorStr;
 }
 
-export function Configuracion() {
+export function Configuracion(): JSX.Element {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingBg, setUploadingBg] = useState(false);
   const [showPicker, setShowPicker] = useState<'primario' | 'fondo' | 'badge' | 'texto' | 'text_hover' | 'descripcion' | null>(null);
   const [success, setSuccess] = useState(false);
   const [saveError, setSaveError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const bgFileInputRef = useRef<HTMLInputElement>(null);
   
   const [gradienteColor1, setGradienteColor1] = useState('#FF416C');
   const [gradienteColor2, setGradienteColor2] = useState('#FF4B2B');
@@ -180,7 +182,11 @@ export function Configuracion() {
             color_fondo: apariencia.color_fondo || fondo,
             modo_oscuro: dark,
             border_radius_botones: apariencia.border_radius_botones || '12px',
-            border_radius_tarjetas: apariencia.border_radius_tarjetas || '24px'
+            border_radius_tarjetas: apariencia.border_radius_tarjetas || '24px',
+            fondo_imagen_url: apariencia.fondo_imagen_url || '',
+            fondo_imagen_posicion: apariencia.fondo_imagen_posicion || 'center center',
+            fondo_imagen_ajuste: apariencia.fondo_imagen_ajuste || 'cover',
+            fondo_imagen_repetir: apariencia.fondo_imagen_repetir || 'no-repeat'
           },
           layout: {
             layout_type: layout.layout_type || layoutType,
@@ -269,6 +275,8 @@ export function Configuracion() {
         }
       };
     });
+  };
+
   const updateInformacion = (key: string, value: any) => {
     setTheme((prev: any) => {
       const config = prev.config_diseno || { apariencia: {}, layout: {}, elementos_visuales: {}, informacion: {} };
@@ -298,6 +306,24 @@ export function Configuracion() {
       alert('Hubo un error al subir la imagen. Intenta de nuevo.');
     } finally {
       setUploadingLogo(false);
+    }
+  };
+
+  const handleBgUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingBg(true);
+    try {
+      const res = await restauranteService.uploadBrandingImage(file);
+      if (res.url_imagen) {
+        updateDisenoApariencia('fondo_imagen_url', res.url_imagen);
+      }
+    } catch (error) {
+      console.error('Error al subir imagen de fondo:', error);
+      alert('Hubo un error al subir la imagen. Intenta de nuevo.');
+    } finally {
+      setUploadingBg(false);
     }
   };
 
@@ -398,8 +424,9 @@ export function Configuracion() {
                     <button 
                       type="button" 
                       onClick={() => setTheme((prev: any) => ({ ...prev, logo_url: '' }))}
-                      className="text-sm text-red-500 hover:text-red-600 font-medium"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 rounded-xl text-xs font-bold transition-colors mt-2"
                     >
+                      <Trash2 size={12} />
                       Eliminar logo
                     </button>
                   )}
@@ -454,7 +481,7 @@ export function Configuracion() {
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Color primario */}
-                <div className="space-y-3">
+                <div className="space-y-3 relative">
                   <label className="text-sm font-bold text-apple-text-secondary ml-1">Color de Acento (Botones/Picante)</label>
                   <div className="flex items-center gap-4 p-4 rounded-2xl bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border shadow-apple-sm group hover:border-apple-blue/50 transition-colors">
                     <button
@@ -468,10 +495,26 @@ export function Configuracion() {
                       <span className="text-[10px] text-apple-text-tertiary">Botones y acentos visuales</span>
                     </div>
                   </div>
+                  
+                  {showPicker === 'primario' && (
+                    <div className="absolute z-50 left-1/2 -translate-x-1/2 mt-2 p-4 rounded-3xl bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border shadow-apple-2xl flex flex-col items-center gap-2">
+                      <HexColorPicker
+                        color={theme.color_primario}
+                        onChange={(color) => updateDisenoApariencia('color_primario', color)}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPicker(null)}
+                        className="px-4 py-1.5 bg-apple-blue text-white rounded-full text-[10px] font-bold active:scale-95 transition-transform"
+                      >
+                        Listo
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Color del texto del menú */}
-                <div className="space-y-3">
+                <div className="space-y-3 relative">
                   <label className="text-sm font-bold text-apple-text-secondary ml-1">Color del Texto del Menú</label>
                   <div className="flex items-center gap-4 p-4 rounded-2xl bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border shadow-apple-sm group hover:border-apple-blue/50 transition-colors">
                     <button
@@ -485,10 +528,26 @@ export function Configuracion() {
                       <span className="text-[10px] text-apple-text-tertiary">Títulos y textos principales</span>
                     </div>
                   </div>
+
+                  {showPicker === 'texto' && (
+                    <div className="absolute z-50 left-1/2 -translate-x-1/2 mt-2 p-4 rounded-3xl bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border shadow-apple-2xl flex flex-col items-center gap-2">
+                      <HexColorPicker
+                        color={theme.config_diseno?.apariencia?.color_normal || '#ffffff'}
+                        onChange={(color) => updateDisenoApariencia('color_normal', color)}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPicker(null)}
+                        className="px-4 py-1.5 bg-apple-blue text-white rounded-full text-[10px] font-bold active:scale-95 transition-transform"
+                      >
+                        Listo
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Color de las descripciones */}
-                <div className="space-y-3">
+                <div className="space-y-3 relative">
                   <label className="text-sm font-bold text-apple-text-secondary ml-1">Color de Descripciones</label>
                   <div className="flex items-center gap-4 p-4 rounded-2xl bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border shadow-apple-sm group hover:border-apple-blue/50 transition-colors">
                     <button
@@ -502,20 +561,36 @@ export function Configuracion() {
                       <span className="text-[10px] text-apple-text-tertiary">Descripciones y textos secundarios</span>
                     </div>
                   </div>
+
+                  {showPicker === 'descripcion' && (
+                    <div className="absolute z-50 left-1/2 -translate-x-1/2 mt-2 p-4 rounded-3xl bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border shadow-apple-2xl flex flex-col items-center gap-2">
+                      <HexColorPicker
+                        color={theme.config_diseno?.apariencia?.color_descripcion || '#8e8e93'}
+                        onChange={(color) => updateDisenoApariencia('color_descripcion', color)}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPicker(null)}
+                        className="px-4 py-1.5 bg-apple-blue text-white rounded-full text-[10px] font-bold active:scale-95 transition-transform"
+                      >
+                        Listo
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* Tipo de Fondo */}
               <div className="space-y-4">
                 <label className="text-sm font-bold text-apple-text-secondary ml-1">Tipo de Fondo del Menú</label>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-3">
                   <button
                     type="button"
                     onClick={() => {
                       updateDisenoApariencia('fondo_tipo', 'solido');
                       updateDisenoApariencia('fondo_valor', theme.color_fondo);
                     }}
-                    className={`py-3.5 px-6 rounded-2xl border-2 font-bold text-sm transition-all ${
+                    className={`py-3 px-3 rounded-2xl border-2 font-bold text-xs transition-all ${
                       theme.config_diseno?.apariencia?.fondo_tipo === 'solido'
                         ? 'border-apple-blue bg-apple-blue/5 text-apple-blue'
                         : 'border-apple-border dark:border-apple-dark-border bg-apple-bg dark:bg-apple-dark-bg text-apple-text-secondary'
@@ -529,7 +604,7 @@ export function Configuracion() {
                       updateDisenoApariencia('fondo_tipo', 'gradiente');
                       updateDisenoApariencia('fondo_valor', PRESETS_GRADIENTES[0].value);
                     }}
-                    className={`py-3.5 px-6 rounded-2xl border-2 font-bold text-sm transition-all ${
+                    className={`py-3 px-3 rounded-2xl border-2 font-bold text-xs transition-all ${
                       theme.config_diseno?.apariencia?.fondo_tipo === 'gradiente'
                         ? 'border-apple-blue bg-apple-blue/5 text-apple-blue'
                         : 'border-apple-border dark:border-apple-dark-border bg-apple-bg dark:bg-apple-dark-bg text-apple-text-secondary'
@@ -537,12 +612,25 @@ export function Configuracion() {
                   >
                     Degradado Premium
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      updateDisenoApariencia('fondo_tipo', 'imagen');
+                    }}
+                    className={`py-3 px-3 rounded-2xl border-2 font-bold text-xs transition-all ${
+                      theme.config_diseno?.apariencia?.fondo_tipo === 'imagen'
+                        ? 'border-apple-blue bg-apple-blue/5 text-apple-blue'
+                        : 'border-apple-border dark:border-apple-dark-border bg-apple-bg dark:bg-apple-dark-bg text-apple-text-secondary'
+                    }`}
+                  >
+                    Imagen de Fondo
+                  </button>
                 </div>
               </div>
 
               {/* Selector de fondo específico */}
-              {theme.config_diseno?.apariencia?.fondo_tipo === 'solido' ? (
-                <div className="space-y-3">
+              {theme.config_diseno?.apariencia?.fondo_tipo === 'solido' && (
+                <div className="space-y-3 relative">
                   <label className="text-sm font-bold text-apple-text-secondary ml-1 font-medium">Color de Fondo</label>
                   <div className="flex items-center gap-4 p-4 rounded-2xl bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border shadow-apple-sm group hover:border-apple-blue/50 transition-colors">
                     <button
@@ -556,8 +644,31 @@ export function Configuracion() {
                       <span className="text-[10px] text-apple-text-tertiary">Color base del fondo del menú</span>
                     </div>
                   </div>
+
+                  {showPicker === 'fondo' && (
+                    <div className="absolute z-50 left-1/2 -translate-x-1/2 mt-2 p-4 rounded-3xl bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border shadow-apple-2xl flex flex-col items-center gap-2">
+                      <HexColorPicker
+                        color={theme.color_fondo}
+                        onChange={(color) => {
+                          updateDisenoApariencia('color_fondo', color);
+                          if (theme.config_diseno?.apariencia?.fondo_tipo === 'solido') {
+                            updateDisenoApariencia('fondo_valor', color);
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPicker(null)}
+                        className="px-4 py-1.5 bg-apple-blue text-white rounded-full text-[10px] font-bold active:scale-95 transition-transform"
+                      >
+                        Listo
+                      </button>
+                    </div>
+                  )}
                 </div>
-              ) : (
+              )}
+
+              {theme.config_diseno?.apariencia?.fondo_tipo === 'gradiente' && (
                 <div className="space-y-4 pt-2">
                   <label className="text-sm font-bold text-apple-text-secondary ml-1">Degradados Predeterminados</label>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -649,51 +760,112 @@ export function Configuracion() {
                 </div>
               )}
 
-              {/* Color Pickers Popup Animados */}
-              <AnimatePresence>
-                {showPicker && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="mt-6 flex flex-col items-center p-6 rounded-3xl bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border"
-                  >
-                    <HexColorPicker
-                      color={
-                        showPicker === 'primario' ? theme.color_primario :
-                        showPicker === 'fondo' ? theme.color_fondo :
-                        showPicker === 'texto' ? (theme.config_diseno?.apariencia?.color_normal || '#ffffff') :
-                        showPicker === 'descripcion' ? (theme.config_diseno?.apariencia?.color_descripcion || '#8e8e93') :
-                        showPicker === 'badge' ? (theme.config_diseno?.elementos_visuales?.badge_color || '#ffbe0b') :
-                        '#ffffff'
-                      }
-                      onChange={(color) => {
-                        if (showPicker === 'primario') {
-                           updateDisenoApariencia('color_primario', color);
-                        } else if (showPicker === 'fondo') {
-                          updateDisenoApariencia('color_fondo', color);
-                          if (theme.config_diseno?.apariencia?.fondo_tipo === 'solido') {
-                            updateDisenoApariencia('fondo_valor', color);
-                          }
-                        } else if (showPicker === 'texto') {
-                          updateDisenoApariencia('color_normal', color);
-                        } else if (showPicker === 'descripcion') {
-                          updateDisenoApariencia('color_descripcion', color);
-                        } else if (showPicker === 'badge') {
-                          updateDisenoElementos('badge_color', color);
-                        }
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPicker(null)}
-                      className="mt-4 px-4 py-1.5 bg-apple-blue text-white rounded-full text-xs font-bold"
-                    >
-                      Listo
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              {theme.config_diseno?.apariencia?.fondo_tipo === 'imagen' && (
+                <div className="space-y-6 pt-2">
+                  <div className="space-y-3">
+                    <label className="text-sm font-bold text-apple-text-secondary ml-1">Imagen de Fondo Personalizada</label>
+                    <div className="flex flex-col sm:flex-row items-center gap-6 p-6 rounded-3xl bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border">
+                      <div className="relative w-28 h-28 rounded-2xl bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border flex items-center justify-center overflow-hidden group flex-shrink-0">
+                        {theme.config_diseno?.apariencia?.fondo_imagen_url ? (
+                          <img src={theme.config_diseno.apariencia.fondo_imagen_url} alt="Fondo" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-3xl opacity-40">🖼️</span>
+                        )}
+                        <div className={`absolute inset-0 bg-black/50 flex flex-col items-center justify-center transition-opacity ${theme.config_diseno?.apariencia?.fondo_imagen_url ? 'opacity-0 group-hover:opacity-100' : 'opacity-100'}`}>
+                          <input 
+                            type="file" 
+                            accept="image/*" 
+                            className="hidden" 
+                            ref={bgFileInputRef}
+                            onChange={handleBgUpload}
+                          />
+                          <button 
+                            type="button"
+                            onClick={() => bgFileInputRef.current?.click()}
+                            className="p-2.5 bg-white/20 hover:bg-white/30 rounded-full text-white backdrop-blur-sm transition-colors"
+                            disabled={uploadingBg}
+                          >
+                            {uploadingBg ? (
+                              <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }}>
+                                <Upload size={16} />
+                              </motion.div>
+                            ) : (
+                              <Upload size={16} />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="flex-1 space-y-2 text-center sm:text-left">
+                        <h4 className="text-sm font-bold">Subir Imagen de Fondo</h4>
+                        <p className="text-xs text-apple-text-secondary">Recomendado: 1080x1920px (formato vertical) o patrón repetible. Solo se permite una imagen.</p>
+                        {theme.config_diseno?.apariencia?.fondo_imagen_url && (
+                          <button 
+                            type="button" 
+                            onClick={() => updateDisenoApariencia('fondo_imagen_url', '')}
+                            className="mt-2 inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 rounded-xl text-xs font-bold transition-colors"
+                          >
+                            <Trash2 size={12} />
+                            Eliminar fondo
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {theme.config_diseno?.apariencia?.fondo_imagen_url && (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+                      {/* Posición de la Imagen */}
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-apple-text-secondary ml-1">Posición de Imagen</label>
+                        <select
+                          value={theme.config_diseno?.apariencia?.fondo_imagen_posicion || 'center center'}
+                          onChange={(e) => updateDisenoApariencia('fondo_imagen_posicion', e.target.value)}
+                          className="w-full px-4 py-3 rounded-xl bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border text-xs font-bold shadow-apple-sm outline-none focus:border-apple-blue"
+                        >
+                          <option value="center center">Centro Centro (Recomendado)</option>
+                          <option value="top center">Arriba Centro</option>
+                          <option value="bottom center">Abajo Centro</option>
+                          <option value="center left">Centro Izquierda</option>
+                          <option value="center right">Centro Derecha</option>
+                          <option value="top left">Arriba Izquierda</option>
+                          <option value="top right">Arriba Derecha</option>
+                          <option value="bottom left">Abajo Izquierda</option>
+                          <option value="bottom right">Abajo Derecha</option>
+                        </select>
+                      </div>
+
+                      {/* Ajuste de la Imagen */}
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-apple-text-secondary ml-1">Ajuste / Tamaño</label>
+                        <select
+                          value={theme.config_diseno?.apariencia?.fondo_imagen_ajuste || 'cover'}
+                          onChange={(e) => updateDisenoApariencia('fondo_imagen_ajuste', e.target.value)}
+                          className="w-full px-4 py-3 rounded-xl bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border text-xs font-bold shadow-apple-sm outline-none focus:border-apple-blue"
+                        >
+                          <option value="cover">Cubrir pantalla entera (Llenar)</option>
+                          <option value="contain">Ajustar / Contener completo</option>
+                          <option value="auto">Tamaño original (Mosaicos)</option>
+                        </select>
+                      </div>
+
+                      {/* Repetición de la Imagen */}
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-apple-text-secondary ml-1">Repetición</label>
+                        <select
+                          value={theme.config_diseno?.apariencia?.fondo_imagen_repetir || 'no-repeat'}
+                          onChange={(e) => updateDisenoApariencia('fondo_imagen_repetir', e.target.value)}
+                          className="w-full px-4 py-3 rounded-xl bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border text-xs font-bold shadow-apple-sm outline-none focus:border-apple-blue"
+                        >
+                          <option value="no-repeat">No repetir</option>
+                          <option value="repeat">Repetir (Mosaico)</option>
+                          <option value="repeat-x">Repetir Horizontal</option>
+                          <option value="repeat-y">Repetir Vertical</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </section>
 
             {/* 2. Estructura y Comportamiento (Layout) */}
@@ -708,7 +880,6 @@ export function Configuracion() {
                     key={layout.value}
                     type="button"
                     onClick={() => {
-                      setTheme((prev: any) => ({ ...prev, layout_type: layout.value }));
                       updateDisenoLayout('layout_type', layout.value);
                     }}
                     className={`p-6 rounded-3xl border-2 transition-all text-center flex flex-col items-center gap-3 active:scale-95 ${
@@ -873,7 +1044,7 @@ export function Configuracion() {
               </div>
 
               {/* Color del Badge de Ofertas */}
-              <div className="space-y-3">
+              <div className="space-y-3 relative">
                 <label className="text-sm font-bold text-apple-text-secondary ml-1">Color del Badge de Ofertas/Destacados</label>
                 <div className="flex items-center gap-4 p-4 rounded-2xl bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border shadow-apple-sm group hover:border-apple-blue/50 transition-colors">
                   <button
@@ -887,6 +1058,22 @@ export function Configuracion() {
                     <span className="text-[10px] text-apple-text-tertiary">Color usado en etiquetas de "Oferta" o "Nuevo"</span>
                   </div>
                 </div>
+
+                {showPicker === 'badge' && (
+                  <div className="absolute z-50 left-1/2 -translate-x-1/2 mt-2 p-4 rounded-3xl bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border shadow-apple-2xl flex flex-col items-center gap-2">
+                    <HexColorPicker
+                      color={theme.config_diseno?.elementos_visuales?.badge_color || '#ffbe0b'}
+                      onChange={(color) => updateDisenoElementos('badge_color', color)}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPicker(null)}
+                      className="px-4 py-1.5 bg-apple-blue text-white rounded-full text-[10px] font-bold active:scale-95 transition-transform"
+                    >
+                      Listo
+                    </button>
+                  </div>
+                )}
               </div>
             </section>
 
@@ -982,12 +1169,26 @@ export function Configuracion() {
                     placeholder="Ej. Av. Reforma 123, Col. Centro, CDMX"
                     className="flex-1 px-5 py-3.5 rounded-2xl bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border text-sm font-medium focus:border-apple-blue outline-none"
                   />
-                  <button
-                    type="submit"
-                    className="sm:w-auto px-6 py-3.5 bg-apple-blue text-white rounded-2xl font-bold text-sm hover:bg-apple-blue-hover active:scale-95 transition-all shadow-apple-sm"
-                  >
-                    Guardar Dirección
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      type="submit"
+                      className="px-6 py-3.5 bg-apple-blue text-white rounded-2xl font-bold text-sm hover:bg-apple-blue-hover active:scale-95 transition-all shadow-apple-sm"
+                    >
+                      Guardar
+                    </button>
+                    {theme.config_diseno?.informacion?.direccion && (
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(theme.config_diseno.informacion.direccion)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-3.5 bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border text-apple-text-secondary rounded-2xl font-bold text-sm hover:bg-apple-border-hover dark:hover:bg-apple-dark-border-hover active:scale-95 transition-all shadow-apple-xs flex items-center justify-center gap-2"
+                        title="Probar en Google Maps"
+                      >
+                        <MapPin size={16} className="text-red-500" />
+                        Maps
+                      </a>
+                    )}
+                  </div>
                 </div>
                 <p className="text-[10px] text-apple-text-tertiary ml-1">Esta dirección se mostrará de forma destacada en el pie de página de tu menú digital.</p>
               </div>
@@ -1072,8 +1273,8 @@ export function Configuracion() {
         </div>
 
         {/* Real-time Preview Column */}
-        <div className="flex-1 flex justify-center items-start">
-<div className="sticky top-12 w-full max-w-[360px]">
+        <div className="flex-1 flex justify-center">
+          <div className="sticky top-12 w-full max-w-[360px]">
              <div className="text-center mb-8">
                <h3 className="text-apple-text-tertiary text-[11px] font-black uppercase tracking-[0.3em] inline-flex items-center gap-2 px-4 py-2 rounded-full border border-apple-border dark:border-apple-dark-border">
                  <div className="w-1.5 h-1.5 rounded-full bg-apple-blue animate-pulse" />
@@ -1083,12 +1284,17 @@ export function Configuracion() {
              
              {/* Smartphone Mockup */}
              <div className="relative w-full aspect-[9/18.5] rounded-[3.5rem] border-[10px] border-[#1D1D1F] shadow-apple-2xl overflow-hidden ring-1 ring-white/10"
-               style={{ 
-                 background: theme.config_diseno?.apariencia?.fondo_tipo === 'gradiente' 
-                   ? theme.config_diseno?.apariencia?.fondo_valor 
-                   : theme.color_fondo,
-                 backgroundColor: theme.color_fondo
-               }}
+                style={{ 
+                  background: theme.config_diseno?.apariencia?.fondo_tipo === 'imagen' && theme.config_diseno?.apariencia?.fondo_imagen_url
+                    ? `url(${theme.config_diseno.apariencia.fondo_imagen_url})`
+                    : (theme.config_diseno?.apariencia?.fondo_tipo === 'gradiente' 
+                      ? theme.config_diseno?.apariencia?.fondo_valor 
+                      : theme.color_fondo),
+                  backgroundColor: theme.color_fondo,
+                  backgroundPosition: theme.config_diseno?.apariencia?.fondo_tipo === 'imagen' ? (theme.config_diseno?.apariencia?.fondo_imagen_posicion || 'center center') : 'initial',
+                  backgroundSize: theme.config_diseno?.apariencia?.fondo_tipo === 'imagen' ? (theme.config_diseno?.apariencia?.fondo_imagen_ajuste || 'cover') : 'initial',
+                  backgroundRepeat: theme.config_diseno?.apariencia?.fondo_tipo === 'imagen' ? (theme.config_diseno?.apariencia?.fondo_imagen_repetir || 'no-repeat') : 'initial',
+                }}
              >
                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/3 h-6 bg-[#1D1D1F] rounded-b-3xl z-50 shadow-sm" />
                  
@@ -1105,8 +1311,9 @@ export function Configuracion() {
                    
                    const btnRadius = theme.config_diseno?.apariencia?.border_radius_botones || '12px';
                    const cardRadius = theme.config_diseno?.apariencia?.border_radius_tarjetas || '24px';
-                   
                    const isGlass = theme.config_diseno?.elementos_visuales?.glassmorphism || false;
+                   const isImageBg = theme.config_diseno?.apariencia?.fondo_tipo === 'imagen';
+                   const imageBgUrl = theme.config_diseno?.apariencia?.fondo_imagen_url;
                    const showShadow = theme.config_diseno?.elementos_visuales?.sombras_habilitadas !== undefined
                      ? theme.config_diseno.elementos_visuales.sombras_habilitadas
                      : true;
@@ -1126,15 +1333,26 @@ export function Configuracion() {
 
                    return (
                  <div
-                   className="w-full h-full overflow-y-auto scrollbar-hide flex flex-col"
+                   className="w-full h-full overflow-y-auto scrollbar-hide flex flex-col relative"
                    style={{ fontFamily: font }}
                  >
+                   {isImageBg && imageBgUrl && (
+                     <div 
+                       className="absolute inset-0 pointer-events-none z-0" 
+                       style={{ 
+                         backgroundColor: isDark ? 'rgba(10, 10, 10, 0.7)' : 'rgba(255, 255, 255, 0.75)', 
+                         backdropFilter: theme.config_diseno?.apariencia?.fondo_blur || '0px',
+                         WebkitBackdropFilter: theme.config_diseno?.apariencia?.fondo_blur || '0px'
+                       }} 
+                     />
+                   )}
+                   <div className="relative z-10 flex flex-col w-full min-h-full">
                    {/* Header mock */}
                    <div 
                      className="px-5 pt-12 pb-3.5 flex items-center gap-2.5 sticky top-0 z-10 backdrop-blur-xl transition-all" 
                      style={{ 
-                       backgroundColor: headerBg, 
-                       borderBottom: `1px solid ${borderOp}` 
+                       backgroundColor: 'transparent', 
+                       borderBottom: 'none' 
                      }}
                    >
                       <div className="w-8 h-8 rounded-xl flex items-center justify-center text-sm flex-shrink-0" style={{ backgroundColor: `${theme.color_primario}25` }}>
@@ -1147,14 +1365,14 @@ export function Configuracion() {
  
                    {/* Nav mock */}
                    <div 
-                     className="px-4 py-2.5 flex gap-2 overflow-x-hidden backdrop-blur-xl" 
-                     style={{ 
-                       position: theme.config_diseno?.layout?.categorias_sticky ? 'sticky' : 'relative',
-                       top: theme.config_diseno?.layout?.categorias_sticky ? '47px' : '0px',
-                       zIndex: 9,
-                       backgroundColor: headerBg,
-                       borderBottom: `1px solid ${borderOp}` 
-                     }}
+                      className="px-4 py-2.5 flex gap-2 overflow-x-hidden backdrop-blur-xl" 
+                      style={{ 
+                        position: theme.config_diseno?.layout?.categorias_sticky ? 'sticky' : 'relative',
+                        top: theme.config_diseno?.layout?.categorias_sticky ? '47px' : '0px',
+                        zIndex: 9,
+                        backgroundColor: 'transparent',
+                        borderBottom: 'none' 
+                      }}
                    >
                      {['Entradas','Tacos','Postres'].map((n, idx) => (
                        <div 
@@ -1287,10 +1505,11 @@ export function Configuracion() {
                              </div>
                            </div>
                          ))}
-                       </div>
-                     )}
-                   </div>
-                 </div>
+                        </div>
+                      )}
+                      </div>
+                    </div>
+                  </div>
                    );
                  })()}
              </div>

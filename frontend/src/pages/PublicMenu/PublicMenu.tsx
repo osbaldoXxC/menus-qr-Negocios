@@ -252,8 +252,9 @@ export function PublicMenu() {
     fontFam === 'Outfit' ? 'Outfit, Inter, sans-serif' :
     'Inter, -apple-system, BlinkMacSystemFont, sans-serif';
 
-  // Fondo tipo gradiente o sólido
+  // Fondo tipo gradiente, sólido o imagen
   const isGradient = apariencia.fondo_tipo === 'gradiente';
+  const isImage = apariencia.fondo_tipo === 'imagen';
   const bgValue = isGradient ? (apariencia.fondo_valor || `linear-gradient(to bottom, ${bg}, #000)`) : bg;
   
   // Layout actual
@@ -275,18 +276,37 @@ export function PublicMenu() {
     <div 
       style={{ 
         ...css, 
-        background: isGradient ? bgValue : bg,
+        background: isImage && apariencia.fondo_imagen_url 
+          ? `url(${apariencia.fondo_imagen_url})` 
+          : (isGradient ? bgValue : bg),
         backgroundColor: bg, 
+        backgroundPosition: isImage ? (apariencia.fondo_imagen_posicion || 'center center') : 'initial',
+        backgroundSize: isImage ? (apariencia.fondo_imagen_ajuste || 'cover') : 'initial',
+        backgroundRepeat: isImage ? (apariencia.fondo_imagen_repetir || 'no-repeat') : 'initial',
+        backgroundAttachment: isImage ? 'fixed' : 'initial',
         color: textMain, 
         fontFamily 
       }} 
-      className="min-h-screen pb-24 transition-colors"
+      className="min-h-screen pb-24 transition-colors relative"
     >
+      {/* Overlay para legibilidad si es imagen de fondo */}
+      {isImage && apariencia.fondo_imagen_url && (
+        <div 
+          className="fixed inset-0 pointer-events-none z-0" 
+          style={{ 
+            backgroundColor: dark ? 'rgba(10, 10, 10, 0.7)' : 'rgba(255, 255, 255, 0.75)', 
+            backdropFilter: apariencia.fondo_blur || '0px',
+            WebkitBackdropFilter: apariencia.fondo_blur || '0px'
+          }} 
+        />
+      )}
+
+      <div className="relative z-10 flex flex-col min-h-screen">
 
       {/* ── HEADER ── */}
       <header
         className="sticky top-0 z-50 px-5 py-3.5 flex items-center justify-between backdrop-blur-xl transition-all"
-        style={{ backgroundColor: headerBg, borderBottom: `1px solid ${border}` }}
+        style={{ backgroundColor: 'transparent', borderBottom: 'none' }}
       >
         <div className="flex items-center gap-3">
           {restaurante.logo_url ? (
@@ -312,8 +332,8 @@ export function PublicMenu() {
         style={{ 
           position: categoriesSticky ? 'sticky' : 'relative',
           top: categoriesSticky ? '57px' : 'auto',
-          backgroundColor: headerBg, 
-          borderBottom: `1px solid ${border}` 
+          backgroundColor: 'transparent', 
+          borderBottom: 'none' 
         }}
       >
         <div className="flex gap-2 w-max">
@@ -368,10 +388,16 @@ export function PublicMenu() {
               </p>
             )}
             {restaurante.config_diseno?.informacion?.direccion && (
-              <div className="flex items-center gap-1.5 text-[12px] font-medium" style={{ color: textMuted }}>
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(restaurante.config_diseno.informacion.direccion)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-[12px] font-bold hover:opacity-80 transition-opacity"
+                style={{ color: primary }}
+              >
                 <span className="text-sm">📍</span>
-                <span>{restaurante.config_diseno.informacion.direccion}</span>
-              </div>
+                <span className="underline decoration-dotted underline-offset-2">{restaurante.config_diseno.informacion.direccion}</span>
+              </a>
             )}
           </div>
         </motion.div>
@@ -446,9 +472,22 @@ export function PublicMenu() {
       {/* ── FOOTER ── */}
       <footer className="mt-20 py-10 text-center" style={{ borderTop: `1px solid ${border}` }}>
         {restaurante.config_diseno?.informacion?.direccion && (
-          <p className="text-[12px] font-medium mb-4 max-w-md mx-auto px-5" style={{ color: textSub }}>
-            📍 {restaurante.config_diseno.informacion.direccion}
-          </p>
+          <a
+            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(restaurante.config_diseno.informacion.direccion)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-[12px] font-bold mb-6 max-w-xs mx-auto px-4 py-2.5 rounded-xl border transition-all active:scale-95 shadow-apple-xs hover:opacity-90"
+            style={{ 
+              backgroundColor: surface, 
+              borderColor: border, 
+              color: textSub,
+              borderRadius: btnRadius
+            }}
+          >
+            <span className="text-red-500">📍</span>
+            <span className="truncate max-w-[180px]">{restaurante.config_diseno.informacion.direccion}</span>
+            <span className="text-[10px] opacity-60 font-black uppercase tracking-wider ml-1 border-l pl-2 border-apple-border dark:border-apple-dark-border">Ruta</span>
+          </a>
         )}
         <p className="text-[11px] font-semibold tracking-[0.18em] uppercase mb-3" style={{ color: textMuted }}>
           Menú digital por MexxicanMX
@@ -457,6 +496,7 @@ export function PublicMenu() {
           <span>🌮</span><span>⚡</span><span>🤖</span>
         </div>
       </footer>
+      </div>
     </div>
   );
 }

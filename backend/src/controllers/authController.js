@@ -23,29 +23,35 @@ const register = async (req, res) => {
   }
 
   try {
-    // 1. Validar email único
+    // 1. Validar email único en la base de datos local
     const userCheck = await db.query('SELECT id FROM restaurantes WHERE email = $1', [email]);
     if (userCheck.rows.length > 0) {
       return res.status(409).json({ mensaje: 'El email ya está registrado' });
     }
 
-    // 2. Hashear password
+    // 2. Hashear password localmente
     const salt = await bcrypt.genSalt(8);
     const password_hash = await bcrypt.hash(password, salt);
 
-    // Generar slug único y no consecutivo
+    // Generar slug único
     const baseSlug = slugify(nombre_negocio);
     const randomSuffix = Math.random().toString(36).substring(2, 6);
     const slug = `${baseSlug}-${randomSuffix}`;
 
-    // 3. Insertar restaurante
+    // 3. Insertar restaurante en base de datos local
     const newRest = await db.query(
       'INSERT INTO restaurantes (nombre_negocio, email, password_hash, plan, nombre_dueno, slug) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
       [nombre_negocio, email, password_hash, plan || 'basico', nombre_dueño || '', slug]
     );
 
+    // Inicializar configuración de tema
+    await db.query(
+      "INSERT INTO configuracion_tema (restaurante_id) VALUES ($1) ON CONFLICT (restaurante_id) DO NOTHING",
+      [newRest.rows[0].id]
+    );
+
     res.status(201).json({
-      mensaje: 'Registrado con éxito',
+      mensaje: 'Registrado con éxito. Ya puedes iniciar sesión.',
       restaurante_id: newRest.rows[0].id
     });
   } catch (error) {
@@ -62,33 +68,32 @@ const login = async (req, res) => {
   }
 
   try {
-    // 1. Buscar usuario (con índice activo en DB)
-    const result = await db.query('SELECT id, password_hash, rol, suscripcion_activa, estado, fecha_vencimiento FROM restaurantes WHERE email = $1 LIMIT 1', [email]);
-    if (result.rows.length === 0) {
-      return res.status(401).json({ mensaje: 'Credenciales inválidas' });
+    // 1. Verificar si existe localmente
+    const localUserRes = await db.query(
+      'SELECT id, password_hash, rol, suscripcion_activa, estado, fecha_vencimiento FROM restaurantes WHERE email = $1 LIMIT 1',
+      [email]
+    );
+
+    if (localUserRes.rows.length === 0) {
+      return res.status(401).json({ mensaje: 'Correo o contraseña incorrectos' });
     }
 
-    const user = result.rows[0];
+    const user = localUserRes.rows[0];
 
-    // 2. Comparar password (Costo optimizado a 8 rounds en registro)
+    // 2. Validar contraseña con bcrypt
     const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
-      return res.status(401).json({ mensaje: 'Credenciales inválidas' });
+      return res.status(401).json({ mensaje: 'Correo o contraseña incorrectos' });
     }
 
-    // 3. Verificar estado y vencimiento de suscripción (Solo para restaurantes)
+    // 3. Verificar estado y vencimiento de suscripción (Solo para restaurantes, no SUPER_ADMIN)
     if (user.rol !== 'SUPER_ADMIN') {
       const ahora = new Date();
       if (user.fecha_vencimiento && new Date(user.fecha_vencimiento) < ahora) {
-        // Suspender automáticamente si venció la fecha
         await db.query("UPDATE restaurantes SET estado = 'suspendido', suscripcion_activa = false WHERE id = $1", [user.id]);
         await db.query("UPDATE platillos SET activo = false WHERE restaurante_id = $1", [user.id]);
         user.estado = 'suspendido';
         user.suscripcion_activa = false;
-      }
-
-      if (user.estado === 'pendiente') {
-        return res.status(403).json({ mensaje: 'Tu cuenta está en proceso de revisión por el administrador' });
       }
 
       if (user.estado === 'suspendido' || !user.suscripcion_activa) {
@@ -96,22 +101,22 @@ const login = async (req, res) => {
       }
     }
 
-    // 4. Generar tokens en paralelo para reducir latencia
+    // 4. Generar tokens locales en paralelo
     const [accessToken, refreshToken] = await Promise.all([
       jwt.sign({ id: user.id, rol: user.rol }, process.env.JWT_SECRET, { expiresIn: '15m' }),
       jwt.sign({ id: user.id }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '7d' })
     ]);
 
-    // 5. Guardar Refresh Token de forma asíncrona (no bloqueante para la respuesta al cliente)
+    // 5. Guardar Refresh Token en segundo plano
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
     
     db.query(
       'INSERT INTO refresh_tokens (restaurante_id, token, expires_at) VALUES ($1, $2, $3)',
       [user.id, refreshToken, expiresAt]
-    ).catch(err => console.error('Error guardando refresh token (background):', err));
+    ).catch(err => console.error('Error guardando refresh token:', err));
 
-    // 6. Responder inmediatamente
+    // 6. Establecer cookie HttpOnly y responder
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -129,6 +134,28 @@ const login = async (req, res) => {
     console.error('Error en login:', error);
     res.status(500).json({ mensaje: 'Error interno del servidor' });
   }
+};
+
+const callback = async (req, res) => {
+  // OIDC Callback dummy por compatibilidad de rutas si es necesario
+  return res.status(404).json({ mensaje: 'Endpoint OIDC deshabilitado. Autenticación local activa.' });
+};
+
+const loginWithCognito = async (req, res) => {
+  // Dummy por compatibilidad si es necesario
+  return res.status(404).json({ mensaje: 'Cognito deshabilitado. Autenticación local activa.' });
+};
+
+const logout = (req, res) => {
+  if (req.session) {
+    req.session.destroy((err) => {
+      if (err) {
+        console.error('Error al destruir sesión express-session:', err);
+      }
+    });
+  }
+  res.clearCookie('refreshToken');
+  return res.json({ mensaje: 'Sesión cerrada exitosamente' });
 };
 
 const refresh = async (req, res) => {
@@ -198,8 +225,100 @@ const refresh = async (req, res) => {
   }
 };
 
+const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ mensaje: 'El correo electrónico es requerido' });
+  }
+
+  try {
+    // 1. Buscar si el usuario existe
+    const userRes = await db.query('SELECT id FROM restaurantes WHERE email = $1 LIMIT 1', [email]);
+    if (userRes.rows.length === 0) {
+      return res.status(404).json({ mensaje: 'El correo electrónico no está registrado' });
+    }
+
+    // 2. Generar código de 6 dígitos
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
+
+    // 3. Guardar en BD
+    await db.query(
+      'UPDATE restaurantes SET reset_token = $1, reset_token_expires = $2 WHERE email = $3',
+      [code, expiresAt, email]
+    );
+
+    // 4. Imprimir en consola para depuración
+    console.log(`\n========================================`);
+    console.log(`[RECUPERACIÓN DE CONTRASEÑA LOCAL]`);
+    console.log(`Para el correo: ${email}`);
+    console.log(`Código generado: ${code}`);
+    console.log(`Expira en: 15 minutos`);
+    console.log(`========================================\n`);
+
+    return res.json({ 
+      mensaje: 'Código de recuperación generado con éxito. (Modo desarrollo: revisa la terminal del backend para ver el código).' 
+    });
+  } catch (error) {
+    console.error('Error en forgotPassword:', error);
+    return res.status(500).json({ mensaje: 'Error interno del servidor' });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  const { email, code, new_password } = req.body;
+
+  if (!email || !code || !new_password) {
+    return res.status(400).json({ mensaje: 'Correo, código y nueva contraseña son requeridos' });
+  }
+
+  try {
+    // 1. Buscar si el usuario existe y obtener su token de reset
+    const userRes = await db.query(
+      'SELECT id, reset_token, reset_token_expires FROM restaurantes WHERE email = $1 LIMIT 1',
+      [email]
+    );
+
+    if (userRes.rows.length === 0) {
+      return res.status(404).json({ mensaje: 'Usuario no encontrado' });
+    }
+
+    const user = userRes.rows[0];
+
+    // 2. Verificar validez del código
+    if (!user.reset_token || user.reset_token !== code) {
+      return res.status(400).json({ mensaje: 'El código de verificación es inválido' });
+    }
+
+    if (new Date(user.reset_token_expires) < new Date()) {
+      return res.status(400).json({ mensaje: 'El código de verificación ha expirado' });
+    }
+
+    // 3. Hashear la nueva contraseña
+    const salt = await bcrypt.genSalt(8);
+    const password_hash = await bcrypt.hash(new_password, salt);
+
+    // 4. Actualizar en BD y limpiar tokens de recuperación
+    await db.query(
+      'UPDATE restaurantes SET password_hash = $1, reset_token = NULL, reset_token_expires = NULL WHERE id = $2',
+      [password_hash, user.id]
+    );
+
+    return res.json({ mensaje: 'Contraseña restablecida con éxito. Ya puedes iniciar sesión.' });
+  } catch (error) {
+    console.error('Error en resetPassword:', error);
+    return res.status(500).json({ mensaje: 'Error interno del servidor' });
+  }
+};
+
 module.exports = {
   register,
   login,
-  refresh
+  refresh,
+  callback,
+  logout,
+  loginWithCognito,
+  forgotPassword,
+  resetPassword
 };

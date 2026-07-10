@@ -1,6 +1,20 @@
 import api from './api';
 
+let cachedRestauranteInfo: any = null;
+let cachedPlatillos: any = null;
+let cachedCategorias: any = null;
+let cachedCocinas: any = null;
+let cachedPorciones: any = null;
+
 export const restauranteService = {
+  clearCache: () => {
+    cachedRestauranteInfo = null;
+    cachedPlatillos = null;
+    cachedCategorias = null;
+    cachedCocinas = null;
+    cachedPorciones = null;
+  },
+
   getQR: async () => {
     try {
       const response = await api.get('/restaurants/qr');
@@ -16,23 +30,29 @@ export const restauranteService = {
 
   // Recibe FormData con el archivo de imagen
   crearPlatillo: async (formData: FormData) => {
+    cachedPlatillos = null;
     const response = await api.post('/menu/platillos', formData);
     return response.data;
   },
 
   // Actualizar platillo
   actualizarPlatillo: async (id: string | number, formData: FormData) => {
+    cachedPlatillos = null;
     const response = await api.put(`/menu/platillos/${id}`, formData);
     return response.data;
   },
 
   // Eliminar platillo
   eliminarPlatillo: async (id: string | number) => {
+    cachedPlatillos = null;
     const response = await api.delete(`/menu/platillos/${id}`);
     return response.data;
   },
 
   getPlatillos: async () => {
+    if (cachedPlatillos) {
+      return cachedPlatillos;
+    }
     try {
       // Usar la ruta privada para ver TODOS los platillos (incluyendo inactivos)
       const response = await api.get('/menu/platillos');
@@ -51,11 +71,13 @@ export const restauranteService = {
         return `${baseUrl}${trimmed.startsWith('/') ? '' : '/'}${trimmed}`;
       };
 
-      return platillos.map((p: any) => ({
+      const mapped = platillos.map((p: any) => ({
         ...p,
         url_imagen: normalizeImageUrl(p.url_imagen),
         categoria: p.categoria_nombre // El backend devuelve categoria_nombre en la ruta privada
       }));
+      cachedPlatillos = mapped;
+      return mapped;
     } catch (error) {
       console.error('Error fetching platillos:', error);
       throw error;
@@ -63,6 +85,7 @@ export const restauranteService = {
   },
 
   updateTheme: async (data: any) => {
+    cachedRestauranteInfo = null;
     try {
       const response = await api.put('/restaurants/theme', data);
       return response.data;
@@ -73,8 +96,12 @@ export const restauranteService = {
   },
 
   getRestauranteInfo: async () => {
+    if (cachedRestauranteInfo) {
+      return cachedRestauranteInfo;
+    }
     try {
       const response = await api.get('/restaurants/info');
+      cachedRestauranteInfo = response.data;
       return response.data;
     } catch (error) {
       console.warn('Error fetching restaurante info, using mock data:', error);
@@ -90,6 +117,7 @@ export const restauranteService = {
   },
 
   uploadBrandingImage: async (file: File) => {
+    cachedRestauranteInfo = null;
     const formData = new FormData();
     formData.append('imagen', file);
     const response = await api.post('/restaurants/upload-branding', formData);
@@ -97,8 +125,12 @@ export const restauranteService = {
   },
 
   getCategorias: async () => {
+    if (cachedCategorias) {
+      return cachedCategorias;
+    }
     try {
       const response = await api.get('/categories');
+      cachedCategorias = response.data;
       return response.data;
     } catch (error) {
       console.warn('Error fetching categories:', error);
@@ -107,8 +139,12 @@ export const restauranteService = {
   },
 
   getCocinas: async () => {
+    if (cachedCocinas) {
+      return cachedCocinas;
+    }
     try {
       const response = await api.get('/categories/cocinas');
+      cachedCocinas = response.data;
       return response.data;
     } catch (error) {
       console.warn('Error fetching cocinas:', error);
@@ -117,8 +153,12 @@ export const restauranteService = {
   },
 
   getPorciones: async () => {
+    if (cachedPorciones) {
+      return cachedPorciones;
+    }
     try {
       const response = await api.get('/categories/porciones');
+      cachedPorciones = response.data;
       return response.data;
     } catch (error) {
       console.warn('Error fetching portion sizes:', error);

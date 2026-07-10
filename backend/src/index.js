@@ -1,11 +1,22 @@
 const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
+const session = require('express-session');
 const path = require('path');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 4000;
+
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'mexxicanmx-session-secret-2026',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000 // 1 día
+  }
+}));
 
 // Middleware
 const allowedOrigins = [
@@ -36,12 +47,16 @@ app.use(cookieParser());
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Database and Redis connections
-require('./config/db');
+const db = require('./config/db');
 require('./config/redis');
 
 // Iniciar verificador de suscripciones expiradas
 const { initSubscriptionCheck } = require('./services/subscriptionCheck');
-initSubscriptionCheck();
+db.initPromise.then(() => {
+  initSubscriptionCheck();
+}).catch(err => {
+  console.error('Failed to initialize database, skipping subscription checks:', err);
+});
 
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));

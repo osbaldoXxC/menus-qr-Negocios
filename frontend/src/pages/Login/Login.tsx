@@ -14,6 +14,14 @@ export function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -51,6 +59,17 @@ export function Login() {
         <div className="absolute top-[-10%] right-[-5%] w-[40%] h-[50%] rounded-full bg-[#0071E3]/[0.06] dark:bg-[#2997FF]/[0.08] blur-[100px]" />
         <div className="absolute bottom-[-10%] left-[-5%] w-[35%] h-[45%] rounded-full bg-[#FF4A00]/[0.05] dark:bg-[#FF4A00]/[0.07] blur-[90px]" />
       </div>
+
+      {/* Back button */}
+      <motion.button
+        onClick={handleBack}
+        whileHover={{ x: -4 }}
+        whileTap={{ scale: 0.97 }}
+        className="fixed top-5 left-5 px-4 py-2.5 rounded-full bg-black/[0.05] dark:bg-white/[0.06] border border-black/[0.08] dark:border-white/[0.08] text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-white transition-all text-[14px] font-semibold flex items-center gap-2 z-10"
+      >
+        <span>←</span>
+        <span>Volver</span>
+      </motion.button>
 
       {/* Theme toggle */}
       <button
@@ -117,6 +136,12 @@ export function Login() {
             >
               {showPassword ? '👁️' : '👁️‍🗨️'}
             </button>
+          </div>
+
+          <div className="flex justify-end text-[13px] px-1">
+            <Link to="/recuperar-contrasena" className="text-[#0071E3] dark:text-[#2997FF] font-medium hover:underline transition-colors">
+              ¿Olvidaste tu contraseña?
+            </Link>
           </div>
 
           <motion.button

@@ -127,32 +127,44 @@ const reorderCategories = async (req, res) => {
   const { categorias } = req.body; // Expects [{ id, orden }, ...]
   const restaurante_id = req.user.id;
 
-  if (!categorias || !Array.isArray(categorias)) {
+  if (!categorias || !Array.isArray(categorias) || categorias.length === 0) {
     return res.status(400).json({ mensaje: 'Se requiere un arreglo de categorías con su nuevo orden' });
   }
 
-  const client = await db.pool.connect();
-
   try {
-    await client.query('BEGIN');
+    // Construir consulta optimizada usando sentencias CASE en un solo query
+    const values = [restaurante_id];
+    let caseStatements = '';
+    const ids = [];
 
-    for (const item of categorias) {
-      await client.query(
-        'UPDATE categorias_restaurante SET orden = $1 WHERE id = $2 AND restaurante_id = $3',
-        [item.orden, item.id, restaurante_id]
-      );
-    }
+    categorias.forEach((item) => {
+      const idIndex = values.push(item.id);
+      const ordenIndex = values.push(parseInt(item.orden));
+      caseStatements += `WHEN $${idIndex}::uuid THEN $${ordenIndex}::int `;
+      ids.push(`$${idIndex}::uuid`);
+    });
 
-    await client.query('COMMIT');
+    const query = `
+      UPDATE categorias_restaurante
+      SET orden = CASE id
+        ${caseStatements}
+      END
+      WHERE id IN (${ids.join(', ')}) AND restaurante_id = $1
+    `;
+
+    await db.query(query, values);
+
+    // Invalida caché del menú en Redis (Tanto ID como Slug)
     await redisClient.del(`cache:menu:${restaurante_id}`);
+    const restSlugQuery = await db.query('SELECT slug FROM restaurantes WHERE id = $1', [restaurante_id]);
+    if (restSlugQuery.rows.length > 0 && restSlugQuery.rows[0].slug) {
+      await redisClient.del(`cache:menu:${restSlugQuery.rows[0].slug}`);
+    }
 
     res.json({ mensaje: 'Orden de categorías actualizado correctamente' });
   } catch (error) {
-    await client.query('ROLLBACK');
-    console.error('Error al reordenar categorías:', error);
+    console.error('Error al reordenar categorías de forma optimizada:', error);
     res.status(500).json({ mensaje: 'Error interno al reordenar' });
-  } finally {
-    client.release();
   }
 };
 

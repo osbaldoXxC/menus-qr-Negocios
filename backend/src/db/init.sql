@@ -1,8 +1,7 @@
 -- MexxicanMX Database Schema (v3.0 - 100% Normalizado 3FN - IA Standby)
 -- Tarea 5.2: Esquema Relacional PostgreSQL
 
--- 1. Habilitar extensión pgvector (Se mantiene la capacidad, aunque no se use activamente)
-CREATE EXTENSION IF NOT EXISTS vector;
+-- 1. Capacidad de IA / Vectorial deshabilitada para desarrollo ligero
 
 -- 2. Tabla de Restaurantes (Módulo de Panel SaaS)
 CREATE TABLE IF NOT EXISTS restaurantes (
@@ -86,7 +85,7 @@ CREATE TABLE IF NOT EXISTS platillos (
     url_imagen TEXT, -- Apunta a S3
     categoria_id UUID REFERENCES categorias_restaurante(id) ON DELETE SET NULL,
     activo BOOLEAN DEFAULT true, -- Soporte para pausado lógico
-    vector_ia vector(768), -- Restaurado a vector_ia para compatibilidad con código actual
+    -- vector_ia vector(768), -- Removido para desarrollo ligero
     estado_ia VARCHAR(50) DEFAULT 'pendiente', -- 'pendiente', 'procesando', 'completado'
     ingredientes_principales JSONB DEFAULT '[]'::jsonb,
     complementos JSONB DEFAULT '[]'::jsonb,

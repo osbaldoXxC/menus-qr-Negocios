@@ -36,7 +36,7 @@ const optimizeImage = async (req, res, next) => {
     // 1. Procesar con SHARP: Convertir a WebP y comprimir
     const optimizedBuffer = await sharp(req.file.buffer)
       .resize(800, 800, { fit: 'inside', withoutEnlargement: true })
-      .webp({ quality: 60, effort: 6 })
+      .webp({ quality: 70, effort: 6 })
       .toBuffer();
 
     // 2. Verificar si tenemos S3 configurado

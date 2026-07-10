@@ -67,6 +67,20 @@ const updateTheme = async (req, res) => {
         sanitizedConfigDiseno.informacion.ambiente = sanitizeText(sanitizedConfigDiseno.informacion.ambiente);
       }
     }
+    if (sanitizedConfigDiseno.apariencia && typeof sanitizedConfigDiseno.apariencia === 'object') {
+      if (sanitizedConfigDiseno.apariencia.fondo_imagen_url) {
+        sanitizedConfigDiseno.apariencia.fondo_imagen_url = sanitizeText(sanitizedConfigDiseno.apariencia.fondo_imagen_url);
+      }
+      if (sanitizedConfigDiseno.apariencia.fondo_imagen_posicion) {
+        sanitizedConfigDiseno.apariencia.fondo_imagen_posicion = sanitizeText(sanitizedConfigDiseno.apariencia.fondo_imagen_posicion);
+      }
+      if (sanitizedConfigDiseno.apariencia.fondo_imagen_ajuste) {
+        sanitizedConfigDiseno.apariencia.fondo_imagen_ajuste = sanitizeText(sanitizedConfigDiseno.apariencia.fondo_imagen_ajuste);
+      }
+      if (sanitizedConfigDiseno.apariencia.fondo_imagen_repetir) {
+        sanitizedConfigDiseno.apariencia.fondo_imagen_repetir = sanitizeText(sanitizedConfigDiseno.apariencia.fondo_imagen_repetir);
+      }
+    }
   }
 
   try {
