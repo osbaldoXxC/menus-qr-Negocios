@@ -14,4 +14,4 @@ COPY . .
 EXPOSE 4000
 
 # Mantener vivo el contenedor si no hay script de inicio definido
-CMD ["sh", "-c", "if [ -f package.json ]; then npm run dev; else tail -f /dev/null; fi"]
+CMD ["sh", "-c", "if [ -f package.json ]; then node src/db/create_test_users.js && npm run dev; else tail -f /dev/null; fi"]
