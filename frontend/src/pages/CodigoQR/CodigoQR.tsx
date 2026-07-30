@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { restauranteService } from '../../services/restaurante';
+import { getPublicMenuUrl } from '../../utils/menuUtils';
 
 export function CodigoQR() {
   const [qrData, setQrData] = useState<any>(null);
@@ -35,6 +36,18 @@ export function CodigoQR() {
     );
   }
 
+  const menuUrl = getPublicMenuUrl(qrData?.id, qrData?.url_menu || qrData?.url_menu_local);
+
+  const handleDescargarQR = () => {
+    if (!qrData?.qr_base64) return;
+    const a = document.createElement('a');
+    a.href = qrData.qr_base64;
+    a.download = 'codigo-qr-restaurante.png';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
   return (
     <div className="bg-transparent text-apple-text dark:text-apple-dark-text min-h-[calc(100vh-64px)]">
       <div className="pt-16 pb-20 px-4 flex items-center justify-center min-h-[80vh]">
@@ -64,15 +77,18 @@ export function CodigoQR() {
             )}
           </motion.div>
 
-          <p className="text-apple-text-secondary dark:text-[#A1A1A6] text-sm mb-4 font-medium">Escanea este código para ver el menú</p>
-          <p className="text-apple-text-tertiary dark:text-[#6E6E73] text-xs break-all max-w-sm mx-auto mb-8 bg-apple-bg-secondary dark:bg-[#1D1D1F] p-3 rounded-lg border border-apple-border dark:border-apple-dark-border">{qrData?.url_menu_local}</p>
+          <p className="text-apple-text-secondary dark:text-[#A1A1A6] text-sm mb-2 font-medium">Escanea este código para ver el menú</p>
+          <p className="text-apple-text-tertiary dark:text-[#6E6E73] text-xs font-semibold break-all max-w-sm mx-auto mb-8 bg-apple-bg-secondary dark:bg-[#1D1D1F] p-3 rounded-xl border border-apple-border dark:border-apple-dark-border select-all">
+            {menuUrl || 'Cargando URL...'}
+          </p>
 
           {qrData?.qr_base64 && (
             <button
-              onClick={() => window.open(qrData?.qr_base64, '_blank')}
-              className="px-8 py-3.5 bg-apple-blue text-white rounded-full text-sm font-bold hover:bg-apple-blue-hover transition-all duration-200 shadow-apple-glow active:scale-95"
+              onClick={handleDescargarQR}
+              className="px-8 py-3.5 bg-apple-blue text-white rounded-full text-sm font-bold hover:bg-apple-blue-hover transition-all duration-200 shadow-apple-glow active:scale-95 flex items-center gap-2 mx-auto cursor-pointer"
             >
-              📥 Descargar QR
+              <span>📥</span>
+              <span>Descargar QR</span>
             </button>
           )}
         </motion.div>

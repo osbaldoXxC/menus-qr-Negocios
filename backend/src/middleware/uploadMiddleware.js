@@ -24,9 +24,32 @@ const upload = multer({
   }
 });
 
+const esImagenValida = (buffer) => {
+  if (!buffer || buffer.length < 12) return false;
+  
+  // Convertir los primeros bytes a hex para comparar firmas conocidas (Magic Bytes)
+  const hex = buffer.toString('hex', 0, 12).toUpperCase();
+  
+  // PNG: 89 50 4E 47 0D 0A 1A 0A
+  if (hex.startsWith('89504E470D0A1A0A')) return true;
+  // JPEG / JPG: FF D8 FF
+  if (hex.startsWith('FFD8FF')) return true;
+  // WEBP: RIFF (52 49 46 46) ... WEBP (57 45 42 50)
+  if (hex.startsWith('52494646') && hex.substring(16, 24) === '57454250') return true;
+  // GIF: GIF8 (47 49 46 38)
+  if (hex.startsWith('47494638')) return true;
+  
+  return false;
+};
+
 // Middleware para procesar y optimizar la imagen
 const optimizeImage = async (req, res, next) => {
   if (!req.file) return next();
+
+  // Validar magic bytes (Firma de archivo real) para mitigar subida de ejecutables / shells
+  if (!esImagenValida(req.file.buffer)) {
+    return res.status(400).json({ mensaje: 'El archivo subido no es una imagen válida (magic bytes no coinciden)' });
+  }
 
   try {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);

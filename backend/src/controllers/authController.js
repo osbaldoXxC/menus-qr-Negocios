@@ -2,39 +2,9 @@ const db = require('../config/db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const redisClient = require('../config/redis');
-const axios = require('axios');
 const crypto = require('crypto');
+const { enviarCorreoResend } = require('../config/mailer');
 
-// Función auxiliar para enviar correos con Resend
-const enviarCorreoResend = async (to, subject, htmlContent) => {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    console.warn('------------------------------------------------------------');
-    console.warn(`[OTP MOCK] Correo para: ${to}`);
-    console.warn(`[OTP MOCK] Asunto: ${subject}`);
-    console.warn(`[OTP MOCK] Contenido HTML:\n${htmlContent}`);
-    console.warn('------------------------------------------------------------');
-    return { mock: true };
-  }
-
-  try {
-    const response = await axios.post('https://api.resend.com/emails', {
-      from: 'MexxicanMX <onboarding@resend.dev>',
-      to: [to],
-      subject: subject,
-      html: htmlContent
-    }, {
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    return response.data;
-  } catch (error) {
-    console.error('Error enviando correo con Resend:', error.response?.data || error.message);
-    throw new Error('Error al enviar el correo electrónico de verificación.');
-  }
-};
 
 const register = async (req, res) => {
   const { nombre_negocio, email, password, plan, nombre_dueño } = req.body;
@@ -54,9 +24,10 @@ const register = async (req, res) => {
     const salt = await bcrypt.genSalt(12);
     const password_hash = await bcrypt.hash(password, salt);
 
-    // 3. Insertar restaurante (email_verificado queda en false por defecto)
+    // 3. Insertar restaurante (email_verificado queda en false por defecto, suscripcion_activa = false, estado = 'pendiente')
     const newRest = await db.query(
-      'INSERT INTO restaurantes (nombre_negocio, email, password_hash, plan, nombre_dueno, email_verificado) VALUES ($1, $2, $3, $4, $5, false) RETURNING id',
+      `INSERT INTO restaurantes (nombre_negocio, email, password_hash, plan, nombre_dueno, email_verificado, suscripcion_activa, estado) 
+       VALUES ($1, $2, $3, $4, $5, false, false, 'pendiente') RETURNING id`,
       [nombre_negocio, email, password_hash, plan || 'basico', nombre_dueño || '']
     );
 
@@ -107,7 +78,7 @@ const login = async (req, res) => {
 
   try {
     // 1. Buscar usuario
-    const result = await db.query('SELECT id, password_hash, rol, suscripcion_activa, email_verificado FROM restaurantes WHERE email = $1 LIMIT 1', [email]);
+    const result = await db.query('SELECT id, password_hash, rol, suscripcion_activa, email_verificado, estado FROM restaurantes WHERE email = $1 LIMIT 1', [email]);
     if (result.rows.length === 0) {
       return res.status(401).json({ mensaje: 'Credenciales inválidas' });
     }
@@ -129,9 +100,12 @@ const login = async (req, res) => {
       });
     }
 
-    // 4. Verificar suscripción (Solo para restaurantes)
+    // 4. Verificar suscripción y aprobación por Super Admin (Solo para restaurantes)
     if (!user.suscripcion_activa && user.rol !== 'SUPER_ADMIN') {
-      return res.status(403).json({ mensaje: 'Suscripción inactiva. Contacte al administrador.' });
+      const msg = user.estado === 'pendiente'
+        ? 'Tu correo ya fue verificado. Tu cuenta está en espera de aprobación por el Super Admin.'
+        : 'Suscripción inactiva o suspendida. Contacte al administrador.';
+      return res.status(403).json({ mensaje: msg });
     }
 
     // 5. Generar tokens en paralelo
@@ -205,7 +179,7 @@ const verifyEmail = async (req, res) => {
     // 3. Eliminar OTP de Redis
     await redisClient.del(`otp:registro:${email}`);
 
-    res.json({ mensaje: 'Cuenta verificada con éxito. Ya puedes iniciar sesión.' });
+    res.json({ mensaje: 'Correo electrónico verificado con éxito. Tu cuenta ha sido enviada al Super Admin para su aprobación.' });
   } catch (error) {
     console.error('Error en verificación de email:', error);
     res.status(500).json({ mensaje: 'Error interno del servidor' });

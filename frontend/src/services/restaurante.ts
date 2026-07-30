@@ -57,17 +57,30 @@ export const restauranteService = {
         categoria: p.categoria_nombre // El backend devuelve categoria_nombre en la ruta privada
       }));
     } catch (error) {
-      console.error('Error fetching platillos:', error);
-      throw error;
+      console.warn('Error fetching platillos:', error);
+      return [];
     }
   },
 
   updateTheme: async (data: any) => {
     try {
+      console.log('📤 updateTheme sending data:', JSON.stringify(data, null, 2).substring(0, 1000));
+      console.log('   responsive_imagen:', data?.config_diseno?.apariencia?.responsive_imagen);
       const response = await api.put('/restaurants/theme', data);
+      
+      if (response.data?.tema && typeof response.data.tema.config_diseno === 'string') {
+        try {
+          response.data.tema.config_diseno = JSON.parse(response.data.tema.config_diseno);
+        } catch (e) {
+          console.warn('Error parsing config_diseno in updateTheme:', e);
+          response.data.tema.config_diseno = {};
+        }
+      }
+
+      console.log('📥 updateTheme response:', JSON.stringify(response.data, null, 2).substring(0, 1000));
       return response.data;
     } catch (error) {
-      console.warn('Error updating theme, simulating success:', error);
+      console.warn('Error updating theme:', error);
       return { mensaje: 'Tema actualizado (Simulado)' };
     }
   },
@@ -75,14 +88,37 @@ export const restauranteService = {
   getRestauranteInfo: async () => {
     try {
       const response = await api.get('/restaurants/info');
+      if (response.data && typeof response.data.config_diseno === 'string') {
+        try {
+          response.data.config_diseno = JSON.parse(response.data.config_diseno);
+        } catch (e) {
+          console.warn('Error parsing config_diseno:', e);
+          response.data.config_diseno = {};
+        }
+      }
       return response.data;
     } catch (error) {
       console.warn('Error fetching restaurante info, using mock data:', error);
+      const restId = localStorage.getItem('restaurante_id');
+      if (restId === 'gourmet' || restId === '33333333-3333-3333-3333-333333333333') {
+        return {
+          id: '33333333-3333-3333-3333-333333333333',
+          nombre_negocio: "L'Étoile Gourmet",
+          nombre_dueño: 'Pierre gourmet',
+          tema: {
+            color_primario: '#D4AF37',
+            color_fondo: '#0A0D10',
+            layout_type: 'TARJETAS_DETALLADAS'
+          }
+        };
+      }
       return {
-        nombre_negocio: 'Restaurante de Prueba',
+        id: '22222222-2222-2222-2222-222222222222',
+        nombre_negocio: 'Gran Dragón Dorado',
+        nombre_dueño: 'Lee Chen',
         tema: {
-          color_primario: '#2997FF',
-          color_fondo: '#000000',
+          color_primario: '#D92B2B',
+          color_fondo: '#0F0A0A',
           layout_type: 'TARJETAS_DETALLADAS'
         }
       };

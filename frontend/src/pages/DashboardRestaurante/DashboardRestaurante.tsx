@@ -2,31 +2,53 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { restauranteService } from '../../services/restaurante';
-import { LayoutDashboard, QrCode, Utensils, Zap, ExternalLink, Copy, Download, PlusCircle, ChevronRight, TrendingUp } from 'lucide-react';
+import { LayoutDashboard, QrCode, Utensils, Zap, ExternalLink, Copy, Download, PlusCircle, ChevronRight } from 'lucide-react';
+import { getPublicMenuUrl } from '../../utils/menuUtils';
 
 export function DashboardRestaurante() {
   const navigate = useNavigate();
   const [restauranteInfo, setRestauranteInfo] = useState<any>(null);
   const [platillos, setPlatillos] = useState<any[]>([]);
+  const [qrData, setQrData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [info, platillosData] = await Promise.all([
+        const [info, platillosData, qrRes] = await Promise.all([
           restauranteService.getRestauranteInfo(),
           restauranteService.getPlatillos(),
+          restauranteService.getQR().catch(() => null),
         ]);
         setRestauranteInfo(info);
         setPlatillos(platillosData);
+        setQrData(qrRes);
       } catch (error) {
-        console.error('Error cargando datos:', error);
+        console.error('Error cargando dashboard:', error);
       } finally {
         setLoading(false);
       }
     };
     fetchData();
   }, []);
+
+  const handleDescargarQR = () => {
+    if (!qrData?.qr_base64) return;
+    const a = document.createElement('a');
+    a.href = qrData.qr_base64;
+    a.download = `qr-${restauranteInfo?.nombre_negocio || 'restaurante'}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  const getDiasRestantes = () => {
+    if (!restauranteInfo?.fecha_fin_suscripcion) return 30;
+    const fin = new Date(restauranteInfo.fecha_fin_suscripcion);
+    const hoy = new Date();
+    const diff = Math.ceil((fin.getTime() - hoy.getTime()) / (1000 * 3600 * 24));
+    return diff > 0 ? diff : 0;
+  };
 
   if (loading) {
     return (
@@ -47,8 +69,7 @@ export function DashboardRestaurante() {
 
   const stats = [
     { label: 'Platillos en menú', value: platillos.length, icon: Utensils, color: 'text-apple-blue', bg: 'bg-apple-blue/10' },
-    { label: 'Visitas este mes', value: '1,284', icon: TrendingUp, color: 'text-green-500', bg: 'bg-green-500/10' },
-    { label: 'Suscripción', value: 'Premium', icon: Zap, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+    { label: 'Suscripción Premium', value: `${getDiasRestantes()} restantes`, icon: Zap, color: 'text-amber-500', bg: 'bg-amber-500/10' },
   ];
 
   return (
@@ -78,10 +99,14 @@ export function DashboardRestaurante() {
           <div className="absolute top-0 right-0 w-80 h-80 bg-apple-blue/5 blur-[100px] group-hover:bg-apple-blue/10 transition-all duration-500" />
           
           <div className="flex flex-col md:flex-row gap-10 items-center relative z-10">
-            <div className="w-56 h-56 bg-white p-5 rounded-[2.5rem] shadow-apple-xl flex-shrink-0 group-hover:scale-105 transition-transform duration-500">
-              <div className="w-full h-full bg-apple-bg-secondary rounded-2xl flex items-center justify-center border-2 border-dashed border-apple-border">
-                 <QrCode size={64} className="text-apple-text-tertiary" />
-              </div>
+            <div className="w-56 h-56 bg-white p-4 rounded-[2.5rem] shadow-apple-xl flex-shrink-0 group-hover:scale-105 transition-transform duration-500 flex items-center justify-center">
+              {qrData?.qr_base64 ? (
+                <img src={qrData.qr_base64} alt="Código QR" className="w-full h-full object-contain rounded-2xl" />
+              ) : (
+                <div className="w-full h-full bg-apple-bg-secondary rounded-2xl flex items-center justify-center border-2 border-dashed border-apple-border">
+                  <QrCode size={64} className="text-apple-text-tertiary" />
+                </div>
+              )}
             </div>
 
             <div className="flex-1 text-center md:text-left">
@@ -98,17 +123,20 @@ export function DashboardRestaurante() {
                   <ExternalLink size={18} />
                   Ver QR
                 </Link>
-                <button className="flex items-center gap-2 px-6 py-3 bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border font-bold rounded-2xl hover:bg-apple-bg-tertiary transition-all active:scale-95">
+                <button 
+                  onClick={handleDescargarQR}
+                  className="flex items-center gap-2 px-6 py-3 bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border font-bold rounded-2xl hover:bg-apple-bg-tertiary transition-all active:scale-95 cursor-pointer"
+                >
                   <Download size={18} />
                   Descargar
                 </button>
                 <button 
                   onClick={() => {
-                    const url = `${window.location.origin}/menu/${restauranteInfo?.id}`;
-                    navigator.clipboard.writeText(url);
-                    alert('URL copiada al portapapeles');
+                    const menuUrl = getPublicMenuUrl(restauranteInfo?.id, qrData?.url_menu);
+                    navigator.clipboard.writeText(menuUrl);
+                    alert('URL copiada al portapapeles: ' + menuUrl);
                   }}
-                  className="flex items-center gap-2 px-6 py-3 bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border font-bold rounded-2xl hover:bg-apple-bg-tertiary transition-all active:scale-95"
+                  className="flex items-center gap-2 px-6 py-3 bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border font-bold rounded-2xl hover:bg-apple-bg-tertiary transition-all active:scale-95 cursor-pointer"
                 >
                   <Copy size={18} />
                   Copiar URL

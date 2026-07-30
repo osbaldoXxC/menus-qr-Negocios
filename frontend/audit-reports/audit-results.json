@@ -1,0 +1,1043 @@
+[
+  {
+    "breakpoint": "Desktop XL",
+    "key": "desktop_large",
+    "group": "horizontal",
+    "status": "PASS",
+    "editorCSS": {
+      "width": "2560px",
+      "height": "1440px",
+      "objectFit": "fill",
+      "transform": "none",
+      "borderRadius": "0px",
+      "opacity": "1",
+      "zIndex": "auto"
+    },
+    "publicCSS": {
+      "width": "2560px",
+      "height": "1440px",
+      "objectFit": "fill",
+      "transform": "none",
+      "borderRadius": "0px",
+      "opacity": "1",
+      "zIndex": "auto"
+    },
+    "cssMatch": true,
+    "objectFitEditor": "fill",
+    "objectFitPublic": "fill",
+    "persistedCorrectly": true,
+    "uiShowsPersisted": true,
+    "editorScreenshot": "EDITOR-desktop_large-1785375676174.png",
+    "publicScreenshot": "MENU-desktop_large-1785375691775.png",
+    "notes": [],
+    "bugs": [],
+    "editorSaveResponse": {
+      "mensaje": "Configuración de marca actualizada correctamente",
+      "tema": {
+        "id": "5222e341-1ac0-40f2-852f-d660892500ee",
+        "restaurante_id": "51ad632a-403d-426e-bfb4-2d32a448bb7b",
+        "logo_url": "",
+        "banner_url": null,
+        "color_primario": "#FF4A00",
+        "color_fondo": "#0A0A0A",
+        "fuente_familia": "Sans-Serif",
+        "layout_type": "TARJETAS_DETALLADAS",
+        "banner_promocional_activo": false,
+        "banner_promocional_texto": "",
+        "config_diseno": {
+          "layout": {
+            "categorias_sticky": true,
+            "layout_type_vertical": "TARJETAS_DETALLADAS",
+            "layout_type_horizontal": "TARJETAS_DETALLADAS"
+          },
+          "apariencia": {
+            "fondo_blur": "0px",
+            "fondo_tipo": "imagen",
+            "color_fondo": "#0A0A0A",
+            "fondo_valor": "#0A0A0A",
+            "modo_oscuro": true,
+            "color_normal": "#ffffff",
+            "color_primario": "#FF4A00",
+            "fondo_imagen_x": 0,
+            "fondo_imagen_y": 0,
+            "fuente_familia": "Sans-Serif",
+            "fondo_imagen_url": "https://d13mim0hny1xpb.cloudfront.net/dishes/1785367031587-712226456.webp",
+            "color_descripcion": "#8e8e93",
+            "fondo_imagen_blur": 0,
+            "fondo_imagen_zoom": 1,
+            "responsive_imagen": {
+              "laptop": {
+                "scale": 1,
+                "width": 300,
+                "custom": true,
+                "height": 300,
+                "opacity": 100,
+                "z_index": 0,
+                "rotation": 0,
+                "object_fit": "fill",
+                "position_x": 50,
+                "position_y": 50,
+                "border_radius": 0
+              },
+              "mobile": {
+                "scale": 1,
+                "width": 768,
+                "custom": true,
+                "height": 1024,
+                "opacity": 100,
+                "z_index": 1,
+                "rotation": 0,
+                "object_fit": "fill",
+                "position_x": 0,
+                "position_y": 0,
+                "border_radius": 0
+              },
+              "tablet": {
+                "scale": 1,
+                "width": 768,
+                "custom": true,
+                "height": 1024,
+                "opacity": 100,
+                "z_index": 1,
+                "rotation": 0,
+                "object_fit": "fill",
+                "position_x": 0,
+                "position_y": 0,
+                "border_radius": 0
+              },
+              "desktop": {
+                "scale": 1,
+                "width": 300,
+                "custom": true,
+                "height": 300,
+                "opacity": 100,
+                "z_index": 0,
+                "rotation": 0,
+                "object_fit": "fill",
+                "position_x": 50,
+                "position_y": 50,
+                "border_radius": 0
+              },
+              "mobile_small": {
+                "scale": 1,
+                "width": 768,
+                "custom": true,
+                "height": 1024,
+                "opacity": 100,
+                "z_index": 1,
+                "rotation": 0,
+                "object_fit": "fill",
+                "position_x": 0,
+                "position_y": 0,
+                "border_radius": 0
+              },
+              "desktop_large": {
+                "scale": 1,
+                "width": 2560,
+                "custom": true,
+                "height": 1440,
+                "opacity": 100,
+                "z_index": 1,
+                "rotation": 0,
+                "object_fit": "fill",
+                "position_x": 0,
+                "position_y": 0,
+                "border_radius": 0
+              }
+            },
+            "fondo_imagen_rotate": 0,
+            "fondo_imagen_opacity": 100,
+            "border_radius_botones": "12px",
+            "fondo_imagen_contrast": 100,
+            "fondo_imagen_saturate": 100,
+            "fondo_overlay_opacity": 0,
+            "border_radius_tarjetas": "24px",
+            "fondo_imagen_brightness": 100,
+            "fondo_overlay_gradient_active": false
+          },
+          "informacion": {
+            "ambiente": "Familiar",
+            "direccion": ""
+          },
+          "elementos_visuales": {
+            "glassmorphism": false,
+            "sombras_habilitadas": true
+          }
+        },
+        "updated_at": "2026-07-30T01:41:17.565Z"
+      }
+    }
+  },
+  {
+    "breakpoint": "Desktop",
+    "key": "desktop",
+    "group": "horizontal",
+    "status": "FAIL",
+    "editorCSS": {
+      "width": "2560px",
+      "height": "1440px",
+      "objectFit": "fill",
+      "transform": "none",
+      "borderRadius": "0px",
+      "opacity": "1",
+      "zIndex": "auto"
+    },
+    "publicCSS": {
+      "width": "300px",
+      "height": "300px",
+      "objectFit": "fill",
+      "transform": "none",
+      "borderRadius": "0px",
+      "opacity": "1",
+      "zIndex": "auto"
+    },
+    "cssMatch": false,
+    "objectFitEditor": "fill",
+    "objectFitPublic": "fill",
+    "persistedCorrectly": true,
+    "uiShowsPersisted": true,
+    "editorScreenshot": "EDITOR-desktop-1785375706270.png",
+    "publicScreenshot": "MENU-desktop-1785375722465.png",
+    "notes": [],
+    "bugs": [
+      {
+        "breakpoint": "Desktop",
+        "step": "Editor-Public CSS comparison",
+        "expected": "width: \"2560px\" (editor)",
+        "observed": "width: \"300px\" (public menu)",
+        "cssProperty": "width",
+        "editorValue": "2560px",
+        "publicValue": "300px",
+        "possibleCause": "Mismatch in width between editor canvas and public menu rendering — scaling or inheritance logic may differ",
+        "responsibleComponent": "PublicMenu",
+        "responsibleFile": "frontend/src/pages/PublicMenu/PublicMenu.tsx",
+        "solution": "Ensure public menu applies the same width value as the editor from the resolved breakpoint config"
+      },
+      {
+        "breakpoint": "Desktop",
+        "step": "Editor-Public CSS comparison",
+        "expected": "height: \"1440px\" (editor)",
+        "observed": "height: \"300px\" (public menu)",
+        "cssProperty": "height",
+        "editorValue": "1440px",
+        "publicValue": "300px",
+        "possibleCause": "Mismatch in height between editor canvas and public menu rendering — scaling or inheritance logic may differ",
+        "responsibleComponent": "PublicMenu",
+        "responsibleFile": "frontend/src/pages/PublicMenu/PublicMenu.tsx",
+        "solution": "Ensure public menu applies the same height value as the editor from the resolved breakpoint config"
+      }
+    ],
+    "editorSaveResponse": {
+      "mensaje": "Configuración de marca actualizada correctamente",
+      "tema": {
+        "id": "5222e341-1ac0-40f2-852f-d660892500ee",
+        "restaurante_id": "51ad632a-403d-426e-bfb4-2d32a448bb7b",
+        "logo_url": "",
+        "banner_url": null,
+        "color_primario": "#FF4A00",
+        "color_fondo": "#0A0A0A",
+        "fuente_familia": "Sans-Serif",
+        "layout_type": "TARJETAS_DETALLADAS",
+        "banner_promocional_activo": false,
+        "banner_promocional_texto": "",
+        "config_diseno": {
+          "layout": {
+            "categorias_sticky": true,
+            "layout_type_vertical": "TARJETAS_DETALLADAS",
+            "layout_type_horizontal": "TARJETAS_DETALLADAS"
+          },
+          "apariencia": {
+            "fondo_blur": "0px",
+            "fondo_tipo": "imagen",
+            "color_fondo": "#0A0A0A",
+            "fondo_valor": "#0A0A0A",
+            "modo_oscuro": true,
+            "color_normal": "#ffffff",
+            "color_primario": "#FF4A00",
+            "fondo_imagen_x": 0,
+            "fondo_imagen_y": 0,
+            "fuente_familia": "Sans-Serif",
+            "fondo_imagen_url": "https://d13mim0hny1xpb.cloudfront.net/dishes/1785367031587-712226456.webp",
+            "color_descripcion": "#8e8e93",
+            "fondo_imagen_blur": 0,
+            "fondo_imagen_zoom": 1,
+            "responsive_imagen": {
+              "laptop": {
+                "scale": 1,
+                "width": 300,
+                "custom": true,
+                "height": 300,
+                "opacity": 100,
+                "z_index": 0,
+                "rotation": 0,
+                "object_fit": "fill",
+                "position_x": 50,
+                "position_y": 50,
+                "border_radius": 0
+              },
+              "mobile": {
+                "scale": 1,
+                "width": 768,
+                "custom": true,
+                "height": 1024,
+                "opacity": 100,
+                "z_index": 1,
+                "rotation": 0,
+                "object_fit": "fill",
+                "position_x": 0,
+                "position_y": 0,
+                "border_radius": 0
+              },
+              "tablet": {
+                "scale": 1,
+                "width": 768,
+                "custom": true,
+                "height": 1024,
+                "opacity": 100,
+                "z_index": 1,
+                "rotation": 0,
+                "object_fit": "fill",
+                "position_x": 0,
+                "position_y": 0,
+                "border_radius": 0
+              },
+              "desktop": {
+                "scale": 1,
+                "width": 300,
+                "custom": true,
+                "height": 300,
+                "opacity": 100,
+                "z_index": 0,
+                "rotation": 0,
+                "object_fit": "fill",
+                "position_x": 50,
+                "position_y": 50,
+                "border_radius": 0
+              },
+              "mobile_small": {
+                "scale": 1,
+                "width": 768,
+                "custom": true,
+                "height": 1024,
+                "opacity": 100,
+                "z_index": 1,
+                "rotation": 0,
+                "object_fit": "fill",
+                "position_x": 0,
+                "position_y": 0,
+                "border_radius": 0
+              },
+              "desktop_large": {
+                "scale": 1,
+                "width": 2560,
+                "custom": true,
+                "height": 1440,
+                "opacity": 100,
+                "z_index": 1,
+                "rotation": 0,
+                "object_fit": "fill",
+                "position_x": 0,
+                "position_y": 0,
+                "border_radius": 0
+              }
+            },
+            "fondo_imagen_rotate": 0,
+            "fondo_imagen_opacity": 100,
+            "border_radius_botones": "12px",
+            "fondo_imagen_contrast": 100,
+            "fondo_imagen_saturate": 100,
+            "fondo_overlay_opacity": 0,
+            "border_radius_tarjetas": "24px",
+            "fondo_imagen_brightness": 100,
+            "fondo_overlay_gradient_active": false
+          },
+          "informacion": {
+            "ambiente": "Familiar",
+            "direccion": ""
+          },
+          "elementos_visuales": {
+            "glassmorphism": false,
+            "sombras_habilitadas": true
+          }
+        },
+        "updated_at": "2026-07-30T01:41:47.670Z"
+      }
+    }
+  },
+  {
+    "breakpoint": "Laptop",
+    "key": "laptop",
+    "group": "horizontal",
+    "status": "PASS",
+    "editorCSS": {
+      "width": "300px",
+      "height": "300px",
+      "objectFit": "fill",
+      "transform": "none",
+      "borderRadius": "0px",
+      "opacity": "1",
+      "zIndex": "auto"
+    },
+    "publicCSS": {
+      "width": "300px",
+      "height": "300px",
+      "objectFit": "fill",
+      "transform": "none",
+      "borderRadius": "0px",
+      "opacity": "1",
+      "zIndex": "auto"
+    },
+    "cssMatch": true,
+    "objectFitEditor": "fill",
+    "objectFitPublic": "fill",
+    "persistedCorrectly": true,
+    "uiShowsPersisted": true,
+    "editorScreenshot": "EDITOR-laptop-1785375736772.png",
+    "publicScreenshot": "MENU-laptop-1785375750968.png",
+    "notes": [],
+    "bugs": [],
+    "editorSaveResponse": {
+      "mensaje": "Configuración de marca actualizada correctamente",
+      "tema": {
+        "id": "5222e341-1ac0-40f2-852f-d660892500ee",
+        "restaurante_id": "51ad632a-403d-426e-bfb4-2d32a448bb7b",
+        "logo_url": "",
+        "banner_url": null,
+        "color_primario": "#FF4A00",
+        "color_fondo": "#0A0A0A",
+        "fuente_familia": "Sans-Serif",
+        "layout_type": "TARJETAS_DETALLADAS",
+        "banner_promocional_activo": false,
+        "banner_promocional_texto": "",
+        "config_diseno": {
+          "layout": {
+            "categorias_sticky": true,
+            "layout_type_vertical": "TARJETAS_DETALLADAS",
+            "layout_type_horizontal": "TARJETAS_DETALLADAS"
+          },
+          "apariencia": {
+            "fondo_blur": "0px",
+            "fondo_tipo": "imagen",
+            "color_fondo": "#0A0A0A",
+            "fondo_valor": "#0A0A0A",
+            "modo_oscuro": true,
+            "color_normal": "#ffffff",
+            "color_primario": "#FF4A00",
+            "fondo_imagen_x": 0,
+            "fondo_imagen_y": 0,
+            "fuente_familia": "Sans-Serif",
+            "fondo_imagen_url": "https://d13mim0hny1xpb.cloudfront.net/dishes/1785367031587-712226456.webp",
+            "color_descripcion": "#8e8e93",
+            "fondo_imagen_blur": 0,
+            "fondo_imagen_zoom": 1,
+            "responsive_imagen": {
+              "laptop": {
+                "scale": 1,
+                "width": 300,
+                "custom": true,
+                "height": 300,
+                "opacity": 100,
+                "z_index": 0,
+                "rotation": 0,
+                "object_fit": "fill",
+                "position_x": 50,
+                "position_y": 50,
+                "border_radius": 0
+              },
+              "mobile": {
+                "scale": 1,
+                "width": 768,
+                "custom": true,
+                "height": 1024,
+                "opacity": 100,
+                "z_index": 1,
+                "rotation": 0,
+                "object_fit": "fill",
+                "position_x": 0,
+                "position_y": 0,
+                "border_radius": 0
+              },
+              "tablet": {
+                "scale": 1,
+                "width": 768,
+                "custom": true,
+                "height": 1024,
+                "opacity": 100,
+                "z_index": 1,
+                "rotation": 0,
+                "object_fit": "fill",
+                "position_x": 0,
+                "position_y": 0,
+                "border_radius": 0
+              },
+              "desktop": {
+                "scale": 1,
+                "width": 300,
+                "custom": true,
+                "height": 300,
+                "opacity": 100,
+                "z_index": 0,
+                "rotation": 0,
+                "object_fit": "fill",
+                "position_x": 50,
+                "position_y": 50,
+                "border_radius": 0
+              },
+              "mobile_small": {
+                "scale": 1,
+                "width": 768,
+                "custom": true,
+                "height": 1024,
+                "opacity": 100,
+                "z_index": 1,
+                "rotation": 0,
+                "object_fit": "fill",
+                "position_x": 0,
+                "position_y": 0,
+                "border_radius": 0
+              },
+              "desktop_large": {
+                "scale": 1,
+                "width": 2560,
+                "custom": true,
+                "height": 1440,
+                "opacity": 100,
+                "z_index": 1,
+                "rotation": 0,
+                "object_fit": "fill",
+                "position_x": 0,
+                "position_y": 0,
+                "border_radius": 0
+              }
+            },
+            "fondo_imagen_rotate": 0,
+            "fondo_imagen_opacity": 100,
+            "border_radius_botones": "12px",
+            "fondo_imagen_contrast": 100,
+            "fondo_imagen_saturate": 100,
+            "fondo_overlay_opacity": 0,
+            "border_radius_tarjetas": "24px",
+            "fondo_imagen_brightness": 100,
+            "fondo_overlay_gradient_active": false
+          },
+          "informacion": {
+            "ambiente": "Familiar",
+            "direccion": ""
+          },
+          "elementos_visuales": {
+            "glassmorphism": false,
+            "sombras_habilitadas": true
+          }
+        },
+        "updated_at": "2026-07-30T01:42:18.035Z"
+      }
+    }
+  },
+  {
+    "breakpoint": "Tablet",
+    "key": "tablet",
+    "group": "vertical",
+    "status": "PASS",
+    "editorCSS": {
+      "width": "768px",
+      "height": "1024px",
+      "objectFit": "fill",
+      "transform": "none",
+      "borderRadius": "0px",
+      "opacity": "1",
+      "zIndex": "auto"
+    },
+    "publicCSS": {
+      "width": "768px",
+      "height": "1024px",
+      "objectFit": "fill",
+      "transform": "none",
+      "borderRadius": "0px",
+      "opacity": "1",
+      "zIndex": "auto"
+    },
+    "cssMatch": true,
+    "objectFitEditor": "fill",
+    "objectFitPublic": "fill",
+    "persistedCorrectly": true,
+    "uiShowsPersisted": true,
+    "editorScreenshot": "EDITOR-tablet-1785375763594.png",
+    "publicScreenshot": "MENU-tablet-1785375778543.png",
+    "notes": [],
+    "bugs": [],
+    "editorSaveResponse": {
+      "mensaje": "Configuración de marca actualizada correctamente",
+      "tema": {
+        "id": "5222e341-1ac0-40f2-852f-d660892500ee",
+        "restaurante_id": "51ad632a-403d-426e-bfb4-2d32a448bb7b",
+        "logo_url": "",
+        "banner_url": null,
+        "color_primario": "#FF4A00",
+        "color_fondo": "#0A0A0A",
+        "fuente_familia": "Sans-Serif",
+        "layout_type": "TARJETAS_DETALLADAS",
+        "banner_promocional_activo": false,
+        "banner_promocional_texto": "",
+        "config_diseno": {
+          "layout": {
+            "categorias_sticky": true,
+            "layout_type_vertical": "TARJETAS_DETALLADAS",
+            "layout_type_horizontal": "TARJETAS_DETALLADAS"
+          },
+          "apariencia": {
+            "fondo_blur": "0px",
+            "fondo_tipo": "imagen",
+            "color_fondo": "#0A0A0A",
+            "fondo_valor": "#0A0A0A",
+            "modo_oscuro": true,
+            "color_normal": "#ffffff",
+            "color_primario": "#FF4A00",
+            "fondo_imagen_x": 0,
+            "fondo_imagen_y": 0,
+            "fuente_familia": "Sans-Serif",
+            "fondo_imagen_url": "https://d13mim0hny1xpb.cloudfront.net/dishes/1785367031587-712226456.webp",
+            "color_descripcion": "#8e8e93",
+            "fondo_imagen_blur": 0,
+            "fondo_imagen_zoom": 1,
+            "responsive_imagen": {
+              "laptop": {
+                "scale": 1,
+                "width": 300,
+                "custom": true,
+                "height": 300,
+                "opacity": 100,
+                "z_index": 0,
+                "rotation": 0,
+                "object_fit": "fill",
+                "position_x": 50,
+                "position_y": 50,
+                "border_radius": 0
+              },
+              "mobile": {
+                "scale": 1,
+                "width": 768,
+                "custom": true,
+                "height": 1024,
+                "opacity": 100,
+                "z_index": 1,
+                "rotation": 0,
+                "object_fit": "fill",
+                "position_x": 0,
+                "position_y": 0,
+                "border_radius": 0
+              },
+              "tablet": {
+                "scale": 1,
+                "width": 768,
+                "custom": true,
+                "height": 1024,
+                "opacity": 100,
+                "z_index": 1,
+                "rotation": 0,
+                "object_fit": "fill",
+                "position_x": 0,
+                "position_y": 0,
+                "border_radius": 0
+              },
+              "desktop": {
+                "scale": 1,
+                "width": 300,
+                "custom": true,
+                "height": 300,
+                "opacity": 100,
+                "z_index": 0,
+                "rotation": 0,
+                "object_fit": "fill",
+                "position_x": 50,
+                "position_y": 50,
+                "border_radius": 0
+              },
+              "mobile_small": {
+                "scale": 1,
+                "width": 768,
+                "custom": true,
+                "height": 1024,
+                "opacity": 100,
+                "z_index": 1,
+                "rotation": 0,
+                "object_fit": "fill",
+                "position_x": 0,
+                "position_y": 0,
+                "border_radius": 0
+              },
+              "desktop_large": {
+                "scale": 1,
+                "width": 2560,
+                "custom": true,
+                "height": 1440,
+                "opacity": 100,
+                "z_index": 1,
+                "rotation": 0,
+                "object_fit": "fill",
+                "position_x": 0,
+                "position_y": 0,
+                "border_radius": 0
+              }
+            },
+            "fondo_imagen_rotate": 0,
+            "fondo_imagen_opacity": 100,
+            "border_radius_botones": "12px",
+            "fondo_imagen_contrast": 100,
+            "fondo_imagen_saturate": 100,
+            "fondo_overlay_opacity": 0,
+            "border_radius_tarjetas": "24px",
+            "fondo_imagen_brightness": 100,
+            "fondo_overlay_gradient_active": false
+          },
+          "informacion": {
+            "ambiente": "Familiar",
+            "direccion": ""
+          },
+          "elementos_visuales": {
+            "glassmorphism": false,
+            "sombras_habilitadas": true
+          }
+        },
+        "updated_at": "2026-07-30T01:42:44.881Z"
+      }
+    }
+  },
+  {
+    "breakpoint": "Móvil Standard",
+    "key": "mobile",
+    "group": "vertical",
+    "status": "PASS",
+    "editorCSS": {
+      "width": "768px",
+      "height": "1024px",
+      "objectFit": "fill",
+      "transform": "none",
+      "borderRadius": "0px",
+      "opacity": "1",
+      "zIndex": "auto"
+    },
+    "publicCSS": {
+      "width": "768px",
+      "height": "1024px",
+      "objectFit": "fill",
+      "transform": "none",
+      "borderRadius": "0px",
+      "opacity": "1",
+      "zIndex": "auto"
+    },
+    "cssMatch": true,
+    "objectFitEditor": "fill",
+    "objectFitPublic": "fill",
+    "persistedCorrectly": true,
+    "uiShowsPersisted": true,
+    "editorScreenshot": "EDITOR-mobile-1785375790315.png",
+    "publicScreenshot": "MENU-mobile-1785375805432.png",
+    "notes": [],
+    "bugs": [],
+    "editorSaveResponse": {
+      "mensaje": "Configuración de marca actualizada correctamente",
+      "tema": {
+        "id": "5222e341-1ac0-40f2-852f-d660892500ee",
+        "restaurante_id": "51ad632a-403d-426e-bfb4-2d32a448bb7b",
+        "logo_url": "",
+        "banner_url": null,
+        "color_primario": "#FF4A00",
+        "color_fondo": "#0A0A0A",
+        "fuente_familia": "Sans-Serif",
+        "layout_type": "TARJETAS_DETALLADAS",
+        "banner_promocional_activo": false,
+        "banner_promocional_texto": "",
+        "config_diseno": {
+          "layout": {
+            "categorias_sticky": true,
+            "layout_type_vertical": "TARJETAS_DETALLADAS",
+            "layout_type_horizontal": "TARJETAS_DETALLADAS"
+          },
+          "apariencia": {
+            "fondo_blur": "0px",
+            "fondo_tipo": "imagen",
+            "color_fondo": "#0A0A0A",
+            "fondo_valor": "#0A0A0A",
+            "modo_oscuro": true,
+            "color_normal": "#ffffff",
+            "color_primario": "#FF4A00",
+            "fondo_imagen_x": 0,
+            "fondo_imagen_y": 0,
+            "fuente_familia": "Sans-Serif",
+            "fondo_imagen_url": "https://d13mim0hny1xpb.cloudfront.net/dishes/1785367031587-712226456.webp",
+            "color_descripcion": "#8e8e93",
+            "fondo_imagen_blur": 0,
+            "fondo_imagen_zoom": 1,
+            "responsive_imagen": {
+              "laptop": {
+                "scale": 1,
+                "width": 300,
+                "custom": true,
+                "height": 300,
+                "opacity": 100,
+                "z_index": 0,
+                "rotation": 0,
+                "object_fit": "fill",
+                "position_x": 50,
+                "position_y": 50,
+                "border_radius": 0
+              },
+              "mobile": {
+                "scale": 1,
+                "width": 768,
+                "custom": true,
+                "height": 1024,
+                "opacity": 100,
+                "z_index": 1,
+                "rotation": 0,
+                "object_fit": "fill",
+                "position_x": 0,
+                "position_y": 0,
+                "border_radius": 0
+              },
+              "tablet": {
+                "scale": 1,
+                "width": 768,
+                "custom": true,
+                "height": 1024,
+                "opacity": 100,
+                "z_index": 1,
+                "rotation": 0,
+                "object_fit": "fill",
+                "position_x": 0,
+                "position_y": 0,
+                "border_radius": 0
+              },
+              "desktop": {
+                "scale": 1,
+                "width": 300,
+                "custom": true,
+                "height": 300,
+                "opacity": 100,
+                "z_index": 0,
+                "rotation": 0,
+                "object_fit": "fill",
+                "position_x": 50,
+                "position_y": 50,
+                "border_radius": 0
+              },
+              "mobile_small": {
+                "scale": 1,
+                "width": 768,
+                "custom": true,
+                "height": 1024,
+                "opacity": 100,
+                "z_index": 1,
+                "rotation": 0,
+                "object_fit": "fill",
+                "position_x": 0,
+                "position_y": 0,
+                "border_radius": 0
+              },
+              "desktop_large": {
+                "scale": 1,
+                "width": 2560,
+                "custom": true,
+                "height": 1440,
+                "opacity": 100,
+                "z_index": 1,
+                "rotation": 0,
+                "object_fit": "fill",
+                "position_x": 0,
+                "position_y": 0,
+                "border_radius": 0
+              }
+            },
+            "fondo_imagen_rotate": 0,
+            "fondo_imagen_opacity": 100,
+            "border_radius_botones": "12px",
+            "fondo_imagen_contrast": 100,
+            "fondo_imagen_saturate": 100,
+            "fondo_overlay_opacity": 0,
+            "border_radius_tarjetas": "24px",
+            "fondo_imagen_brightness": 100,
+            "fondo_overlay_gradient_active": false
+          },
+          "informacion": {
+            "ambiente": "Familiar",
+            "direccion": ""
+          },
+          "elementos_visuales": {
+            "glassmorphism": false,
+            "sombras_habilitadas": true
+          }
+        },
+        "updated_at": "2026-07-30T01:43:11.557Z"
+      }
+    }
+  },
+  {
+    "breakpoint": "Móvil Pequeño",
+    "key": "mobile_small",
+    "group": "vertical",
+    "status": "PASS",
+    "editorCSS": {
+      "width": "768px",
+      "height": "1024px",
+      "objectFit": "fill",
+      "transform": "none",
+      "borderRadius": "0px",
+      "opacity": "1",
+      "zIndex": "auto"
+    },
+    "publicCSS": {
+      "width": "768px",
+      "height": "1024px",
+      "objectFit": "fill",
+      "transform": "none",
+      "borderRadius": "0px",
+      "opacity": "1",
+      "zIndex": "auto"
+    },
+    "cssMatch": true,
+    "objectFitEditor": "fill",
+    "objectFitPublic": "fill",
+    "persistedCorrectly": true,
+    "uiShowsPersisted": true,
+    "editorScreenshot": "EDITOR-mobile_small-1785375816923.png",
+    "publicScreenshot": "MENU-mobile_small-1785375832068.png",
+    "notes": [],
+    "bugs": [],
+    "editorSaveResponse": {
+      "mensaje": "Configuración de marca actualizada correctamente",
+      "tema": {
+        "id": "5222e341-1ac0-40f2-852f-d660892500ee",
+        "restaurante_id": "51ad632a-403d-426e-bfb4-2d32a448bb7b",
+        "logo_url": "",
+        "banner_url": null,
+        "color_primario": "#FF4A00",
+        "color_fondo": "#0A0A0A",
+        "fuente_familia": "Sans-Serif",
+        "layout_type": "TARJETAS_DETALLADAS",
+        "banner_promocional_activo": false,
+        "banner_promocional_texto": "",
+        "config_diseno": {
+          "layout": {
+            "categorias_sticky": true,
+            "layout_type_vertical": "TARJETAS_DETALLADAS",
+            "layout_type_horizontal": "TARJETAS_DETALLADAS"
+          },
+          "apariencia": {
+            "fondo_blur": "0px",
+            "fondo_tipo": "imagen",
+            "color_fondo": "#0A0A0A",
+            "fondo_valor": "#0A0A0A",
+            "modo_oscuro": true,
+            "color_normal": "#ffffff",
+            "color_primario": "#FF4A00",
+            "fondo_imagen_x": 0,
+            "fondo_imagen_y": 0,
+            "fuente_familia": "Sans-Serif",
+            "fondo_imagen_url": "https://d13mim0hny1xpb.cloudfront.net/dishes/1785367031587-712226456.webp",
+            "color_descripcion": "#8e8e93",
+            "fondo_imagen_blur": 0,
+            "fondo_imagen_zoom": 1,
+            "responsive_imagen": {
+              "laptop": {
+                "scale": 1,
+                "width": 300,
+                "custom": true,
+                "height": 300,
+                "opacity": 100,
+                "z_index": 0,
+                "rotation": 0,
+                "object_fit": "fill",
+                "position_x": 50,
+                "position_y": 50,
+                "border_radius": 0
+              },
+              "mobile": {
+                "scale": 1,
+                "width": 768,
+                "custom": true,
+                "height": 1024,
+                "opacity": 100,
+                "z_index": 1,
+                "rotation": 0,
+                "object_fit": "fill",
+                "position_x": 0,
+                "position_y": 0,
+                "border_radius": 0
+              },
+              "tablet": {
+                "scale": 1,
+                "width": 768,
+                "custom": true,
+                "height": 1024,
+                "opacity": 100,
+                "z_index": 1,
+                "rotation": 0,
+                "object_fit": "fill",
+                "position_x": 0,
+                "position_y": 0,
+                "border_radius": 0
+              },
+              "desktop": {
+                "scale": 1,
+                "width": 300,
+                "custom": true,
+                "height": 300,
+                "opacity": 100,
+                "z_index": 0,
+                "rotation": 0,
+                "object_fit": "fill",
+                "position_x": 50,
+                "position_y": 50,
+                "border_radius": 0
+              },
+              "mobile_small": {
+                "scale": 1,
+                "width": 768,
+                "custom": true,
+                "height": 1024,
+                "opacity": 100,
+                "z_index": 1,
+                "rotation": 0,
+                "object_fit": "fill",
+                "position_x": 0,
+                "position_y": 0,
+                "border_radius": 0
+              },
+              "desktop_large": {
+                "scale": 1,
+                "width": 2560,
+                "custom": true,
+                "height": 1440,
+                "opacity": 100,
+                "z_index": 1,
+                "rotation": 0,
+                "object_fit": "fill",
+                "position_x": 0,
+                "position_y": 0,
+                "border_radius": 0
+              }
+            },
+            "fondo_imagen_rotate": 0,
+            "fondo_imagen_opacity": 100,
+            "border_radius_botones": "12px",
+            "fondo_imagen_contrast": 100,
+            "fondo_imagen_saturate": 100,
+            "fondo_overlay_opacity": 0,
+            "border_radius_tarjetas": "24px",
+            "fondo_imagen_brightness": 100,
+            "fondo_overlay_gradient_active": false
+          },
+          "informacion": {
+            "ambiente": "Familiar",
+            "direccion": ""
+          },
+          "elementos_visuales": {
+            "glassmorphism": false,
+            "sombras_habilitadas": true
+          }
+        },
+        "updated_at": "2026-07-30T01:43:38.092Z"
+      }
+    }
+  }
+]

@@ -27,6 +27,7 @@ const Configuracion = lazy(() => import('./pages/Configuracion/Configuracion').t
 const Perfil = lazy(() => import('./pages/Perfil/Perfil').then(m => ({ default: m.Perfil })));
 const VerifyEmail = lazy(() => import('./pages/Login/VerifyEmail').then(m => ({ default: m.VerifyEmail })));
 const RecuperarContrasena = lazy(() => import('./pages/Login/RecuperarContrasena').then(m => ({ default: m.RecuperarContrasena })));
+const AdminPanel = lazy(() => import('./pages/Admin/AdminPanel').then(m => ({ default: m.AdminPanel })));
 const NotFound = lazy(() => import('./pages/NotFound/NotFound').then(m => ({ default: m.NotFound })));
 
 function PageLoader() {
@@ -128,7 +129,7 @@ function AnimatedRoutes() {
 
             <Route path="/admin" element={
               <ProtectedRoute allowedRoles={['SUPER_ADMIN']}>
-                <DashboardRestaurante />
+                <AdminPanel />
               </ProtectedRoute>
             } />
 

@@ -1,15 +1,31 @@
 const express = require('express');
 const router = express.Router();
-const { updateRestaurantStatus } = require('../controllers/adminController');
+const { 
+  getAllRestaurants, 
+  approveRestaurant, 
+  cancelRestaurantAccess, 
+  updateRestaurantStatus 
+} = require('../controllers/adminController');
 const authMiddleware = require('../middleware/authMiddleware');
 const roleMiddleware = require('../middleware/roleMiddleware');
 
+// Todas las rutas requieren SUPER_ADMIN
+router.use(authMiddleware);
+router.use(roleMiddleware(['SUPER_ADMIN']));
+
+// GET /api/admin/restaurants
+router.get('/restaurants', getAllRestaurants);
+
+// PUT /api/admin/restaurants/:id/approve
+router.put('/restaurants/:id/approve', approveRestaurant);
+
+// PUT /api/admin/restaurants/:id/cancel (alias para suspend)
+router.put('/restaurants/:id/cancel', cancelRestaurantAccess);
+
+// PUT /api/admin/restaurants/:id/suspend (Kill Switch)
+router.put('/restaurants/:id/suspend', cancelRestaurantAccess);
+
 // PUT /api/admin/restaurants/:id/status
-// Solo accesible por Super Admins
-router.put('/restaurants/:id/status', 
-  authMiddleware, 
-  roleMiddleware(['SUPER_ADMIN']), 
-  updateRestaurantStatus
-);
+router.put('/restaurants/:id/status', updateRestaurantStatus);
 
 module.exports = router;

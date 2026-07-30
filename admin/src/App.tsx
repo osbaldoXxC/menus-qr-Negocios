@@ -8,8 +8,8 @@ interface Restaurante {
   estado: 'pendiente' | 'aprobado' | 'suspendido';
   suscripcion_activa: boolean;
   plan: string;
-  fecha_vencimiento: string | null;
-  dias_acceso_permitidos: number;
+  suscripcion_expira_en: string | null;
+  dias_licencia: number;
   created_at: string;
 }
 
@@ -171,7 +171,7 @@ function App() {
       // Inicializar el input de días para cada restaurante en 30 por defecto
       const initialDays: { [id: string]: number } = {};
       data.forEach((r: Restaurante) => {
-        initialDays[r.id] = r.dias_acceso_permitidos > 0 ? r.dias_acceso_permitidos : 30;
+        initialDays[r.id] = r.dias_licencia > 0 ? r.dias_licencia : 30;
       });
       setDaysInput(initialDays);
     } catch (err) {
@@ -187,7 +187,7 @@ function App() {
       const res = await fetch(`${API_BASE_URL}/admin/restaurants/${id}/approve`, {
         method: 'PUT',
         headers: getHeaders(),
-        body: JSON.stringify({ dias_acceso_permitidos: dias }),
+        body: JSON.stringify({ dias_licencia: dias }),
       });
 
       const data = await res.json();
@@ -496,9 +496,9 @@ function App() {
                           </span>
                         </td>
                         <td>
-                          {r.fecha_vencimiento ? (
+                          {r.suscripcion_expira_en ? (
                             <span className="date-text">
-                              {new Date(r.fecha_vencimiento).toLocaleDateString('es-MX', {
+                              {new Date(r.suscripcion_expira_en).toLocaleDateString('es-MX', {
                                 year: 'numeric',
                                 month: 'short',
                                 day: 'numeric',
@@ -509,30 +509,28 @@ function App() {
                           )}
                         </td>
                         <td>
-                          {r.dias_acceso_permitidos > 0 ? (
-                            <span className="days-text">{r.dias_acceso_permitidos} días</span>
+                          {r.dias_licencia > 0 ? (
+                            <span className="days-text">{r.dias_licencia} días</span>
                           ) : (
                             <span className="no-days-text">—</span>
                           )}
                         </td>
                         <td>
-                          <div className="actions-cell">
-                            {(isPending || isSuspended) && (
-                              <div className="approve-box">
-                                <input
-                                  type="number"
-                                  min="1"
-                                  max="365"
-                                  className="approve-input-days"
-                                  value={daysInput[r.id] || 30}
-                                  onChange={(e) => updateDaysInputValue(r.id, parseInt(e.target.value) || 0)}
-                                  title="Días de acceso"
-                                />
-                                <button className="btn-approve" onClick={() => handleApprove(r.id)}>
-                                  {isSuspended ? 'Reactivar' : 'Aprobar'}
-                                </button>
-                              </div>
-                            )}
+                          <div className="actions-cell flex gap-2 items-center">
+                            <div className="approve-box flex items-center gap-2">
+                              <input
+                                type="number"
+                                min="1"
+                                max="365"
+                                className="approve-input-days"
+                                value={daysInput[r.id] || 30}
+                                onChange={(e) => updateDaysInputValue(r.id, parseInt(e.target.value) || 0)}
+                                title="Días de acceso"
+                              />
+                              <button className="btn-approve" onClick={() => handleApprove(r.id)}>
+                                {isApproved ? 'Guardar Tiempo' : isSuspended ? 'Reactivar' : 'Aprobar'}
+                              </button>
+                            </div>
                             {isApproved && (
                               <button className="btn-suspend" onClick={() => openSuspendModal(r)}>
                                 <AlertIcon className="btn-suspend-icon" />

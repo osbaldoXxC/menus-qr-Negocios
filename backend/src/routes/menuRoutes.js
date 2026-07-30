@@ -1,18 +1,20 @@
 const express = require('express');
 const router = express.Router();
-const { 
-  createDish, 
-  getDishes, 
-  updateDish, 
-  deleteDish 
+const {
+  createDish,
+  getDishes,
+  updateDish,
+  deleteDish
 } = require('../controllers/menuController');
 const authMiddleware = require('../middleware/authMiddleware');
 const roleMiddleware = require('../middleware/roleMiddleware');
+const subscriptionMiddleware = require('../middleware/subscriptionMiddleware');
 const { upload, optimizeImage } = require('../middleware/uploadMiddleware');
 
 // Middleware común para todas las rutas de este router
 router.use(authMiddleware);
 router.use(roleMiddleware(['RESTAURANTE', 'SUPER_ADMIN']));
+router.use(subscriptionMiddleware);
 
 // GET /api/menu/platillos
 router.get('/platillos', getDishes);

@@ -5,7 +5,8 @@ const axios = require('axios');
 const createDish = async (req, res) => {
   let { 
     nombre, descripcion, precio, categoria_id, categoria, 
-    ingredientes_principales, complementos, activo 
+    ingredientes_principales, complementos, activo,
+    nivel_picante, porcion, etiquetas_dieteticas
   } = req.body;
   const restaurante_id = req.user.id;
   
@@ -13,8 +14,9 @@ const createDish = async (req, res) => {
   try {
     if (typeof ingredientes_principales === 'string') ingredientes_principales = JSON.parse(ingredientes_principales);
     if (typeof complementos === 'string') complementos = JSON.parse(complementos);
+    if (typeof etiquetas_dieteticas === 'string') etiquetas_dieteticas = JSON.parse(etiquetas_dieteticas);
   } catch (e) {
-    console.warn('Error parseando ingredientes/complementos:', e);
+    console.warn('Error parseando JSON en createDish:', e);
   }
 
   // La URL de la imagen vendrá de multer-s3 si se subió un archivo
@@ -29,17 +31,19 @@ const createDish = async (req, res) => {
     return res.status(400).json({ mensaje: 'Nombre y precio son obligatorios' });
   }
 
-  let final_categoria_id = categoria_id;
+  let final_categoria_id = (categoria_id && categoria_id !== 'undefined' && categoria_id !== 'null') ? categoria_id : null;
 
   // Si envían nombre de categoría en lugar de ID (como en el frontend actual)
-  if (!final_categoria_id && categoria) {
+  if (!final_categoria_id && categoria && typeof categoria === 'string' && categoria.trim() !== '') {
     try {
       // Buscar o crear la categoría para este restaurante
       const catRes = await db.query(
         'INSERT INTO categorias_restaurante (restaurante_id, nombre) VALUES ($1, $2) ON CONFLICT (restaurante_id, nombre) DO UPDATE SET nombre = EXCLUDED.nombre RETURNING id',
-        [restaurante_id, categoria]
+        [restaurante_id, categoria.trim()]
       );
-      final_categoria_id = catRes.rows[0].id;
+      if (catRes.rows.length > 0) {
+        final_categoria_id = catRes.rows[0].id;
+      }
     } catch (err) {
       console.error('Error al manejar categoría:', err);
     }
@@ -52,8 +56,8 @@ const createDish = async (req, res) => {
 
     // 1. Insertar el platillo
     const dishRes = await client.query(
-      `INSERT INTO platillos (restaurante_id, nombre, descripcion, precio, categoria_id, url_imagen, activo, estado_ia, ingredientes_principales, complementos) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, 'pendiente', $8, $9) 
+      `INSERT INTO platillos (restaurante_id, nombre, descripcion, precio, categoria_id, url_imagen, activo, estado_ia, ingredientes_principales, complementos, nivel_picante, porcion, etiquetas_dieteticas) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 'pendiente', $8, $9, $10, $11, $12) 
        RETURNING id`,
       [
         restaurante_id, 
@@ -64,7 +68,10 @@ const createDish = async (req, res) => {
         url_imagen, 
         activo !== undefined ? (activo === 'true' || activo === true) : true,
         JSON.stringify(ingredientes_principales || []),
-        JSON.stringify(complementos || [])
+        JSON.stringify(complementos || []),
+        Number(nivel_picante) || 0,
+        porcion || '',
+        JSON.stringify(etiquetas_dieteticas || [])
       ]
     );
 
@@ -92,7 +99,8 @@ const updateDish = async (req, res) => {
   const { id } = req.params;
   let { 
     nombre, descripcion, precio, categoria_id, categoria,
-    ingredientes_principales, complementos, activo 
+    ingredientes_principales, complementos, activo,
+    nivel_picante, porcion, etiquetas_dieteticas
   } = req.body;
   const restaurante_id = req.user.id;
 
@@ -100,8 +108,9 @@ const updateDish = async (req, res) => {
   try {
     if (typeof ingredientes_principales === 'string') ingredientes_principales = JSON.parse(ingredientes_principales);
     if (typeof complementos === 'string') complementos = JSON.parse(complementos);
+    if (typeof etiquetas_dieteticas === 'string') etiquetas_dieteticas = JSON.parse(etiquetas_dieteticas);
   } catch (e) {
-    console.warn('Error parseando ingredientes/complementos en update:', e);
+    console.warn('Error parseando JSON en updateDish:', e);
   }
 
   // URL de imagen (si se sube nueva)
@@ -113,13 +122,15 @@ const updateDish = async (req, res) => {
   }
 
   // Manejar categoría por nombre si se envía
-  let final_categoria_id = categoria_id;
-  if (!final_categoria_id && categoria) {
+  let final_categoria_id = (categoria_id && categoria_id !== 'undefined' && categoria_id !== 'null') ? categoria_id : null;
+  if (!final_categoria_id && categoria && typeof categoria === 'string' && categoria.trim() !== '') {
     const catRes = await db.query(
       'INSERT INTO categorias_restaurante (restaurante_id, nombre) VALUES ($1, $2) ON CONFLICT (restaurante_id, nombre) DO UPDATE SET nombre = EXCLUDED.nombre RETURNING id',
-      [restaurante_id, categoria]
+      [restaurante_id, categoria.trim()]
     );
-    final_categoria_id = catRes.rows[0].id;
+    if (catRes.rows.length > 0) {
+      final_categoria_id = catRes.rows[0].id;
+    }
   }
 
   const client = await db.pool.connect();
@@ -137,8 +148,11 @@ const updateDish = async (req, res) => {
           url_imagen = COALESCE($5, url_imagen),
           activo = COALESCE($6, activo),
           ingredientes_principales = COALESCE($7, ingredientes_principales),
-          complementos = COALESCE($8, complementos)
-      WHERE id = $9 AND restaurante_id = $10
+          complementos = COALESCE($8, complementos),
+          nivel_picante = COALESCE($9, nivel_picante),
+          porcion = COALESCE($10, porcion),
+          etiquetas_dieteticas = COALESCE($11, etiquetas_dieteticas)
+      WHERE id = $12 AND restaurante_id = $13
       RETURNING id
     `;
     const updateValues = [
@@ -150,6 +164,9 @@ const updateDish = async (req, res) => {
       activo !== undefined ? (activo === 'true' || activo === true) : undefined, 
       ingredientes_principales ? JSON.stringify(ingredientes_principales) : null,
       complementos ? JSON.stringify(complementos) : null,
+      nivel_picante !== undefined ? Number(nivel_picante) : null,
+      porcion !== undefined ? porcion : null,
+      etiquetas_dieteticas ? JSON.stringify(etiquetas_dieteticas) : null,
       id, 
       restaurante_id
     ];
@@ -215,22 +232,39 @@ const getPublicMenu = async (req, res) => {
   }
 
   try {
-    // 2. PostgreSQL - Obtener info del restaurante y su tema
-    const restRes = await db.query(
-      `SELECT r.nombre_negocio, r.suscripcion_activa, 
-              t.logo_url, t.banner_url, t.color_primario, t.color_fondo, 
-              t.fuente_familia, t.layout_type, t.banner_promocional_activo, t.banner_promocional_texto
-       FROM restaurantes r
-       LEFT JOIN configuracion_tema t ON r.id = t.restaurante_id
-       WHERE r.id = $1`,
-      [restaurant_id]
-    );
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(restaurant_id);
+
+    let restRes;
+    if (isUuid) {
+      restRes = await db.query(
+        `SELECT r.id, r.nombre_negocio, r.suscripcion_activa, 
+                t.logo_url, t.banner_url, t.color_primario, t.color_fondo, 
+                t.fuente_familia, t.layout_type, t.banner_promocional_activo, t.banner_promocional_texto,
+                t.config_diseno
+         FROM restaurantes r
+         LEFT JOIN configuracion_tema t ON r.id = t.restaurante_id
+         WHERE r.id = $1`,
+        [restaurant_id]
+      );
+    } else {
+      restRes = await db.query(
+        `SELECT r.id, r.nombre_negocio, r.suscripcion_activa, 
+                t.logo_url, t.banner_url, t.color_primario, t.color_fondo, 
+                t.fuente_familia, t.layout_type, t.banner_promocional_activo, t.banner_promocional_texto,
+                t.config_diseno
+         FROM restaurantes r
+         LEFT JOIN configuracion_tema t ON r.id = t.restaurante_id
+         WHERE LOWER(r.nombre_negocio) LIKE LOWER($1) OR r.id::text = $1`,
+        [`%${restaurant_id}%`]
+      );
+    }
 
     if (restRes.rows.length === 0) {
       return res.status(404).json({ mensaje: 'Restaurante no encontrado' });
     }
 
     const restInfo = restRes.rows[0];
+    const realRestaurantId = restInfo.id;
 
     if (!restInfo.suscripcion_activa) {
       return res.status(403).json({ mensaje: 'Restaurante no disponible temporalmente' });
@@ -238,13 +272,22 @@ const getPublicMenu = async (req, res) => {
 
     // 3. Obtener platillos con sus categorías ordenadas (solo activos)
     const dishesRes = await db.query(
-      `SELECT p.id, p.nombre, p.descripcion, p.precio, p.url_imagen, p.ingredientes_principales, p.complementos, c.nombre as categoria_nombre, c.orden as categoria_orden
+      `SELECT p.id, p.nombre, p.descripcion, p.precio, p.url_imagen, p.ingredientes_principales, p.complementos, p.nivel_picante, p.porcion, p.etiquetas_dieteticas, c.nombre as categoria_nombre, c.orden as categoria_orden
        FROM platillos p
        LEFT JOIN categorias_restaurante c ON p.categoria_id = c.id
        WHERE p.restaurante_id = $1 AND p.activo = true
        ORDER BY c.orden ASC, c.nombre ASC, p.nombre ASC`,
-      [restaurant_id]
+      [realRestaurantId]
     );
+
+    let configDisenoObj = restInfo.config_diseno;
+    if (typeof configDisenoObj === 'string') {
+      try {
+        configDisenoObj = JSON.parse(configDisenoObj);
+      } catch (e) {
+        configDisenoObj = {};
+      }
+    }
 
     // 4. Estructurar la respuesta
     const response = {
@@ -258,7 +301,8 @@ const getPublicMenu = async (req, res) => {
           fuente_familia: restInfo.fuente_familia,
           layout_type: restInfo.layout_type,
           banner_promocional_activo: restInfo.banner_promocional_activo,
-          banner_promocional_texto: restInfo.banner_promocional_texto
+          banner_promocional_texto: restInfo.banner_promocional_texto,
+          config_diseno: configDisenoObj
         }
       },
       categorias: []
@@ -282,7 +326,10 @@ const getPublicMenu = async (req, res) => {
         precio: dish.precio,
         url_imagen: dish.url_imagen,
         ingredientes_principales: dish.ingredientes_principales,
-        complementos: dish.complementos
+        complementos: dish.complementos,
+        nivel_picante: dish.nivel_picante || 0,
+        porcion: dish.porcion || '',
+        etiquetas_dieteticas: dish.etiquetas_dieteticas || []
       });
     });
 
@@ -306,7 +353,7 @@ const getDishes = async (req, res) => {
 
   try {
     const result = await db.query(
-      `SELECT p.id, p.nombre, p.descripcion, p.precio, p.url_imagen, p.estado_ia, p.activo, p.ingredientes_principales, p.complementos, c.nombre as categoria_nombre
+      `SELECT p.id, p.nombre, p.descripcion, p.precio, p.url_imagen, p.estado_ia, p.activo, p.ingredientes_principales, p.complementos, p.nivel_picante, p.porcion, p.etiquetas_dieteticas, c.nombre as categoria_nombre
        FROM platillos p
        LEFT JOIN categorias_restaurante c ON p.categoria_id = c.id
        WHERE p.restaurante_id = $1

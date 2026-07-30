@@ -22,6 +22,9 @@ export function NuevoPlatillo() {
     descripcion: '',
     precio: '',
     categoria: '',
+    porcion: '',
+    nivel_picante: 0,
+    etiquetas_dieteticas: [] as string[],
     ingredientes_principales: [''],
     complementos: [''],
   });
@@ -40,10 +43,13 @@ export function NuevoPlatillo() {
           
           if (platillo) {
             setFormData({
-              nombre: platillo.nombre,
-              descripcion: platillo.descripcion,
-              precio: platillo.precio.toString(),
-              categoria: platillo.categoria || '',
+              nombre: platillo.nombre || '',
+              descripcion: platillo.descripcion || '',
+              precio: platillo.precio ? platillo.precio.toString() : '',
+              categoria: platillo.categoria || platillo.categoria_nombre || '',
+              porcion: platillo.porcion || '',
+              nivel_picante: Number(platillo.nivel_picante) || 0,
+              etiquetas_dieteticas: Array.isArray(platillo.etiquetas_dieteticas) ? platillo.etiquetas_dieteticas : [],
               ingredientes_principales: Array.isArray(platillo.ingredientes_principales) && platillo.ingredientes_principales.length > 0 
                 ? platillo.ingredientes_principales 
                 : [''],
@@ -121,6 +127,9 @@ export function NuevoPlatillo() {
       submitData.append('descripcion', formData.descripcion);
       submitData.append('precio', formData.precio);
       submitData.append('categoria', formData.categoria);
+      submitData.append('porcion', formData.porcion);
+      submitData.append('nivel_picante', formData.nivel_picante.toString());
+      submitData.append('etiquetas_dieteticas', JSON.stringify(formData.etiquetas_dieteticas));
       submitData.append('ingredientes_principales', JSON.stringify(formData.ingredientes_principales.filter(i => i.trim())));
       submitData.append('complementos', JSON.stringify(formData.complementos.filter(c => c.trim())));
 
@@ -251,8 +260,8 @@ export function NuevoPlatillo() {
             />
           </div>
 
-          {/* Precio y Categoría */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Porción y Categoría */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <label className="block text-sm font-bold text-apple-text-secondary dark:text-apple-dark-text-secondary mb-2">Precio</label>
               <div className="relative">
@@ -267,6 +276,16 @@ export function NuevoPlatillo() {
                   required
                 />
               </div>
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-apple-text-secondary dark:text-apple-dark-text-secondary mb-2">Porción / Cantidad</label>
+              <input
+                type="text"
+                value={formData.porcion}
+                onChange={(e) => setFormData({ ...formData, porcion: e.target.value })}
+                className="w-full px-5 py-4 bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border rounded-2xl text-[15px] focus:border-apple-blue/40 focus:ring-4 focus:ring-apple-blue/10 focus:outline-none transition-all duration-200"
+                placeholder='Ej: "350g", "3 piezas", "1 persona"'
+              />
             </div>
             <div>
               <label className="block text-sm font-bold text-apple-text-secondary dark:text-apple-dark-text-secondary mb-2">Categoría</label>
@@ -284,6 +303,70 @@ export function NuevoPlatillo() {
                   <option key={i} value={cat.nombre} />
                 ))}
               </datalist>
+            </div>
+          </div>
+
+          {/* Nivel de Picante */}
+          <div>
+            <label className="block text-sm font-bold text-apple-text-secondary dark:text-apple-dark-text-secondary mb-2">Nivel de Picante</label>
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+              {[
+                { val: 0, label: 'Sin picante', icon: '🍃' },
+                { val: 1, label: 'Suave', icon: '🌶️' },
+                { val: 2, label: 'Medio', icon: '🌶️🌶️' },
+                { val: 3, label: 'Muy picoso', icon: '🌶️🌶️🌶️' },
+                { val: 4, label: 'Extremo', icon: '🌶️🌶️🌶️🌶️' },
+              ].map((item) => (
+                <button
+                  key={item.val}
+                  type="button"
+                  onClick={() => setFormData({ ...formData, nivel_picante: item.val })}
+                  className={`p-3.5 rounded-2xl border text-center transition-all text-xs font-bold flex flex-col items-center gap-1.5 ${
+                    formData.nivel_picante === item.val
+                      ? 'border-apple-blue bg-apple-blue/10 text-apple-blue dark:border-apple-blue dark:bg-apple-blue/20'
+                      : 'border-apple-border dark:border-apple-dark-border bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary text-apple-text-secondary hover:border-apple-blue/50'
+                  }`}
+                >
+                  <span className="text-base">{item.icon}</span>
+                  <span>{item.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Etiquetas Dietéticas */}
+          <div>
+            <label className="block text-sm font-bold text-apple-text-secondary dark:text-apple-dark-text-secondary mb-2">Etiquetas Dietéticas</label>
+            <div className="flex flex-wrap gap-3">
+              {[
+                { id: 'sin_gluten', label: 'Sin Gluten', icon: '🌾' },
+                { id: 'vegano', label: 'Vegano', icon: '🌱' },
+                { id: 'vegetariano', label: 'Vegetariano', icon: '🥗' },
+                { id: 'sin_lactosa', label: 'Sin Lactosa', icon: '🥛' },
+                { id: 'keto', label: 'Keto', icon: '🥑' },
+              ].map((tag) => {
+                const active = formData.etiquetas_dieteticas.includes(tag.id);
+                return (
+                  <button
+                    key={tag.id}
+                    type="button"
+                    onClick={() => {
+                      const next = active
+                        ? formData.etiquetas_dieteticas.filter((t) => t !== tag.id)
+                        : [...formData.etiquetas_dieteticas, tag.id];
+                      setFormData({ ...formData, etiquetas_dieteticas: next });
+                    }}
+                    className={`px-4 py-2.5 rounded-xl border text-xs font-bold transition-all flex items-center gap-2 ${
+                      active
+                        ? 'border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                        : 'border-apple-border dark:border-apple-dark-border bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary text-apple-text-secondary hover:border-emerald-500/50'
+                    }`}
+                  >
+                    <span>{tag.icon}</span>
+                    <span>{tag.label}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 

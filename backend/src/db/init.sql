@@ -16,9 +16,17 @@ CREATE TABLE IF NOT EXISTS restaurantes (
     suscripcion_activa BOOLEAN DEFAULT true, -- Crítico para ABAC
     rol VARCHAR(50) NOT NULL DEFAULT 'RESTAURANTE', -- 'RESTAURANTE', 'SUPER_ADMIN'
     plan VARCHAR(50) DEFAULT 'basico', -- 'basico', 'premium'
+    estado VARCHAR(50) DEFAULT 'aprobado', -- 'pendiente', 'aprobado', 'suspendido'
+    suscripcion_expira_en TIMESTAMP WITH TIME ZONE,
+    dias_licencia INT DEFAULT 30,
     ultimo_pago DATE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Asegurar columnas en restaurantes
+ALTER TABLE restaurantes ADD COLUMN IF NOT EXISTS estado VARCHAR(50) DEFAULT 'aprobado';
+ALTER TABLE restaurantes ADD COLUMN IF NOT EXISTS suscripcion_expira_en TIMESTAMP WITH TIME ZONE;
+ALTER TABLE restaurantes ADD COLUMN IF NOT EXISTS dias_licencia INT DEFAULT 30;
 
 -- 2.2 Configuración de Tema (Branding Premium)
 DO $$ BEGIN
@@ -38,6 +46,7 @@ CREATE TABLE IF NOT EXISTS configuracion_tema (
     layout_type layout_style DEFAULT 'TARJETAS_DETALLADAS',
     banner_promocional_activo BOOLEAN DEFAULT false,
     banner_promocional_texto TEXT,
+    config_diseno TEXT,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -80,10 +89,22 @@ CREATE TABLE IF NOT EXISTS platillos (
     url_imagen TEXT, -- Apunta a S3
     categoria_id UUID REFERENCES categorias_restaurante(id) ON DELETE SET NULL,
     activo BOOLEAN DEFAULT true, -- Soporte para pausado lógico
+    ingredientes_principales JSONB DEFAULT '[]'::jsonb,
+    complementos JSONB DEFAULT '[]'::jsonb,
+    nivel_picante INTEGER DEFAULT 0, -- Escala de 0 a 4
+    porcion VARCHAR(100) DEFAULT '', -- Ej: "350g", "3 piezas", "500 ml"
+    etiquetas_dieteticas JSONB DEFAULT '[]'::jsonb, -- Ej: ["sin_gluten", "vegano"]
     vector_ia vector(768), -- Restaurado a vector_ia para compatibilidad con código actual
     estado_ia VARCHAR(50) DEFAULT 'pendiente', -- 'pendiente', 'procesando', 'completado'
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Asegurar columnas en tablas existentes
+ALTER TABLE platillos ADD COLUMN IF NOT EXISTS ingredientes_principales JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE platillos ADD COLUMN IF NOT EXISTS complementos JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE platillos ADD COLUMN IF NOT EXISTS nivel_picante INTEGER DEFAULT 0;
+ALTER TABLE platillos ADD COLUMN IF NOT EXISTS porcion VARCHAR(100) DEFAULT '';
+ALTER TABLE platillos ADD COLUMN IF NOT EXISTS etiquetas_dieteticas JSONB DEFAULT '[]'::jsonb;
 
 -- 6. Ingredientes_Catalogo
 CREATE TABLE IF NOT EXISTS ingredientes_catalogo (

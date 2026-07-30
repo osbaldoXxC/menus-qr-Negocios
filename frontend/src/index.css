@@ -22,7 +22,7 @@
     font-feature-settings: 'ss01' 1, 'cv01' 1, 'cv11' 1;
     background-color: var(--app-bg);
     color: var(--app-text);
-    overflow-x: hidden;
+    overflow-x: clip;
   }
 
   /* Noise Overlay */

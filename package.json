@@ -1,0 +1,15 @@
+{
+  "name": "menus-qr-negocios",
+  "version": "1.0.0",
+  "main": "download_images.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "playwright": "^1.61.1"
+  },
+  "description": ""
+}

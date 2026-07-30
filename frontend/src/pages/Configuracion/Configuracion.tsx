@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { HexColorPicker } from 'react-colorful';
 import { restauranteService } from '../../services/restaurante';
 import { Palette, Layout, Type, Globe, CheckCircle2, AlertCircle, Upload, Image as ImageIcon, Moon, Sun, Sliders, Sparkles, Eye, EyeOff, Megaphone, MapPin, Store, Trash2, Map, Navigation } from 'lucide-react';
+import { ResponsiveImageEditor } from './ResponsiveImageEditor';
 
 const LAYOUTS = [
   { value: 'LISTA_SIMPLE', icon: '📋', label: 'Lista simple', desc: 'Minimalista y directo' },
@@ -82,6 +83,7 @@ export function Configuracion(): JSX.Element {
   const [showPicker, setShowPicker] = useState<'primario' | 'fondo' | 'badge' | 'texto' | 'text_hover' | 'descripcion' | null>(null);
   const [success, setSuccess] = useState(false);
   const [saveError, setSaveError] = useState('');
+  const [previewMode, setPreviewMode] = useState<'mobile' | 'desktop'>('mobile');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bgFileInputRef = useRef<HTMLInputElement>(null);
   
@@ -97,6 +99,7 @@ export function Configuracion(): JSX.Element {
   const [loadingLocation, setLoadingLocation] = useState(false);
   const [showMap, setShowMap] = useState(false);
   const [loadingMap, setLoadingMap] = useState(false);
+  const [showFondoEditor, setShowFondoEditor] = useState(false);
   const mapInstanceRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
 
@@ -377,6 +380,7 @@ export function Configuracion(): JSX.Element {
         banner_promocional_texto: data.banner_promocional_texto || '',
         config_diseno: {
           apariencia: {
+            ...apariencia,
             fondo_tipo: apariencia.fondo_tipo || 'solido',
             fondo_valor: apariencia.fondo_valor || fondo,
             fondo_blur: apariencia.fondo_blur || '0px',
@@ -392,10 +396,12 @@ export function Configuracion(): JSX.Element {
             fondo_imagen_url: apariencia.fondo_imagen_url || '',
             fondo_imagen_posicion: apariencia.fondo_imagen_posicion || 'center center',
             fondo_imagen_ajuste: apariencia.fondo_imagen_ajuste || 'cover',
-            fondo_imagen_repetir: apariencia.fondo_imagen_repetir || 'no-repeat'
+            fondo_imagen_repetir: apariencia.fondo_imagen_repetir || 'no-repeat',
+            responsive_imagen: apariencia.responsive_imagen || {}
           },
           layout: {
-            layout_type: layout.layout_type || layoutType,
+            layout_type_horizontal: layout.layout_type_horizontal || layout.layout_type || layoutType,
+            layout_type_vertical: layout.layout_type_vertical || layout.layout_type || layoutType,
             categorias_sticky: layout.categorias_sticky !== undefined ? layout.categorias_sticky : true
           },
           elementos_visuales: {
@@ -409,6 +415,7 @@ export function Configuracion(): JSX.Element {
           }
         }
       });
+      console.log('🟢 [Configuracion] Data loaded from API:', JSON.stringify(data.config_diseno?.apariencia?.responsive_imagen));
 
       const fondoValor = apariencia.fondo_valor || fondo;
       if (apariencia.fondo_tipo === 'gradiente' && fondoValor && fondoValor.startsWith('linear-gradient')) {
@@ -455,7 +462,11 @@ export function Configuracion(): JSX.Element {
       const layout = { ...config.layout, [key]: value };
       
       let extra: any = {};
-      if (key === 'layout_type') extra.layout_type = value;
+      if (key === 'layout_type_horizontal') extra.layout_type_horizontal = value;
+      if (key === 'layout_type_vertical') extra.layout_type_vertical = value;
+      
+      // Update global layout_type for legacy compatibility when saving
+      if (key === 'layout_type_vertical') extra.layout_type = value;
 
       return {
         ...prev,
@@ -566,21 +577,113 @@ export function Configuracion(): JSX.Element {
 
   return (
     <div className="py-12 px-6 lg:px-12 max-w-[1400px] mx-auto min-h-screen">
-      <div className="flex flex-col xl:flex-row gap-16">
-        
-        {/* Settings Column */}
-        <div className="flex-1 max-w-3xl">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="mb-12"
-          >
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-2 text-apple-text dark:text-apple-dark-text">Identidad Visual</h1>
-            <p className="text-lg text-apple-text-secondary dark:text-apple-dark-text-secondary font-medium">
-              Define el estilo único de tu menú digital.
+      
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 flex items-center justify-center rounded-2xl bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary">
+            <Sliders className="w-6 h-6 text-apple-blue" />
+          </div>
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-apple-text dark:text-apple-dark-text">Configuración del Menú</h1>
+            <p className="text-sm text-apple-text-secondary dark:text-apple-dark-text-secondary font-medium">
+              Personaliza la identidad visual y estilo de tu restaurante digital.
             </p>
-          </motion.div>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <button className="px-5 py-2.5 rounded-xl border border-apple-border dark:border-apple-dark-border text-sm font-bold bg-white dark:bg-black text-apple-text dark:text-apple-dark-text hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors flex items-center gap-2">
+            <Eye size={16} />
+            Vista Previa
+          </button>
+          <button 
+            onClick={handleSubmit}
+            disabled={saving}
+            className="px-6 py-2.5 rounded-xl bg-apple-blue text-white text-sm font-bold hover:bg-blue-600 transition-colors shadow-apple-sm flex items-center gap-2"
+          >
+            {saving ? (
+               <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+            ) : (
+               <CheckCircle2 size={16} />
+            )}
+            Guardar Cambios
+          </button>
+        </div>
+      </div>
 
+      {/* Tabs */}
+      <div className="flex items-center gap-8 border-b border-apple-border dark:border-apple-dark-border mb-8 overflow-x-auto scrollbar-hide">
+        <button 
+          onClick={() => setShowFondoEditor(false)}
+          className={`pb-4 text-sm font-bold border-b-2 flex items-center gap-2 transition-colors whitespace-nowrap ${!showFondoEditor ? 'border-apple-blue text-apple-blue' : 'border-transparent text-apple-text-secondary hover:text-apple-text'}`}
+        >
+          <Palette size={18} />
+          Identidad & Estilos
+        </button>
+        <button 
+          onClick={() => setShowFondoEditor(true)}
+          className={`pb-4 text-sm font-bold border-b-2 flex items-center gap-2 transition-colors whitespace-nowrap ${showFondoEditor ? 'border-apple-blue text-apple-blue' : 'border-transparent text-apple-text-secondary hover:text-apple-text'}`}
+        >
+          <ImageIcon size={18} />
+          Dimensiones de Imagen
+        </button>
+      </div>
+
+      {showFondoEditor ? (
+        <ResponsiveImageEditor
+          isOpen={true}
+          onClose={() => setShowFondoEditor(false)}
+          imageUrl={theme.config_diseno?.apariencia?.fondo_imagen_url || ''}
+          apariencia={theme.config_diseno?.apariencia || {}}
+          onSave={async (updatedApariencia) => {
+            setTheme((prev: any) => {
+              const config = prev.config_diseno || { apariencia: {}, layout: {}, elementos_visuales: {}, informacion: {} };
+              return {
+                ...prev,
+                config_diseno: {
+                  ...config,
+                  apariencia: updatedApariencia
+                }
+              };
+            });
+
+            // Guardar en el servidor y esperar respuesta
+            try {
+              // Obtener el estado más reciente del tema
+              const newTheme = await new Promise<any>((resolve) => {
+                setTheme((prev: any) => {
+                  const config = prev.config_diseno || { apariencia: {}, layout: {}, elementos_visuales: {}, informacion: {} };
+                  const updatedTheme = {
+                    ...prev,
+                    config_diseno: {
+                      ...config,
+                      apariencia: updatedApariencia
+                    }
+                  };
+                  resolve(updatedTheme);
+                  return updatedTheme;
+                });
+              });
+
+              const result = await restauranteService.updateTheme(newTheme);
+
+              // Actualizar con la respuesta del servidor para asegurar sincronización
+              if (result.tema && result.tema.config_diseno) {
+                setTheme((prev: any) => ({
+                  ...prev,
+                  config_diseno: result.tema.config_diseno
+                }));
+              }
+            } catch (err) {
+              console.error('Error al guardar configuración responsiva:', err);
+            }
+          }}
+        />
+      ) : (
+        <div className="flex flex-col xl:flex-row gap-12">
+          {/* Settings Column */}
+          <div className="flex-1 max-w-3xl">
           <form onSubmit={handleSubmit} className="space-y-12">
             
             {/* Branding / Logo */}
@@ -1018,58 +1121,7 @@ export function Configuracion(): JSX.Element {
                     </div>
                   </div>
 
-                  {theme.config_diseno?.apariencia?.fondo_imagen_url && (
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-                      {/* Posición de la Imagen */}
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-apple-text-secondary ml-1">Posición de Imagen</label>
-                        <select
-                          value={theme.config_diseno?.apariencia?.fondo_imagen_posicion || 'center center'}
-                          onChange={(e) => updateDisenoApariencia('fondo_imagen_posicion', e.target.value)}
-                          className="w-full px-4 py-3 rounded-xl bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border text-xs font-bold shadow-apple-sm outline-none focus:border-apple-blue"
-                        >
-                          <option value="center center">Centro Centro (Recomendado)</option>
-                          <option value="top center">Arriba Centro</option>
-                          <option value="bottom center">Abajo Centro</option>
-                          <option value="center left">Centro Izquierda</option>
-                          <option value="center right">Centro Derecha</option>
-                          <option value="top left">Arriba Izquierda</option>
-                          <option value="top right">Arriba Derecha</option>
-                          <option value="bottom left">Abajo Izquierda</option>
-                          <option value="bottom right">Abajo Derecha</option>
-                        </select>
-                      </div>
 
-                      {/* Ajuste de la Imagen */}
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-apple-text-secondary ml-1">Ajuste / Tamaño</label>
-                        <select
-                          value={theme.config_diseno?.apariencia?.fondo_imagen_ajuste || 'cover'}
-                          onChange={(e) => updateDisenoApariencia('fondo_imagen_ajuste', e.target.value)}
-                          className="w-full px-4 py-3 rounded-xl bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border text-xs font-bold shadow-apple-sm outline-none focus:border-apple-blue"
-                        >
-                          <option value="cover">Cubrir pantalla entera (Llenar)</option>
-                          <option value="contain">Ajustar / Contener completo</option>
-                          <option value="auto">Tamaño original (Mosaicos)</option>
-                        </select>
-                      </div>
-
-                      {/* Repetición de la Imagen */}
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-apple-text-secondary ml-1">Repetición</label>
-                        <select
-                          value={theme.config_diseno?.apariencia?.fondo_imagen_repetir || 'no-repeat'}
-                          onChange={(e) => updateDisenoApariencia('fondo_imagen_repetir', e.target.value)}
-                          className="w-full px-4 py-3 rounded-xl bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border text-xs font-bold shadow-apple-sm outline-none focus:border-apple-blue"
-                        >
-                          <option value="no-repeat">No repetir</option>
-                          <option value="repeat">Repetir (Mosaico)</option>
-                          <option value="repeat-x">Repetir Horizontal</option>
-                          <option value="repeat-y">Repetir Vertical</option>
-                        </select>
-                      </div>
-                    </div>
-                  )}
                 </div>
               )}
             </section>
@@ -1080,27 +1132,58 @@ export function Configuracion(): JSX.Element {
                 <Layout size={16} /> Estructura del Menú
               </h3>
               
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {LAYOUTS.map((layout) => (
-                  <button
-                    key={layout.value}
-                    type="button"
-                    onClick={() => {
-                      updateDisenoLayout('layout_type', layout.value);
-                    }}
-                    className={`p-6 rounded-3xl border-2 transition-all text-center flex flex-col items-center gap-3 active:scale-95 ${
-                      theme.layout_type === layout.value
-                        ? 'border-apple-blue bg-apple-blue/5 shadow-apple-glow'
-                        : 'border-apple-border dark:border-apple-dark-border bg-apple-bg dark:bg-apple-dark-bg text-apple-text-secondary hover:border-apple-blue/30'
-                    }`}
-                  >
-                    <div className="text-3xl mb-1">{layout.icon}</div>
-                    <div>
-                      <div className={`text-sm font-bold ${theme.layout_type === layout.value ? 'text-apple-blue' : 'text-apple-text'}`}>{layout.label}</div>
-                      <div className="text-[10px] font-bold uppercase tracking-wider opacity-60 mt-1">{layout.desc}</div>
-                    </div>
-                  </button>
-                ))}
+              {/* Selector Pantallas Anchas (Desktop) */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-bold text-apple-blue pl-2 border-l-2 border-apple-blue">Pantallas Anchas (Monitor/Laptop)</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {LAYOUTS.map((layout) => {
+                    const isSelected = (theme.config_diseno?.layout?.layout_type_horizontal || theme.layout_type) === layout.value;
+                    return (
+                      <button
+                        key={`horiz-${layout.value}`}
+                        type="button"
+                        onClick={() => updateDisenoLayout('layout_type_horizontal', layout.value)}
+                        className={`p-5 rounded-3xl border-2 transition-all text-center flex flex-col items-center gap-3 active:scale-95 ${
+                          isSelected
+                            ? 'border-apple-blue bg-apple-blue/5 shadow-apple-glow'
+                            : 'border-apple-border dark:border-apple-dark-border bg-apple-bg dark:bg-apple-dark-bg text-apple-text-secondary hover:border-apple-blue/30'
+                        }`}
+                      >
+                        <div className="text-2xl mb-1">{layout.icon}</div>
+                        <div>
+                          <div className={`text-xs font-bold ${isSelected ? 'text-apple-blue' : 'text-apple-text'}`}>{layout.label}</div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Selector Pantallas Angostas (Móvil) */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-bold text-emerald-500 pl-2 border-l-2 border-emerald-500">Pantallas Angostas (Móvil/Tablet Vertical)</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {LAYOUTS.map((layout) => {
+                    const isSelected = (theme.config_diseno?.layout?.layout_type_vertical || theme.layout_type) === layout.value;
+                    return (
+                      <button
+                        key={`vert-${layout.value}`}
+                        type="button"
+                        onClick={() => updateDisenoLayout('layout_type_vertical', layout.value)}
+                        className={`p-5 rounded-3xl border-2 transition-all text-center flex flex-col items-center gap-3 active:scale-95 ${
+                          isSelected
+                            ? 'border-emerald-500 bg-emerald-500/5 shadow-apple-sm'
+                            : 'border-apple-border dark:border-apple-dark-border bg-apple-bg dark:bg-apple-dark-bg text-apple-text-secondary hover:border-emerald-500/30'
+                        }`}
+                      >
+                        <div className="text-2xl mb-1">{layout.icon}</div>
+                        <div>
+                          <div className={`text-xs font-bold ${isSelected ? 'text-emerald-500' : 'text-apple-text'}`}>{layout.label}</div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Categorías Sticky */}
@@ -1570,255 +1653,319 @@ export function Configuracion(): JSX.Element {
         </div>
 
         {/* Real-time Preview Column */}
-        <div className="flex-1 flex justify-center xl:sticky xl:top-8 xl:self-start">
-          <div className="w-full max-w-[360px]">
-             <div className="text-center mb-8">
-               <h3 className="text-apple-text-tertiary text-[11px] font-black uppercase tracking-[0.3em] inline-flex items-center gap-2 px-4 py-2 rounded-full border border-apple-border dark:border-apple-dark-border">
-                 <div className="w-1.5 h-1.5 rounded-full bg-apple-blue animate-pulse" />
-                 Vista Previa Real
-               </h3>
-             </div>
+        <div className="flex-1 flex flex-col items-center xl:sticky xl:top-8 xl:self-start">
              
-             {/* Smartphone Mockup */}
-             <div className="relative w-full aspect-[9/18.5] rounded-[3.5rem] border-[10px] border-[#1D1D1F] shadow-apple-2xl overflow-hidden ring-1 ring-white/10"
-                style={{ 
-                  background: theme.config_diseno?.apariencia?.fondo_tipo === 'imagen' && theme.config_diseno?.apariencia?.fondo_imagen_url
-                    ? `url(${theme.config_diseno.apariencia.fondo_imagen_url})`
-                    : (theme.config_diseno?.apariencia?.fondo_tipo === 'gradiente' 
-                      ? theme.config_diseno?.apariencia?.fondo_valor 
-                      : theme.color_fondo),
-                  backgroundColor: theme.color_fondo,
-                  backgroundPosition: theme.config_diseno?.apariencia?.fondo_tipo === 'imagen' ? (theme.config_diseno?.apariencia?.fondo_imagen_posicion || 'center center') : 'initial',
-                  backgroundSize: theme.config_diseno?.apariencia?.fondo_tipo === 'imagen' ? (theme.config_diseno?.apariencia?.fondo_imagen_ajuste || 'cover') : 'initial',
-                  backgroundRepeat: theme.config_diseno?.apariencia?.fondo_tipo === 'imagen' ? (theme.config_diseno?.apariencia?.fondo_imagen_repetir || 'no-repeat') : 'initial',
-                }}
-             >
-                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/3 h-6 bg-[#1D1D1F] rounded-b-3xl z-50 shadow-sm" />
-                 
-                 {/* Mock Content */}
-                 {(() => {
-                   const isDark = theme.config_diseno?.apariencia?.modo_oscuro !== undefined
-                     ? theme.config_diseno.apariencia.modo_oscuro
-                     : isColorDark(theme.color_fondo);
-                     
-                    const textOpHigh = theme.config_diseno?.apariencia?.color_normal || (isDark ? 'rgba(255,255,255,0.9)' : 'rgba(29,29,31,0.9)');
-                    const textOpLow  = colorWithOpacity(textOpHigh, 0.55);
-                   const borderOp   = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
-                   const headerBg   = isDark ? 'rgba(10,10,10,0.5)' : 'rgba(255,255,255,0.5)';
-                   
-                   const btnRadius = theme.config_diseno?.apariencia?.border_radius_botones || '12px';
-                   const cardRadius = theme.config_diseno?.apariencia?.border_radius_tarjetas || '24px';
-                   const isGlass = theme.config_diseno?.elementos_visuales?.glassmorphism || false;
-                   const isImageBg = theme.config_diseno?.apariencia?.fondo_tipo === 'imagen';
-                   const imageBgUrl = theme.config_diseno?.apariencia?.fondo_imagen_url;
-                   const showShadow = theme.config_diseno?.elementos_visuales?.sombras_habilitadas !== undefined
-                     ? theme.config_diseno.elementos_visuales.sombras_habilitadas
-                     : true;
-                   const badgeColor = theme.config_diseno?.elementos_visuales?.badge_color || '#ffbe0b';
-                   
-                   const surfaceOp = isGlass
-                     ? (isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)')
-                     : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)');
+             {/* Toggle de Dispositivo */}
+             <div className="mb-6 flex items-center bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary p-1 rounded-2xl border border-apple-border dark:border-apple-dark-border">
+                <button 
+                  type="button"
+                  onClick={() => setPreviewMode('mobile')}
+                  className={`px-6 py-2 rounded-xl text-xs font-bold transition-all ${
+                    previewMode === 'mobile' 
+                      ? 'bg-apple-blue text-white shadow-apple-sm' 
+                      : 'text-apple-text-secondary hover:text-apple-text'
+                  }`}
+                >
+                  Móvil
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => setPreviewMode('desktop')}
+                  className={`px-6 py-2 rounded-xl text-xs font-bold transition-all ${
+                    previewMode === 'desktop' 
+                      ? 'bg-apple-blue text-white shadow-apple-sm' 
+                      : 'text-apple-text-secondary hover:text-apple-text'
+                  }`}
+                >
+                  Escritorio
+                </button>
+             </div>
 
-                   const fontFam = theme.fuente_familia || 'Sans-Serif';
-                   const font = 
-                     fontFam === 'Serif' ? 'Georgia, serif' :
-                     fontFam === 'Mono' ? 'monospace' :
-                     fontFam === 'Poppins' ? 'Poppins, sans-serif' :
-                     fontFam === 'Outfit' ? 'Outfit, sans-serif' :
-                     'Inter, sans-serif';
-
-                   return (
-                 <div
-                   className="w-full h-full overflow-y-auto scrollbar-hide flex flex-col relative"
-                   style={{ fontFamily: font }}
-                 >
-                   {isImageBg && imageBgUrl && (
-                     <div 
-                       className="absolute inset-0 pointer-events-none z-0" 
-                       style={{ 
-                         backgroundColor: isDark ? 'rgba(10, 10, 10, 0.7)' : 'rgba(255, 255, 255, 0.75)', 
-                         backdropFilter: theme.config_diseno?.apariencia?.fondo_blur || '0px',
-                         WebkitBackdropFilter: theme.config_diseno?.apariencia?.fondo_blur || '0px'
-                       }} 
-                     />
+             <div className={`w-full transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${previewMode === 'mobile' ? 'max-w-[360px]' : 'max-w-full'}`}>
+               <div className="text-center mb-6">
+                 <h3 className="text-apple-text-tertiary text-[11px] font-black uppercase tracking-[0.3em] inline-flex items-center gap-2 px-4 py-2 rounded-full border border-apple-border dark:border-apple-dark-border">
+                   <div className="w-1.5 h-1.5 rounded-full bg-apple-blue animate-pulse" />
+                   Vista Previa {previewMode === 'mobile' ? '(Vertical)' : '(Horizontal)'}
+                 </h3>
+               </div>
+               
+               {/* Device Mockup */}
+               <div className={`relative w-full overflow-hidden transition-all duration-500 ring-1 ring-white/10 shadow-apple-2xl bg-black ${
+                  previewMode === 'mobile' 
+                    ? 'aspect-[9/18.5] rounded-[3.5rem] border-[10px] border-[#1D1D1F]' 
+                    : 'aspect-video rounded-2xl border-[8px] border-[#1D1D1F]'
+               }`}
+                  style={{ 
+                    background: theme.config_diseno?.apariencia?.fondo_tipo === 'gradiente' 
+                        ? theme.config_diseno?.apariencia?.fondo_valor 
+                        : theme.color_fondo,
+                    backgroundColor: theme.color_fondo,
+                  }}
+               >
+                   {/* Device Notch (Mobile) or Camera Dot (Desktop) */}
+                   {previewMode === 'mobile' ? (
+                     <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/3 h-6 bg-[#1D1D1F] rounded-b-3xl z-50 shadow-sm" />
+                   ) : (
+                     <div className="absolute top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#1D1D1F] rounded-full z-50 shadow-sm opacity-50" />
                    )}
-                   <div className="relative z-10 flex flex-col w-full min-h-full">
-                   {/* Header mock */}
-                   <div 
-                     className="px-5 pt-12 pb-3.5 flex items-center gap-2.5 sticky top-0 z-10 backdrop-blur-xl transition-all" 
-                     style={{ 
-                       backgroundColor: 'transparent', 
-                       borderBottom: 'none' 
-                     }}
-                   >
-                      <div className="w-8 h-8 rounded-xl flex items-center justify-center text-sm flex-shrink-0" style={{ backgroundColor: `${theme.color_primario}25` }}>
-                        {theme.logo_url
-                          ? <img src={theme.logo_url} alt="" className="w-full h-full object-cover rounded-xl" />
-                          : <span style={{ color: theme.color_primario }}>🌮</span>}
-                      </div>
-                      <div className="h-3.5 w-24 rounded-full" style={{ backgroundColor: textOpHigh }} />
-                   </div>
- 
-                   {/* Nav mock */}
-                   <div 
-                      className="px-4 py-2.5 flex gap-2 overflow-x-hidden backdrop-blur-xl" 
-                      style={{ 
-                        position: theme.config_diseno?.layout?.categorias_sticky ? 'sticky' : 'relative',
-                        top: theme.config_diseno?.layout?.categorias_sticky ? '47px' : '0px',
-                        zIndex: 9,
-                        backgroundColor: 'transparent',
-                        borderBottom: 'none' 
-                      }}
-                   >
-                     {['Entradas','Tacos','Postres'].map((n, idx) => (
-                       <div 
-                         key={n} 
-                         className="h-7 px-3 flex-shrink-0 flex items-center gap-1.5 transition-all" 
-                         style={{ 
-                           backgroundColor: idx === 0 ? `${theme.color_primario}20` : surfaceOp, 
-                           border: `1px solid ${idx === 0 ? theme.color_primario : borderOp}`,
-                           borderRadius: btnRadius
-                         }}
-                       >
-                         {idx === 0 && <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: theme.color_primario }} />}
-                         <div className="h-2 w-10 rounded-full" style={{ backgroundColor: idx === 0 ? theme.color_primario : textOpLow }} />
-                       </div>
-                     ))}
-                   </div>
- 
-                    {/* Tarjeta de Presentación en Mockup */}
-                    <div className="mx-4 mt-4 p-3.5 rounded-2xl border transition-all"
-                      style={{ 
-                        backgroundColor: surfaceOp, 
-                        borderColor: borderOp,
-                        borderRadius: cardRadius 
-                      }}
-                    >
-                      <div className="space-y-2">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          <div className="h-3 w-16 rounded-full" style={{ backgroundColor: textOpHigh }} />
-                          {theme.config_diseno?.informacion?.ambiente && (
-                            <span 
-                              className="px-1.5 py-0.5 rounded-full text-[6px] font-black uppercase tracking-wider"
-                              style={{ backgroundColor: `${theme.color_primario}1a`, color: theme.color_primario, border: `1px solid ${theme.color_primario}20` }}
-                            >
-                              {theme.config_diseno.informacion.ambiente}
-                            </span>
-                          )}
-                        </div>
-                        <div className="space-y-1">
-                          <div className="h-1.5 w-full rounded-full" style={{ backgroundColor: textOpLow }} />
-                          <div className="h-1.5 w-5/6 rounded-full" style={{ backgroundColor: textOpLow }} />
-                        </div>
-                        {theme.config_diseno?.informacion?.direccion && (
-                          <div className="flex items-center gap-1 text-[7px]" style={{ color: textOpLow }}>
-                            <span>📍</span>
-                            <span className="truncate max-w-[180px]">{theme.config_diseno.informacion.direccion}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                   
+                   {/* Mock Content */}
+                   {(() => {
+                     const isDark = theme.config_diseno?.apariencia?.modo_oscuro !== undefined
+                       ? theme.config_diseno.apariencia.modo_oscuro
+                       : isColorDark(theme.color_fondo);
+                       
+                     const responsiveConfig = theme.config_diseno?.apariencia?.responsive_imagen || {};
+                     const imgConfig = previewMode === 'desktop' 
+                        ? (responsiveConfig.desktop_large || responsiveConfig.desktop || responsiveConfig.laptop || { width: 1920, height: 1080, position_x: 0, position_y: 0, scale: 1, rotation: 0, opacity: 100, object_fit: 'cover', z_index: 0, border_radius: 0 })
+                        : (responsiveConfig.mobile || responsiveConfig.mobile_small || { width: 1080, height: 1920, position_x: 0, position_y: 0, scale: 1, rotation: 0, opacity: 100, object_fit: 'cover', z_index: 0, border_radius: 0 });
+                       
+                      const textOpHigh = theme.config_diseno?.apariencia?.color_normal || (isDark ? 'rgba(255,255,255,0.9)' : 'rgba(29,29,31,0.9)');
+                      const textOpLow  = colorWithOpacity(textOpHigh, 0.55);
+                     const borderOp   = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
+                     const headerBg   = isDark ? 'rgba(10,10,10,0.5)' : 'rgba(255,255,255,0.5)';
+                     
+                     const btnRadius = theme.config_diseno?.apariencia?.border_radius_botones || '12px';
+                     const cardRadius = theme.config_diseno?.apariencia?.border_radius_tarjetas || '24px';
+                     const isGlass = theme.config_diseno?.elementos_visuales?.glassmorphism || false;
+                     const isImageBg = theme.config_diseno?.apariencia?.fondo_tipo === 'imagen';
+                     const imageBgUrl = theme.config_diseno?.apariencia?.fondo_imagen_url;
+                     const showShadow = theme.config_diseno?.elementos_visuales?.sombras_habilitadas !== undefined
+                       ? theme.config_diseno.elementos_visuales.sombras_habilitadas
+                       : true;
+                     const badgeColor = theme.config_diseno?.elementos_visuales?.badge_color || '#ffbe0b';
+                     
+                     const surfaceOp = isGlass
+                       ? (isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)')
+                       : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)');
 
-                    {/* Content */}
-                    <div className="p-4 space-y-6">
-                     <div className="h-4 w-28 pl-2 flex items-center" style={{ borderLeft: `3px solid ${theme.color_primario}` }}>
-                       <span className="text-[11px] font-black uppercase tracking-wider" style={{ color: textOpHigh }}>Entradas</span>
+                     const fontFam = theme.fuente_familia || 'Sans-Serif';
+                     const font = 
+                       fontFam === 'Serif' ? 'Georgia, serif' :
+                       fontFam === 'Mono' ? 'monospace' :
+                       fontFam === 'Poppins' ? 'Poppins, sans-serif' :
+                       fontFam === 'Outfit' ? 'Outfit, sans-serif' :
+                       'Inter, sans-serif';
+
+                     const currentLayoutType = previewMode === 'desktop'
+                        ? (theme.config_diseno?.layout?.layout_type_horizontal || theme.layout_type || 'TARJETAS_DETALLADAS')
+                        : (theme.config_diseno?.layout?.layout_type_vertical || theme.layout_type || 'TARJETAS_DETALLADAS');
+
+                     return (
+                   <div
+                     className="w-full h-full overflow-y-auto scrollbar-hide flex flex-col relative"
+                     style={{ fontFamily: font }}
+                   >
+                     {isImageBg && imageBgUrl && (
+                       <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden z-0">
+                         <div 
+                           className="relative flex items-center justify-center" 
+                           style={{
+                             width: `${imgConfig.width}px`,
+                             height: `${imgConfig.height}px`,
+                             transform: `translate3d(${imgConfig.position_x}px, ${imgConfig.position_y}px, 0px) scale(${imgConfig.scale}) rotate(${imgConfig.rotation}deg)`,
+                             opacity: imgConfig.opacity / 100,
+                             zIndex: imgConfig.z_index,
+                             borderRadius: `${imgConfig.border_radius}px`,
+                             transformOrigin: 'center center'
+                           }}
+                         >
+                           <img 
+                             src={imageBgUrl} 
+                             alt="fondo" 
+                             className="w-full h-full max-w-none"
+                             style={{ 
+                               objectFit: imgConfig.object_fit,
+                               borderRadius: `${imgConfig.border_radius}px`
+                             }} 
+                           />
+                         </div>
+                         <div 
+                           className="absolute inset-0 w-full h-full" 
+                           style={{ 
+                             backgroundColor: isDark ? 'rgba(10, 10, 10, 0.7)' : 'rgba(255, 255, 255, 0.75)', 
+                             backdropFilter: theme.config_diseno?.apariencia?.fondo_blur || '0px',
+                             WebkitBackdropFilter: theme.config_diseno?.apariencia?.fondo_blur || '0px'
+                           }} 
+                         />
+                       </div>
+                     )}
+                     <div className="relative z-10 flex flex-col w-full min-h-full">
+                     {/* Header mock */}
+                     <div 
+                       className="px-5 pt-12 pb-3.5 flex items-center gap-2.5 sticky top-0 z-10 backdrop-blur-xl transition-all" 
+                       style={{ 
+                         backgroundColor: 'transparent', 
+                         borderBottom: 'none' 
+                       }}
+                     >
+                        <div className="w-8 h-8 rounded-xl flex items-center justify-center text-sm flex-shrink-0" style={{ backgroundColor: `${theme.color_primario}25` }}>
+                          {theme.logo_url
+                            ? <img src={theme.logo_url} alt="" className="w-full h-full object-cover rounded-xl" />
+                            : <span style={{ color: theme.color_primario }}>🌮</span>}
+                        </div>
+                        <div className="h-3.5 w-24 rounded-full" style={{ backgroundColor: textOpHigh }} />
                      </div>
  
-                     {theme.layout_type === 'LISTA_SIMPLE' && (
-                       <div className="space-y-4">
-                         {[1,2,3].map(i => (
-                           <div key={i} className="flex justify-between items-center py-2" style={{ borderBottom: `1px solid ${borderOp}` }}>
-                             <div className="space-y-1.5 flex-1 pr-4">
-                               <div className="h-3 w-28 rounded-full" style={{ backgroundColor: textOpHigh }} />
-                               <div className="h-2 w-44 rounded-full" style={{ backgroundColor: textOpLow }} />
-                             </div>
-                             <div className="h-6 px-2.5 rounded-lg font-bold text-[10px] flex items-center justify-center" style={{ color: theme.color_primario, border: `1px solid ${theme.color_primario}40`, borderRadius: btnRadius }}>
-                               $65
-                             </div>
-                           </div>
-                         ))}
-                       </div>
-                     )}
+                     {/* Nav mock */}
+                     <div 
+                        className="px-4 py-2.5 flex gap-2 overflow-x-hidden backdrop-blur-xl" 
+                        style={{ 
+                          position: theme.config_diseno?.layout?.categorias_sticky ? 'sticky' : 'relative',
+                          top: theme.config_diseno?.layout?.categorias_sticky ? '47px' : '0px',
+                          zIndex: 9,
+                          backgroundColor: 'transparent',
+                          borderBottom: 'none' 
+                        }}
+                     >
+                       {['Entradas','Tacos','Postres'].map((n, idx) => (
+                         <div 
+                           key={n} 
+                           className="h-7 px-3 flex-shrink-0 flex items-center gap-1.5 transition-all" 
+                           style={{ 
+                             backgroundColor: idx === 0 ? `${theme.color_primario}20` : surfaceOp, 
+                             border: `1px solid ${idx === 0 ? theme.color_primario : borderOp}`,
+                             borderRadius: btnRadius
+                           }}
+                         >
+                           {idx === 0 && <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: theme.color_primario }} />}
+                           <div className="h-2 w-10 rounded-full" style={{ backgroundColor: idx === 0 ? theme.color_primario : textOpLow }} />
+                         </div>
+                       ))}
+                     </div>
  
-                     {theme.layout_type === 'CUADRICULA_FOTOS' && (
-                       <div className="grid grid-cols-2 gap-3">
-                         {[1,2,3,4].map(i => (
-                           <div 
-                             key={i} 
-                             className="space-y-2 p-2 rounded-2xl transition-all"
-                             style={{ 
-                               backgroundColor: surfaceOp, 
-                               borderRadius: cardRadius,
-                               border: `1px solid ${borderOp}`,
-                               boxShadow: showShadow ? '0 4px 10px rgba(0,0,0,0.1)' : 'none'
-                             }}
-                           >
-                             <div className="aspect-square relative overflow-hidden bg-black/10" style={{ borderRadius: `calc(${cardRadius} - 8px)` }}>
-                               <div className="w-full h-full flex items-center justify-center text-xl">🌮</div>
-                               <div className="absolute bottom-1.5 right-1.5 px-2 py-0.5 rounded-full text-[8px] font-black shadow-sm" style={{ backgroundColor: theme.color_primario, color: '#fff' }}>$75</div>
-                             </div>
-                             <div className="h-2 w-14 rounded-full mx-auto" style={{ backgroundColor: textOpHigh }} />
+                     {/* Tarjeta de Presentación en Mockup */}
+                     <div className="mx-4 mt-4 p-3.5 rounded-2xl border transition-all"
+                       style={{ 
+                         backgroundColor: surfaceOp, 
+                         borderColor: borderOp,
+                         borderRadius: cardRadius 
+                       }}
+                     >
+                       <div className="space-y-2">
+                         <div className="flex flex-wrap items-center gap-1.5">
+                           <div className="h-3 w-16 rounded-full" style={{ backgroundColor: textOpHigh }} />
+                           {theme.config_diseno?.informacion?.ambiente && (
+                             <span 
+                               className="px-1.5 py-0.5 rounded-full text-[6px] font-black uppercase tracking-wider"
+                               style={{ backgroundColor: `${theme.color_primario}1a`, color: theme.color_primario, border: `1px solid ${theme.color_primario}20` }}
+                             >
+                               {theme.config_diseno.informacion.ambiente}
+                             </span>
+                           )}
+                         </div>
+                         <div className="space-y-1">
+                           <div className="h-1.5 w-full rounded-full" style={{ backgroundColor: textOpLow }} />
+                           <div className="h-1.5 w-5/6 rounded-full" style={{ backgroundColor: textOpLow }} />
+                         </div>
+                         {theme.config_diseno?.informacion?.direccion && (
+                           <div className="flex items-center gap-1 text-[7px]" style={{ color: textOpLow }}>
+                             <span>📍</span>
+                             <span className="truncate max-w-[180px]">{theme.config_diseno.informacion.direccion}</span>
                            </div>
-                         ))}
+                         )}
                        </div>
-                     )}
+                     </div>
+
+                     {/* Content */}
+                     <div className="p-4 space-y-6">
+                      <div className="h-4 w-28 pl-2 flex items-center" style={{ borderLeft: `3px solid ${theme.color_primario}` }}>
+                        <span className="text-[11px] font-black uppercase tracking-wider" style={{ color: textOpHigh }}>Entradas</span>
+                      </div>
  
-                     {theme.layout_type === 'TARJETAS_DETALLADAS' && (
-                       <div className="space-y-4">
-                         {[1,2].map(i => (
-                           <div 
-                             key={i} 
-                             className="p-3.5 space-y-3 transition-all relative overflow-hidden" 
-                             style={{ 
-                               backgroundColor: surfaceOp, 
-                               border: `1px solid ${borderOp}`,
-                               borderRadius: cardRadius,
-                               boxShadow: showShadow ? '0 8px 20px rgba(0,0,0,0.12)' : 'none',
-                               backdropFilter: isGlass ? 'blur(10px)' : 'none',
-                               WebkitBackdropFilter: isGlass ? 'blur(10px)' : 'none'
-                             }}
-                           >
-                             {/* Badge de Oferta (Fase 2) */}
-                             {i === 1 && (
-                               <div 
-                                 className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full text-[8px] font-black text-white uppercase tracking-wider shadow-sm animate-pulse" 
-                                 style={{ backgroundColor: badgeColor }}
-                               >
-                                 Oferta
-                               </div>
-                             )}
-                             <div className="h-24 rounded-xl flex items-center justify-center text-3xl bg-black/10" style={{ borderRadius: `calc(${cardRadius} - 8px)` }}>
-                               🥗
-                             </div>
-                             <div className="flex justify-between items-center">
-                               <div className="h-3 w-28 rounded-full" style={{ backgroundColor: textOpHigh }} />
-                               <div className="h-5 w-12 rounded-full font-black text-[10px] flex items-center justify-center text-white" style={{ backgroundColor: theme.color_primario }}>$85</div>
-                             </div>
-                             <div className="space-y-1.5">
-                               <div className="h-1.5 w-full rounded-full" style={{ backgroundColor: textOpLow }} />
-                               <div className="h-1.5 w-3/4 rounded-full" style={{ backgroundColor: textOpLow }} />
-                             </div>
-                           </div>
-                         ))}
+                      {currentLayoutType === 'LISTA_SIMPLE' && (
+                        <div className="space-y-4">
+                          {[1,2,3].map(i => (
+                            <div key={i} className="flex justify-between items-center py-2" style={{ borderBottom: `1px solid ${borderOp}` }}>
+                              <div className="space-y-1.5 flex-1 pr-4">
+                                <div className="h-3 w-28 rounded-full" style={{ backgroundColor: textOpHigh }} />
+                                <div className="h-2 w-44 rounded-full" style={{ backgroundColor: textOpLow }} />
+                              </div>
+                              <div className="h-6 px-2.5 rounded-lg font-bold text-[10px] flex items-center justify-center" style={{ color: theme.color_primario, border: `1px solid ${theme.color_primario}40`, borderRadius: btnRadius }}>
+                                $65
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       )}
-                      </div>
+ 
+                      {currentLayoutType === 'CUADRICULA_FOTOS' && (
+                        <div className={`grid gap-3 ${previewMode === 'desktop' ? 'grid-cols-4' : 'grid-cols-2'}`}>
+                          {[1,2,3,4].map(i => (
+                            <div 
+                              key={i} 
+                              className="space-y-2 p-2 rounded-2xl transition-all"
+                              style={{ 
+                                backgroundColor: surfaceOp, 
+                                borderRadius: cardRadius,
+                                border: `1px solid ${borderOp}`,
+                                boxShadow: showShadow ? '0 4px 10px rgba(0,0,0,0.1)' : 'none'
+                              }}
+                            >
+                              <div className="aspect-square relative overflow-hidden bg-black/10" style={{ borderRadius: `calc(${cardRadius} - 8px)` }}>
+                                <div className="w-full h-full flex items-center justify-center text-xl">🌮</div>
+                                <div className="absolute bottom-1.5 right-1.5 px-2 py-0.5 rounded-full text-[8px] font-black shadow-sm" style={{ backgroundColor: theme.color_primario, color: '#fff' }}>$75</div>
+                              </div>
+                              <div className="h-2 w-14 rounded-full mx-auto" style={{ backgroundColor: textOpHigh }} />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+ 
+                      {currentLayoutType === 'TARJETAS_DETALLADAS' && (
+                        <div className="space-y-4">
+                          {[1,2].map(i => (
+                            <div 
+                              key={i} 
+                              className="p-3.5 space-y-3 transition-all relative overflow-hidden" 
+                              style={{ 
+                                backgroundColor: surfaceOp, 
+                                border: `1px solid ${borderOp}`,
+                                borderRadius: cardRadius,
+                                boxShadow: showShadow ? '0 8px 20px rgba(0,0,0,0.12)' : 'none',
+                                backdropFilter: isGlass ? 'blur(10px)' : 'none',
+                                WebkitBackdropFilter: isGlass ? 'blur(10px)' : 'none'
+                              }}
+                            >
+                              {/* Badge de Oferta (Fase 2) */}
+                              {i === 1 && (
+                                <div 
+                                  className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full text-[8px] font-black text-white uppercase tracking-wider shadow-sm animate-pulse" 
+                                  style={{ backgroundColor: badgeColor }}
+                                >
+                                  Oferta
+                                </div>
+                              )}
+                              <div className="h-24 rounded-xl flex items-center justify-center text-3xl bg-black/10" style={{ borderRadius: `calc(${cardRadius} - 8px)` }}>
+                                🥗
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <div className="h-3 w-28 rounded-full" style={{ backgroundColor: textOpHigh }} />
+                                <div className="h-5 w-12 rounded-full font-black text-[10px] flex items-center justify-center text-white" style={{ backgroundColor: theme.color_primario }}>$85</div>
+                              </div>
+                              <div className="space-y-1.5">
+                                <div className="h-1.5 w-full rounded-full" style={{ backgroundColor: textOpLow }} />
+                                <div className="h-1.5 w-3/4 rounded-full" style={{ backgroundColor: textOpLow }} />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
-                   );
-                 })()}
-             </div>
-             
-             <p className="mt-8 text-center text-apple-text-tertiary text-xs font-medium flex items-center justify-center gap-1.5">
-               <AlertCircle size={14} />
-               Esto es una representación visual aproximada.
-             </p>
+                </div>
+              );
+            })()}
           </div>
+          
+          <p className="mt-8 text-center text-apple-text-tertiary text-xs font-medium flex items-center justify-center gap-1.5">
+            <AlertCircle size={14} />
+            Esto es una representación visual aproximada.
+          </p>
         </div>
-
       </div>
+        </div>
+      )}
     </div>
   );
 }

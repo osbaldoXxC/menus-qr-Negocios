@@ -21,14 +21,35 @@ function preloadAllChunks() {
 }
 
 const SPLASH_KEY = 'splash_shown';
+let splashShownInTab = false; // Flag en memoria de la pestaña
 
 export function WelcomeSplash() {
   const location = useLocation();
   const [visible, setVisible] = useState(false);
 
-  // Detecta el flag cada vez que cambia la ruta (justo después del navigate del login)
+  // Ejecutar al montar la app (F5 o primer acceso a la pestaña)
   useEffect(() => {
-    if (sessionStorage.getItem(SPLASH_KEY) === 'pending') {
+    const user = authService.getCurrentUser();
+    const isAuth = user.isAuthenticated;
+    const isPending = sessionStorage.getItem(SPLASH_KEY) === 'pending';
+    const isPrivate = window.location.pathname.startsWith('/dashboard') || 
+                      window.location.pathname.startsWith('/perfil') || 
+                      window.location.pathname.startsWith('/admin');
+
+    if (isPrivate && ((isAuth && !splashShownInTab) || isPending)) {
+      splashShownInTab = true;
+      setVisible(true);
+    }
+  }, []);
+
+  // También escuchar el flag pending cuando cambia la ruta post-login
+  useEffect(() => {
+    const isPrivate = location.pathname.startsWith('/dashboard') || 
+                      location.pathname.startsWith('/perfil') || 
+                      location.pathname.startsWith('/admin');
+                      
+    if (isPrivate && sessionStorage.getItem(SPLASH_KEY) === 'pending') {
+      splashShownInTab = true;
       setVisible(true);
     }
   }, [location.pathname]);
