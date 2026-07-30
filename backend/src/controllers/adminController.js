@@ -27,14 +27,30 @@ const getAllRestaurants = async (req, res) => {
   }
 };
 
+const logAuditoria = async (client, restaurante_id, accion, plan_anterior, plan_nuevo, detalles, admin_id) => {
+  await client.query(
+    'INSERT INTO historial_suscripciones (restaurante_id, accion, plan_anterior, plan_nuevo, detalles, admin_id) VALUES ($1, $2, $3, $4, $5, $6)',
+    [restaurante_id, accion, plan_anterior, plan_nuevo, detalles, admin_id]
+  );
+};
+
 const approveRestaurant = async (req, res) => {
   const { id } = req.params;
   const dias = Math.max(1, parseInt(req.body.dias_licencia || req.body.dias || req.body.dias_acceso_permitidos || 30));
   const plan = req.body.plan || null;
   const modo = req.body.modo || 'set';
+  const admin_id = req.user.id;
+
+  const client = await db.pool.connect();
 
   try {
-    const result = await db.query(
+    await client.query('BEGIN');
+    
+    // Get prev plan
+    const prevRes = await client.query('SELECT plan FROM restaurantes WHERE id = $1', [id]);
+    const plan_anterior = prevRes.rows.length ? prevRes.rows[0].plan : null;
+
+    const result = await client.query(
       `UPDATE restaurantes 
        SET estado = 'aprobado', 
            suscripcion_activa = true, 
@@ -51,9 +67,14 @@ const approveRestaurant = async (req, res) => {
     );
 
     if (result.rows.length === 0) {
+      await client.query('ROLLBACK');
       return res.status(404).json({ mensaje: 'Restaurante no encontrado' });
     }
 
+    const plan_nuevo = result.rows[0].plan;
+    await logAuditoria(client, id, 'RENOVAR_O_ACTIVAR', plan_anterior, plan_nuevo, `Modo: ${modo}, Días: ${dias}`, admin_id);
+
+    await client.query('COMMIT');
     await redisClient.del(`cache:menu:${id}`);
 
     res.json({
@@ -61,18 +82,24 @@ const approveRestaurant = async (req, res) => {
       restaurante: result.rows[0]
     });
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error('Error al aprobar o modificar tiempo de restaurante:', error);
     res.status(500).json({ mensaje: 'Error interno del servidor al actualizar el restaurante' });
+  } finally {
+    client.release();
   }
 };
 
 const cancelRestaurantAccess = async (req, res) => {
   const { id } = req.params;
+  const admin_id = req.user.id;
 
   const client = await db.pool.connect();
 
   try {
     await client.query('BEGIN');
+    const prevRes = await client.query('SELECT plan FROM restaurantes WHERE id = $1', [id]);
+    const plan = prevRes.rows.length ? prevRes.rows[0].plan : null;
 
     // 1. Suspender restaurante
     const result = await client.query(
@@ -100,6 +127,8 @@ const cancelRestaurantAccess = async (req, res) => {
       'UPDATE platillos SET activo = false WHERE restaurante_id = $1',
       [id]
     );
+    
+    await logAuditoria(client, id, 'SUSPENDER', plan, plan, 'Acceso cancelado (Kill Switch)', admin_id);
 
     await client.query('COMMIT');
 
@@ -124,6 +153,7 @@ const updateRestaurantStatus = async (req, res) => {
   const { id } = req.params;
   const { estado, dias_licencia, plan } = req.body;
   let suscripcion_activa = req.body.suscripcion_activa;
+  const admin_id = req.user.id;
 
   if (suscripcion_activa === undefined && req.body.estado_activo !== undefined) {
     suscripcion_activa = req.body.estado_activo;
@@ -140,8 +170,14 @@ const updateRestaurantStatus = async (req, res) => {
 
   const dias = dias_licencia || req.body.dias ? parseInt(dias_licencia || req.body.dias) : null;
 
+  const client = await db.pool.connect();
+
   try {
-    const result = await db.query(
+    await client.query('BEGIN');
+    const prevRes = await client.query('SELECT plan FROM restaurantes WHERE id = $1', [id]);
+    const plan_anterior = prevRes.rows.length ? prevRes.rows[0].plan : null;
+
+    const result = await client.query(
       `UPDATE restaurantes 
        SET suscripcion_activa = COALESCE($1, suscripcion_activa),
            estado = COALESCE($2, estado),
@@ -163,9 +199,14 @@ const updateRestaurantStatus = async (req, res) => {
     );
 
     if (result.rows.length === 0) {
+      await client.query('ROLLBACK');
       return res.status(404).json({ mensaje: 'Restaurante no encontrado' });
     }
 
+    const plan_nuevo = result.rows[0].plan;
+    await logAuditoria(client, id, 'ACTUALIZAR_ESTADO', plan_anterior, plan_nuevo, `Estado: ${finalEstado}, Días: ${dias}`, admin_id);
+
+    await client.query('COMMIT');
     await redisClient.del(`cache:menu:${id}`);
 
     res.json({
@@ -174,7 +215,28 @@ const updateRestaurantStatus = async (req, res) => {
     });
 
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error('Error al actualizar estado de restaurante:', error);
+    res.status(500).json({ mensaje: 'Error interno del servidor' });
+  } finally {
+    client.release();
+  }
+};
+
+const getAuditHistory = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await db.query(
+      `SELECT h.*, a.nombre_dueno as admin_nombre 
+       FROM historial_suscripciones h
+       LEFT JOIN restaurantes a ON h.admin_id = a.id
+       WHERE h.restaurante_id = $1 
+       ORDER BY h.created_at DESC`,
+      [id]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error al obtener historial:', error);
     res.status(500).json({ mensaje: 'Error interno del servidor' });
   }
 };
@@ -184,4 +246,5 @@ module.exports = {
   approveRestaurant,
   cancelRestaurantAccess,
   updateRestaurantStatus,
+  getAuditHistory
 };

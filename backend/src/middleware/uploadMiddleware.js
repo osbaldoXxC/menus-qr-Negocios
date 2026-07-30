@@ -62,40 +62,20 @@ const optimizeImage = async (req, res, next) => {
       .webp({ quality: 60, effort: 6 })
       .toBuffer();
 
-    // 2. Verificar si tenemos S3 configurado
-    if (process.env.S3_BUCKET_NAME && process.env.AWS_ACCESS_KEY_ID) {
-      // Subir a S3
-      const parallelUploadS3 = new Upload({
-        client: s3Client,
-        params: {
-          Bucket: process.env.S3_BUCKET_NAME,
-          Key: s3Key,
-          Body: optimizedBuffer,
-          ContentType: 'image/webp',
-          ACL: 'public-read'
-        },
-      });
-      const result = await parallelUploadS3.done();
-      req.file.location = result.Location;
-      req.file.key = s3Key;
-    } else {
-      // Fallback a almacenamiento local si no hay S3 (Desarrollo)
-      const localDir = path.join(__dirname, '../../uploads/dishes');
-      
-      // Crear directorio si no existe
-      if (!fs.existsSync(localDir)) {
-        fs.mkdirSync(localDir, { recursive: true });
-      }
-
-      const filePath = path.join(localDir, fileName);
-      fs.writeFileSync(filePath, optimizedBuffer);
-      
-      // Construir URL local
-      const baseUrl = process.env.BACKEND_URL || 'http://localhost:4000';
-      req.file.location = `${baseUrl}/uploads/dishes/${fileName}`;
-      req.file.key = s3Key;
-      console.log('Imagen guardada localmente en:', req.file.location);
-    }
+    // 2. Subir a S3
+    const parallelUploadS3 = new Upload({
+      client: s3Client,
+      params: {
+        Bucket: process.env.S3_BUCKET_NAME,
+        Key: s3Key,
+        Body: optimizedBuffer,
+        ContentType: 'image/webp',
+        ACL: 'public-read'
+      },
+    });
+    const result = await parallelUploadS3.done();
+    req.file.location = result.Location;
+    req.file.key = s3Key;
     
     next();
   } catch (error) {

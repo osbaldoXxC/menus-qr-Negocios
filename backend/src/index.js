@@ -23,7 +23,7 @@ app.use(cors({
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      console.log('Bloqueado por CORS:', origin);
+      console.warn('Bloqueado por CORS:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -34,7 +34,9 @@ app.use(cookieParser());
 
 // Logger de peticiones para depuración
 app.use((req, res, next) => {
-  console.log(`[REQUEST] ${req.method} ${req.url} - Origin: ${req.headers.origin}`);
+  if (process.env.DEBUG_REQUESTS === 'true') {
+    console.log(`[REQUEST] ${req.method} ${req.url} - Origin: ${req.headers.origin}`);
+  }
   next();
 });
 
@@ -55,6 +57,7 @@ app.use('/api/restaurants', require('./routes/restaurantRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/public/menu', require('./routes/publicRoutes'));
 app.use('/api/search', require('./routes/searchRoutes'));
+app.use('/api/support', require('./routes/supportRoutes'));
 
 app.get('/', (req, res) => {
   res.json({ message: 'MexxicanMX Backend API is running' });

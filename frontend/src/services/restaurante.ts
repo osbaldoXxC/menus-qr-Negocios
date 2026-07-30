@@ -7,9 +7,11 @@ export const restauranteService = {
       return response.data;
     } catch (error) {
       console.warn('Error fetching QR, using mock data:', error);
+      const baseUrl = import.meta.env.VITE_PUBLIC_MENU_URL || `${window.location.origin}/menu/`;
+      const url = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
       return {
-        qr_base64: 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://mexxicanmx.com/menu/1',
-        url_menu_local: 'http://localhost:3001/menu/1'
+        qr_base64: `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${url}1`,
+        url_menu_local: `${url}1`
       };
     }
   },
@@ -64,8 +66,7 @@ export const restauranteService = {
 
   updateTheme: async (data: any) => {
     try {
-      console.log('📤 updateTheme sending data:', JSON.stringify(data, null, 2).substring(0, 1000));
-      console.log('   responsive_imagen:', data?.config_diseno?.apariencia?.responsive_imagen);
+      // Debug log removed
       const response = await api.put('/restaurants/theme', data);
       
       if (response.data?.tema && typeof response.data.tema.config_diseno === 'string') {
@@ -77,7 +78,7 @@ export const restauranteService = {
         }
       }
 
-      console.log('📥 updateTheme response:', JSON.stringify(response.data, null, 2).substring(0, 1000));
+      // Debug log removed
       return response.data;
     } catch (error) {
       console.warn('Error updating theme:', error);

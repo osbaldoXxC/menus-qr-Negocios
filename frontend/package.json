@@ -13,7 +13,6 @@
     "axios": "^1.17.0",
     "framer-motion": "^10.16.4",
     "lucide-react": "^0.284.0",
-    "playwright": "^1.61.1",
     "react": "^18.2.0",
     "react-colorful": "^5.7.0",
     "react-dom": "^18.2.0",
@@ -21,7 +20,6 @@
     "react-router-dom": "^6.30.4"
   },
   "devDependencies": {
-    "@playwright/test": "^1.62.0",
     "@types/react": "^18.2.15",
     "@types/react-dom": "^18.2.7",
     "@typescript-eslint/eslint-plugin": "^6.0.0",

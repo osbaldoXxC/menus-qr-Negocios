@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { ProtectedRoute } from './pages/components/ProtectedRoute';
 import { authService } from './services/auth';
 import { ThemeProvider } from './context/ThemeContext';
+import { RestaurantProvider } from './context/RestaurantContext';
 import { MainLayout } from './pages/components/MainLayout';
 import { WelcomeSplash } from './pages/components/WelcomeSplash';
 import { Logo } from './pages/components/Logo';
@@ -24,6 +25,7 @@ const MiMenu = lazy(() => import('./pages/MiMenu/MiMenu').then(m => ({ default: 
 const NuevoPlatillo = lazy(() => import('./pages/NuevoPlatillo/NuevoPlatillo').then(m => ({ default: m.NuevoPlatillo })));
 const CodigoQR = lazy(() => import('./pages/CodigoQR/CodigoQR').then(m => ({ default: m.CodigoQR })));
 const Configuracion = lazy(() => import('./pages/Configuracion/Configuracion').then(m => ({ default: m.Configuracion })));
+const Soporte = lazy(() => import('./pages/Soporte/Soporte').then(m => ({ default: m.Soporte })));
 const Perfil = lazy(() => import('./pages/Perfil/Perfil').then(m => ({ default: m.Perfil })));
 const VerifyEmail = lazy(() => import('./pages/Login/VerifyEmail').then(m => ({ default: m.VerifyEmail })));
 const RecuperarContrasena = lazy(() => import('./pages/Login/RecuperarContrasena').then(m => ({ default: m.RecuperarContrasena })));
@@ -126,6 +128,11 @@ function AnimatedRoutes() {
                 <Configuracion />
               </ProtectedRoute>
             } />
+            <Route path="/dashboard/soporte" element={
+              <ProtectedRoute allowedRoles={['RESTAURANTE', 'SUPER_ADMIN']}>
+                <Soporte />
+              </ProtectedRoute>
+            } />
 
             <Route path="/admin" element={
               <ProtectedRoute allowedRoles={['SUPER_ADMIN']}>
@@ -144,12 +151,14 @@ function AnimatedRoutes() {
 function App() {
   return (
     <ThemeProvider>
-      <BrowserRouter>
-        <WelcomeSplash />
-        <MainLayout>
-          <AnimatedRoutes />
-        </MainLayout>
-      </BrowserRouter>
+      <RestaurantProvider>
+        <BrowserRouter>
+          <WelcomeSplash />
+          <MainLayout>
+            <AnimatedRoutes />
+          </MainLayout>
+        </BrowserRouter>
+      </RestaurantProvider>
     </ThemeProvider>
   );
 }

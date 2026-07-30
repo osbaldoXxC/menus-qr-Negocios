@@ -1,6 +1,7 @@
 const db = require('../config/db');
 const redisClient = require('../config/redis');
 const axios = require('axios');
+const SubscriptionService = require('../services/subscriptionService');
 
 const createDish = async (req, res) => {
   let { 
@@ -9,6 +10,11 @@ const createDish = async (req, res) => {
     nivel_picante, porcion, etiquetas_dieteticas
   } = req.body;
   const restaurante_id = req.user.id;
+
+  const limiteCheck = await SubscriptionService.canCreatePlatillo(restaurante_id);
+  if (!limiteCheck.allowed) {
+    return res.status(403).json({ mensaje: limiteCheck.reason });
+  }
   
   // Parsear JSON strings si vienen de FormData
   try {
@@ -36,13 +42,25 @@ const createDish = async (req, res) => {
   // Si envían nombre de categoría en lugar de ID (como en el frontend actual)
   if (!final_categoria_id && categoria && typeof categoria === 'string' && categoria.trim() !== '') {
     try {
-      // Buscar o crear la categoría para este restaurante
-      const catRes = await db.query(
-        'INSERT INTO categorias_restaurante (restaurante_id, nombre) VALUES ($1, $2) ON CONFLICT (restaurante_id, nombre) DO UPDATE SET nombre = EXCLUDED.nombre RETURNING id',
-        [restaurante_id, categoria.trim()]
-      );
-      if (catRes.rows.length > 0) {
-        final_categoria_id = catRes.rows[0].id;
+      // Buscar si ya existe la categoría
+      const existsRes = await db.query('SELECT id FROM categorias_restaurante WHERE restaurante_id = $1 AND nombre = $2', [restaurante_id, categoria.trim()]);
+      
+      if (existsRes.rows.length > 0) {
+        final_categoria_id = existsRes.rows[0].id;
+      } else {
+        const limitCheckCat = await SubscriptionService.canCreateCategory(restaurante_id);
+        if (!limitCheckCat.allowed) {
+          return res.status(403).json({ mensaje: 'No puedes crear más categorías. ' + limitCheckCat.reason });
+        }
+        
+        // Crear la nueva categoría
+        const catRes = await db.query(
+          'INSERT INTO categorias_restaurante (restaurante_id, nombre) VALUES ($1, $2) RETURNING id',
+          [restaurante_id, categoria.trim()]
+        );
+        if (catRes.rows.length > 0) {
+          final_categoria_id = catRes.rows[0].id;
+        }
       }
     } catch (err) {
       console.error('Error al manejar categoría:', err);

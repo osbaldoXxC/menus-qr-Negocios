@@ -13,7 +13,8 @@ import {
   Menu,
   Sun,
   Moon,
-  Home
+  Home,
+  MessageSquare
 } from 'lucide-react';
 import { Logo } from './Logo';
 import { authService } from '../../services/auth';
@@ -98,6 +99,7 @@ export function Sidebar() {
 
   const secondaryItems = [
     { icon: Settings, label: 'Configuración', ruta: '/dashboard/configuracion' },
+    { icon: MessageSquare, label: 'Soporte Premium', ruta: '/dashboard/soporte' },
     { icon: User, label: 'Mi Perfil', ruta: '/perfil' },
   ];
 

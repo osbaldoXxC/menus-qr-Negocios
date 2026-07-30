@@ -1,6 +1,7 @@
 const db = require('../config/db');
 const redisClient = require('../config/redis');
 const QRCode = require('qrcode');
+const SubscriptionService = require('../services/subscriptionService');
 
 const generateQR = async (req, res) => {
   try {
@@ -8,7 +9,7 @@ const generateQR = async (req, res) => {
     const restaurante_id = req.user.id;
 
     // 2. Construir URL pública del menú
-    const rawBaseUrl = process.env.PUBLIC_MENU_URL ;
+    const rawBaseUrl = process.env.PUBLIC_MENU_URL || 'https://mexxican.mx/menu/';
     const baseUrl = rawBaseUrl.endsWith('/') ? rawBaseUrl : `${rawBaseUrl}/`;
     const url_menu = `${baseUrl}${restaurante_id}`;
 
@@ -191,7 +192,7 @@ const sanitizarConfigDiseno = (config) => {
 
 const updateTheme = async (req, res) => {
   const restaurante_id = req.user.id;
-  const {
+  let {
     logo_url,
     banner_url,
     color_primario,
@@ -204,7 +205,32 @@ const updateTheme = async (req, res) => {
   } = req.body;
 
   try {
-    const configSanitizada = sanitizarConfigDiseno(config_diseno);
+    // ABAC - Validar restricciones de plan
+    const hasBanner = await SubscriptionService.hasFeature(restaurante_id, 'banner_promocional');
+    const hasFondo = await SubscriptionService.hasFeature(restaurante_id, 'imagen_fondo');
+    const hasDiseno = await SubscriptionService.hasFeature(restaurante_id, 'configuracion_diseno');
+
+    if (!hasBanner) {
+      banner_promocional_activo = false;
+      banner_promocional_texto = null;
+    }
+
+    let configSanitizada = sanitizarConfigDiseno(config_diseno);
+
+    if (!hasFondo) {
+      if (configSanitizada.apariencia) {
+        configSanitizada.apariencia.fondo_imagen_url = null;
+        if (configSanitizada.apariencia.fondo_tipo === 'imagen') {
+          configSanitizada.apariencia.fondo_tipo = 'solido';
+        }
+      }
+    }
+
+    if (!hasDiseno) {
+      // Bloquear configuraciones avanzadas si no tiene acceso
+      configSanitizada.elementos_visuales = {};
+      configSanitizada.apariencia.modo_oscuro = false;
+    }
 
     // Validación de colores directos contra inyección CSS / estilo inline
     const hexRegex = /^#[0-9a-fA-F]{3,8}$/;
@@ -272,7 +298,10 @@ const getRestaurantInfo = async (req, res) => {
       return res.status(404).json({ mensaje: 'Restaurante no encontrado' });
     }
 
-    res.json(result.rows[0]);
+    const restInfo = result.rows[0];
+    restInfo.stats = await SubscriptionService.getUsageStats(restaurante_id);
+
+    res.json(restInfo);
   } catch (error) {
     console.error('Error al obtener info del restaurante:', error);
     res.status(500).json({ mensaje: 'Error interno del servidor' });

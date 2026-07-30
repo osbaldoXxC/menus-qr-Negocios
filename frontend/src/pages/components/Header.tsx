@@ -30,7 +30,6 @@ export function Header() {
   // Menu Items según el contexto
   const businessItems = [
     { nombre: 'Inicio', ruta: '/para-restaurantes' },
-    { nombre: 'Cómo funciona', ruta: '/como-funciona' },
     { nombre: 'Precios', ruta: '/precios' },
     { nombre: 'Comensales', ruta: '/' },
   ];

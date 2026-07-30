@@ -10,6 +10,12 @@ const createCategory = async (req, res) => {
   }
 
   try {
+    const SubscriptionService = require('../services/subscriptionService');
+    const limitCheck = await SubscriptionService.canCreateCategory(restaurante_id);
+    if (!limitCheck.allowed) {
+      return res.status(403).json({ mensaje: limitCheck.reason, limit: limitCheck.max });
+    }
+
     // Si no se provee orden, buscamos el máximo actual + 1
     let finalOrden = orden;
     if (orden === undefined) {

@@ -4,7 +4,8 @@ const {
   getAllRestaurants, 
   approveRestaurant, 
   cancelRestaurantAccess, 
-  updateRestaurantStatus 
+  updateRestaurantStatus,
+  getAuditHistory
 } = require('../controllers/adminController');
 const authMiddleware = require('../middleware/authMiddleware');
 const roleMiddleware = require('../middleware/roleMiddleware');
@@ -27,5 +28,8 @@ router.put('/restaurants/:id/suspend', cancelRestaurantAccess);
 
 // PUT /api/admin/restaurants/:id/status
 router.put('/restaurants/:id/status', updateRestaurantStatus);
+
+// GET /api/admin/restaurants/:id/audit
+router.get('/restaurants/:id/audit', getAuditHistory);
 
 module.exports = router;

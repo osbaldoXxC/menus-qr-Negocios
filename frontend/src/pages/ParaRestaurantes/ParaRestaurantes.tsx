@@ -25,12 +25,6 @@ const stats = [
   { valor: '4.9⭐', label: 'calificación promedio' },
 ];
 
-const testimonios = [
-  { nombre: 'Carlos M.', negocio: 'Tacos El Moreno', texto: 'Antes perdía ventas por menús desactualizados. Ahora mis clientes siempre ven lo correcto.' },
-  { nombre: 'Ana R.', negocio: 'Birriería Central', texto: 'La IA trae clientes que nunca hubiera alcanzado por mi cuenta. Increíble.' },
-  { nombre: 'Pedro L.', negocio: 'Fonda La Abuela', texto: 'Monté el QR en 20 minutos. Sin complicaciones. Vale cada peso.' },
-];
-
 export function ParaRestaurantes() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -38,7 +32,6 @@ export function ParaRestaurantes() {
   const isDark = theme === 'dark';
 
   const navItems = [
-    { label: 'Cómo funciona', to: '/como-funciona' },
     { label: 'Precios', to: '/precios' },
     { label: 'Comensales', to: '/' },
   ];
@@ -244,41 +237,6 @@ export function ParaRestaurantes() {
                 <div className="text-4xl mb-5 group-hover:scale-110 transition-transform duration-300">{b.icon}</div>
                 <h3 className="text-[16px] font-bold mb-2 tracking-tight">{b.titulo}</h3>
                 <p className="text-[13px] text-[#86868B] dark:text-[#A1A1A6] leading-relaxed">{b.desc}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── TESTIMONIOS ───────────────────────────────────────────────────────── */}
-      <section className="py-28 px-6">
-        <div className="max-w-[1100px] mx-auto">
-          <motion.div
-            className="text-center mb-16"
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-80px' }}
-            transition={{ duration: 0.7 }}
-          >
-            <p className="text-[12px] font-bold uppercase tracking-[0.12em] text-[#0071E3] dark:text-[#2997FF] mb-4">Testimonios</p>
-            <h2 className="text-[2.5rem] md:text-[3.5rem] font-bold tracking-tight">Ellos ya lo usan.</h2>
-          </motion.div>
-
-          <div className="grid md:grid-cols-3 gap-5">
-            {testimonios.map((t, i) => (
-              <motion.div
-                key={t.nombre}
-                className="p-7 rounded-[1.5rem] bg-[#F5F5F7] dark:bg-[#161617] border border-black/[0.05] dark:border-white/[0.06]"
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-40px' }}
-                transition={{ duration: 0.55, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
-              >
-                <p className="text-[14px] leading-relaxed mb-6 text-[#1D1D1F] dark:text-[#F5F5F7]">"{t.texto}"</p>
-                <div>
-                  <p className="text-[14px] font-bold">{t.nombre}</p>
-                  <p className="text-[12px] text-[#86868B] dark:text-[#A1A1A6]">{t.negocio}</p>
-                </div>
               </motion.div>
             ))}
           </div>

@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const SubscriptionService = require('../services/subscriptionService');
 
 const subscriptionMiddleware = async (req, res, next) => {
   try {
@@ -38,4 +39,27 @@ const subscriptionMiddleware = async (req, res, next) => {
   }
 };
 
-module.exports = subscriptionMiddleware;
+const requireFeature = (featureKey) => {
+  return async (req, res, next) => {
+    try {
+      const userId = req.user.id;
+      const hasAccess = await SubscriptionService.hasFeature(userId, featureKey);
+      
+      if (!hasAccess) {
+        return res.status(403).json({ 
+          mensaje: `Tu plan actual no incluye la funcionalidad: ${featureKey}. Actualiza a Premium para disfrutar de más beneficios.` 
+        });
+      }
+      
+      next();
+    } catch (error) {
+      console.error(`Error verificando feature ${featureKey}:`, error);
+      res.status(500).json({ mensaje: 'Error al verificar permisos' });
+    }
+  };
+};
+
+module.exports = {
+  subscriptionMiddleware,
+  requireFeature
+};

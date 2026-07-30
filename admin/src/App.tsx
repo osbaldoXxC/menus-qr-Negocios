@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import './App.css';
+import { AdminSupport } from './components/AdminSupport';
 
 interface Restaurante {
   id: string;
@@ -86,8 +87,9 @@ function App() {
   const [restaurants, setRestaurants] = useState<Restaurante[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState<'todos' | 'pendientes' | 'aprobados' | 'suspendidos'>('todos');
+  const [activeTab, setActiveTab] = useState<'todos' | 'pendientes' | 'aprobados' | 'suspendidos' | 'soporte'>('todos');
   const [daysInput, setDaysInput] = useState<{ [id: string]: number }>({});
+  const [planInput, setPlanInput] = useState<{ [id: string]: string }>({});
   
   // Modal de confirmación para el Kill Switch
   const [showSuspendModal, setShowSuspendModal] = useState(false);
@@ -168,12 +170,15 @@ function App() {
       }
 
       setRestaurants(data);
-      // Inicializar el input de días para cada restaurante en 30 por defecto
+      // Inicializar el input de días y plan para cada restaurante
       const initialDays: { [id: string]: number } = {};
+      const initialPlans: { [id: string]: string } = {};
       data.forEach((r: Restaurante) => {
         initialDays[r.id] = r.dias_licencia > 0 ? r.dias_licencia : 30;
+        initialPlans[r.id] = r.plan || 'basico';
       });
       setDaysInput(initialDays);
+      setPlanInput(initialPlans);
     } catch (err) {
       console.error(err);
     } finally {
@@ -183,11 +188,12 @@ function App() {
 
   const handleApprove = async (id: string) => {
     const dias = daysInput[id] || 30;
+    const plan = planInput[id] || 'basico';
     try {
       const res = await fetch(`${API_BASE_URL}/admin/restaurants/${id}/approve`, {
         method: 'PUT',
         headers: getHeaders(),
-        body: JSON.stringify({ dias_licencia: dias }),
+        body: JSON.stringify({ dias_licencia: dias, plan }),
       });
 
       const data = await res.json();
@@ -238,6 +244,13 @@ function App() {
 
   const updateDaysInputValue = (id: string, value: number) => {
     setDaysInput(prev => ({
+      ...prev,
+      [id]: value
+    }));
+  };
+
+  const updatePlanInputValue = (id: string, value: string) => {
+    setPlanInput(prev => ({
       ...prev,
       [id]: value
     }));
@@ -440,11 +453,20 @@ function App() {
             >
               Suspendidos <span className="tab-count">{suspendedCount}</span>
             </button>
+            <button 
+              className={`filter-tab ${activeTab === 'soporte' ? 'active' : ''}`}
+              onClick={() => setActiveTab('soporte')}
+              style={{ backgroundColor: activeTab === 'soporte' ? '#2997FF' : 'transparent', color: activeTab === 'soporte' ? 'white' : 'inherit' }}
+            >
+              Soporte Premium
+            </button>
           </div>
         </section>
 
-        {/* Restaurants Table */}
-        <section className="restaurants-list">
+        {activeTab === 'soporte' ? (
+          <AdminSupport />
+        ) : (
+          <section className="restaurants-list">
           {loading ? (
             <div className="loading-spinner-container">
               <span className="loading-spinner"></span>
@@ -473,7 +495,6 @@ function App() {
                 </thead>
                 <tbody>
                   {filteredRestaurants.map((r) => {
-                    const isPending = r.estado === 'pendiente';
                     const isApproved = r.estado === 'aprobado';
                     const isSuspended = r.estado === 'suspendido';
 
@@ -518,6 +539,17 @@ function App() {
                         <td>
                           <div className="actions-cell flex gap-2 items-center">
                             <div className="approve-box flex items-center gap-2">
+                              <select
+                                className="approve-input-days"
+                                style={{ width: 'auto', padding: '0 8px' }}
+                                value={planInput[r.id] || 'basico'}
+                                onChange={(e) => updatePlanInputValue(r.id, e.target.value)}
+                                title="Plan"
+                              >
+                                <option value="prueba">Prueba</option>
+                                <option value="estandar">Estándar</option>
+                                <option value="premium">Premium</option>
+                              </select>
                               <input
                                 type="number"
                                 min="1"
@@ -547,6 +579,7 @@ function App() {
             </div>
           )}
         </section>
+        )}
       </main>
 
       {/* Kill Switch Warning Modal */}

@@ -25,6 +25,39 @@ async function runMigrations() {
     console.log('Migración 3: Verificando columna config_diseno...');
     await client.query('ALTER TABLE configuracion_tema ADD COLUMN IF NOT EXISTS config_diseno TEXT');
 
+    // 4. Tablas para sistema de Suscripciones y Soporte Premium
+    console.log('Migración 4: Creando tablas de auditoría de suscripciones y soporte premium...');
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS historial_suscripciones (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        restaurante_id UUID NOT NULL REFERENCES restaurantes(id) ON DELETE CASCADE,
+        accion VARCHAR(100) NOT NULL,
+        plan_anterior VARCHAR(50),
+        plan_nuevo VARCHAR(50),
+        detalles TEXT,
+        admin_id UUID,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+      
+      CREATE TABLE IF NOT EXISTS soporte_conversaciones (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        restaurante_id UUID NOT NULL REFERENCES restaurantes(id) ON DELETE CASCADE,
+        estado VARCHAR(50) DEFAULT 'abierta', -- 'abierta', 'resuelta', 'cerrada'
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+      
+      CREATE TABLE IF NOT EXISTS soporte_mensajes (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        conversacion_id UUID NOT NULL REFERENCES soporte_conversaciones(id) ON DELETE CASCADE,
+        remitente_tipo VARCHAR(50) NOT NULL, -- 'RESTAURANTE', 'ADMIN'
+        remitente_id UUID,
+        mensaje TEXT NOT NULL,
+        leido BOOLEAN DEFAULT false,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
     await client.query('COMMIT');
     console.log('🎉 Migraciones completadas con éxito.');
     process.exit(0);

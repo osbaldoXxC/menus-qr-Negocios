@@ -67,7 +67,7 @@ export const ResponsiveImageEditor: React.FC<ResponsiveImageEditorProps> = ({
   // Solo recargar si apariencia.responsive_imagen cambió realmente (no en cada render)
   useEffect(() => {
     if (isOpen) {
-      console.log('🟢 [ResponsiveImageEditor] MOUNT/UPDATE. apariencia.responsive_imagen:', JSON.stringify(apariencia?.responsive_imagen));
+      // Debug log removed
       const initialMap = apariencia?.responsive_imagen
         ? { ...apariencia.responsive_imagen }
         : {};
@@ -79,7 +79,7 @@ export const ResponsiveImageEditor: React.FC<ResponsiveImageEditorProps> = ({
         const newJson = JSON.stringify(initialMap);
 
         if (prevJson !== newJson) {
-          console.log('🟢 [ResponsiveImageEditor] Updating responsiveMap from DB:', newJson);
+          // Debug log removed
           setHistory([initialMap]);
           setHistoryIndex(0);
           setActiveBp('desktop');
@@ -96,7 +96,7 @@ export const ResponsiveImageEditor: React.FC<ResponsiveImageEditorProps> = ({
     activeBp,
     apariencia
   );
-  console.log('🟢 [ResponsiveImageEditor] Render BP:', activeBp, 'resolved config:', JSON.stringify(currentConfig), 'inheritedFrom:', inheritedFrom);
+  // Debug log removed
 
   const activeBpMeta = BREAKPOINTS_LIST.find(b => b.key === activeBp) || BREAKPOINTS_LIST[1];
   const isCustomized = inheritedFrom === activeBp;
@@ -107,9 +107,9 @@ export const ResponsiveImageEditor: React.FC<ResponsiveImageEditorProps> = ({
 
     const handleNativeSelectChange = (e: Event) => {
       const select = e.target as HTMLSelectElement;
-      console.log('🟣 Native', e.type, 'event listener fired on:', select.name, 'data-testid:', select.getAttribute('data-testid'), 'value:', select.value);
+      console.warn('⚠️ Native select event:', e.type, 'for', select.name);
       if (select.name === 'object-fit' || select.getAttribute('data-testid') === 'object-fit-select') {
-        console.log('🟡 Native', e.type, 'event caught on select, value:', select.value);
+        // Debug log removed
         updateActiveConfig({ object_fit: select.value as ObjectFitValue });
       }
     };
@@ -117,11 +117,10 @@ export const ResponsiveImageEditor: React.FC<ResponsiveImageEditorProps> = ({
     // Listen for both change and input events on capture phase
     document.addEventListener('change', handleNativeSelectChange, true);
     document.addEventListener('input', handleNativeSelectChange, true);
-    console.log('🟣 Native select change/input listeners registered');
+    // Debug logs removed
     return () => {
       document.removeEventListener('change', handleNativeSelectChange, true);
       document.removeEventListener('input', handleNativeSelectChange, true);
-      console.log('🟣 Native select change/input listeners removed');
     };
   }, [isOpen, responsiveMap, activeBp]);
 
@@ -151,7 +150,7 @@ export const ResponsiveImageEditor: React.FC<ResponsiveImageEditorProps> = ({
 
   // Actualizar cualquier propiedad del breakpoint activo (marca custom=true para esa resolución únicamente)
   const updateActiveConfig = (updates: Partial<ImageBreakpointConfig>) => {
-    console.log('🔴 updateActiveConfig called with:', updates);
+    // Debug log removed
     const updatedBpConfig: ImageBreakpointConfig = sanitizeBreakpointConfig(
       {
         ...currentConfig,
@@ -160,13 +159,13 @@ export const ResponsiveImageEditor: React.FC<ResponsiveImageEditorProps> = ({
       },
       activeBp
     );
-    console.log('   Updated config:', updatedBpConfig);
+    // Debug log removed
 
     const nextMap: ResponsiveImageMap = {
       ...responsiveMap,
       [activeBp]: updatedBpConfig
     };
-    console.log('   New responsiveMap keys:', Object.keys(nextMap));
+    // Debug log removed
 
     setResponsiveMap(nextMap);
     pushToHistory(nextMap);
@@ -307,10 +306,7 @@ export const ResponsiveImageEditor: React.FC<ResponsiveImageEditorProps> = ({
   // Guardar Cambios
   const handleApplyChanges = () => {
     try {
-      console.log('🔵 handleApplyChanges called');
-      console.log('🔵 responsiveMap at start:', JSON.stringify(responsiveMap).substring(0, 500));
-      console.log('🔵 activeBp:', activeBp);
-
+      // Debug logs removed
       // Build responsive_imagen from current responsiveMap + any DOM values that differ
       let finalMap = { ...responsiveMap };
 
@@ -319,19 +315,17 @@ export const ResponsiveImageEditor: React.FC<ResponsiveImageEditorProps> = ({
       const posXInput = document.querySelector('input[data-testid="position-x"]') as HTMLInputElement;
       const posYInput = document.querySelector('input[data-testid="position-y"]') as HTMLInputElement;
 
-      console.log('🔵 DOM query results - select:', selectElement ? `found, value=${selectElement.value}` : 'not found');
-      console.log('🔵 DOM query results - posX:', posXInput ? `found, value=${posXInput.value}` : 'not found');
-      console.log('🔵 DOM query results - posY:', posYInput ? `found, value=${posYInput.value}` : 'not found');
+      // Debug logs removed
 
       if (selectElement && selectElement.value) {
-        console.log('🔵 Reading from DOM - object_fit:', selectElement.value);
+        // Debug log removed
         const currentBpConfig = finalMap[activeBp] || { ...currentConfig };
         finalMap[activeBp] = {
           ...currentBpConfig,
           object_fit: selectElement.value as ObjectFitValue,
           custom: true
         };
-        console.log('🔵 Updated finalMap[' + activeBp + ']:', JSON.stringify(finalMap[activeBp]));
+        // Debug log removed
       }
 
       if (posXInput) {
@@ -344,17 +338,14 @@ export const ResponsiveImageEditor: React.FC<ResponsiveImageEditorProps> = ({
         finalMap[activeBp] = { ...existing, position_y: parseInt(posYInput.value) || 0 };
       }
 
-      console.log('🔵 finalMap after DOM reads:', JSON.stringify(finalMap).substring(0, 500));
-      console.log('🔵 activeBp:', activeBp);
-      console.log('🔵 apariencia before update:', JSON.stringify(apariencia).substring(0, 300));
+      // Debug logs removed
 
       const updatedApariencia = {
         ...apariencia,
         responsive_imagen: finalMap,
         fondo_tipo: 'imagen'
       };
-      console.log('🔵 updatedApariencia.responsive_imagen:', JSON.stringify(updatedApariencia.responsive_imagen).substring(0, 500));
-      console.log('🔵 Calling onSave with:', JSON.stringify(updatedApariencia).substring(0, 500));
+      // Debug log removed
       onSave(updatedApariencia);
     } catch (error) {
       console.error('🔴 ERROR in handleApplyChanges:', error);
@@ -502,7 +493,7 @@ export const ResponsiveImageEditor: React.FC<ResponsiveImageEditorProps> = ({
               data-testid="object-fit-select"
               value={currentConfig.object_fit}
               onChange={(e) => {
-                console.log('🟡 SELECT onChange fired with value:', e.target.value);
+                // Debug log removed
                 updateActiveConfig({ object_fit: e.target.value as ObjectFitValue });
               }}
               className="w-full px-4 py-2.5 rounded-xl bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border text-apple-text dark:text-apple-dark-text text-xs font-bold outline-none focus:border-apple-blue cursor-pointer"

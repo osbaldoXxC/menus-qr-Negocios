@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HexColorPicker } from 'react-colorful';
 import { restauranteService } from '../../services/restaurante';
+import { useRestaurant } from '../../context/RestaurantContext';
 import { Palette, Layout, Type, Globe, CheckCircle2, AlertCircle, Upload, Image as ImageIcon, Moon, Sun, Sliders, Sparkles, Eye, EyeOff, Megaphone, MapPin, Store, Trash2, Map, Navigation } from 'lucide-react';
 import { ResponsiveImageEditor } from './ResponsiveImageEditor';
 
@@ -76,6 +77,7 @@ function colorWithOpacity(colorStr: string, opacity: number): string {
 }
 
 export function Configuracion(): JSX.Element {
+  const { isPremium } = useRestaurant();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -371,6 +373,7 @@ export function Configuracion(): JSX.Element {
       const dark = apariencia.modo_oscuro !== undefined ? apariencia.modo_oscuro : isColorDark(fondo);
 
       setTheme({
+        plan: data.plan || 'basico',
         logo_url: data.logo_url || '',
         color_primario: primario,
         color_fondo: fondo,
@@ -415,7 +418,7 @@ export function Configuracion(): JSX.Element {
           }
         }
       });
-      console.log('🟢 [Configuracion] Data loaded from API:', JSON.stringify(data.config_diseno?.apariencia?.responsive_imagen));
+      // Debug log removed
 
       const fondoValor = apariencia.fondo_valor || fondo;
       if (apariencia.fondo_tipo === 'gradiente' && fondoValor && fondoValor.startsWith('linear-gradient')) {
@@ -921,6 +924,7 @@ export function Configuracion(): JSX.Element {
                   >
                     Degradado Premium
                   </button>
+                  {['premium', 'prueba'].includes(theme.plan) && (
                   <button
                     type="button"
                     onClick={() => {
@@ -934,6 +938,7 @@ export function Configuracion(): JSX.Element {
                   >
                     Imagen de Fondo
                   </button>
+                  )}
                 </div>
               </div>
 
@@ -1210,6 +1215,8 @@ export function Configuracion(): JSX.Element {
             </section>
 
             {/* 3. Componentes y Bordes */}
+            {['premium', 'prueba'].includes(theme.plan) && (
+            <>
             <section className="p-8 rounded-[2.5rem] bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border shadow-apple-sm space-y-8">
               <h3 className="text-[11px] font-bold text-apple-blue tracking-[0.2em] uppercase flex items-center gap-2 border-b border-apple-border dark:border-apple-dark-border pb-4">
                 <Sliders size={16} /> Estilo de Componentes
@@ -1430,8 +1437,11 @@ export function Configuracion(): JSX.Element {
                 ))}
               </div>
             </section>
+            </>
+            )}
 
             {/* 5. Banner Promocional */}
+            {['premium', 'prueba'].includes(theme.plan) && (
             <section className="p-8 rounded-[2.5rem] bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border shadow-apple-sm space-y-6">
               <h3 className="text-[11px] font-bold text-apple-blue tracking-[0.2em] uppercase flex items-center gap-2 border-b border-apple-border dark:border-apple-dark-border pb-4">
                 <Megaphone size={16} /> Banner Promocional
@@ -1475,6 +1485,7 @@ export function Configuracion(): JSX.Element {
                 </motion.div>
               )}
             </section>
+            )}
 
             {/* 6. Datos del Establecimiento */}
             <section className="p-8 rounded-[2.5rem] bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border shadow-apple-sm space-y-6">

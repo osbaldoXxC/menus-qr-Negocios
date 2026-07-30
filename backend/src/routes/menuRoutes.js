@@ -8,10 +8,10 @@ const {
 } = require('../controllers/menuController');
 const authMiddleware = require('../middleware/authMiddleware');
 const roleMiddleware = require('../middleware/roleMiddleware');
-const subscriptionMiddleware = require('../middleware/subscriptionMiddleware');
+const { subscriptionMiddleware } = require('../middleware/subscriptionMiddleware');
 const { upload, optimizeImage } = require('../middleware/uploadMiddleware');
 
-// Middleware común para todas las rutas de este router
+// Aplicar middleware de autenticación a todas las rutas del menú
 router.use(authMiddleware);
 router.use(roleMiddleware(['RESTAURANTE', 'SUPER_ADMIN']));
 router.use(subscriptionMiddleware);
