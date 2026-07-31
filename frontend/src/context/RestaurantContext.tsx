@@ -17,6 +17,7 @@ interface Limits {
   maxImagenes: number;
   soportePremium: boolean;
   personalizacionAvanzada: boolean;
+  bannerPromocional: boolean;
 }
 
 interface RestaurantContextValue {
@@ -33,16 +34,8 @@ const defaultLimits: Limits = {
   maxPlatillos: 50,
   maxImagenes: 10,
   soportePremium: false,
-  personalizacionAvanzada: false
-};
-
-const premiumLimits: Limits = {
-  maxMenus: 10,
-  maxCategorias: 50,
-  maxPlatillos: 500,
-  maxImagenes: 500,
-  soportePremium: true,
-  personalizacionAvanzada: true
+  personalizacionAvanzada: false,
+  bannerPromocional: false
 };
 
 export const RestaurantContext = createContext<RestaurantContextValue>({
@@ -55,6 +48,7 @@ export const RestaurantContext = createContext<RestaurantContextValue>({
 
 export function RestaurantProvider({ children }: { children: ReactNode }) {
   const [restaurant, setRestaurant] = useState<RestaurantInfo | null>(null);
+  const [limits, setLimits] = useState<Limits>(defaultLimits);
   const [loading, setLoading] = useState(true);
 
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
@@ -63,13 +57,14 @@ export function RestaurantProvider({ children }: { children: ReactNode }) {
     const user = authService.getCurrentUser();
     if (!user.isAuthenticated || (user.rol !== 'RESTAURANTE' && user.rol !== 'SUPER_ADMIN')) {
       setRestaurant(null);
+      setLimits(defaultLimits);
       setLoading(false);
       return;
     }
 
     try {
       const token = localStorage.getItem('access_token');
-      const res = await fetch(`${API_BASE_URL}/restaurant/info`, {
+      const res = await fetch(`${API_BASE_URL}/restaurants/info`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -84,8 +79,22 @@ export function RestaurantProvider({ children }: { children: ReactNode }) {
           suscripcion_activa: data.suscripcion_activa,
           dias_licencia: data.dias_licencia
         });
+
+        // Set limits dynamically from backend response
+        if (data.stats) {
+          setLimits({
+            maxMenus: data.stats.plan === 'premium' ? 10 : (data.stats.plan === 'prueba' ? 2 : 1), // Optional mapping if backend doesn't send max_menus
+            maxCategorias: data.stats.platillos?.maximo ? Math.floor(data.stats.platillos.maximo / 10) : 5, // Fallback if backend doesn't send explicit maxCategorias
+            maxPlatillos: data.stats.platillos?.maximo || 50,
+            maxImagenes: data.stats.plan === 'premium' ? 500 : (data.stats.plan === 'prueba' ? 100 : 10),
+            soportePremium: !!data.stats.features?.soporte_premium,
+            personalizacionAvanzada: !!data.stats.features?.configuracion_diseno,
+            bannerPromocional: !!data.stats.features?.banner_promocional
+          });
+        }
       } else {
         setRestaurant(null);
+        setLimits(defaultLimits);
       }
     } catch (err) {
       console.error('Error fetching restaurant info:', err);
@@ -105,8 +114,7 @@ export function RestaurantProvider({ children }: { children: ReactNode }) {
     return () => unsub();
   }, []);
 
-  const isPremium = restaurant?.plan === 'premium' || restaurant?.plan === 'prueba';
-  const limits = isPremium ? premiumLimits : defaultLimits;
+  const isPremium = !!limits.soportePremium;
 
   return (
     <RestaurantContext.Provider value={{ restaurant, limits, loading, refreshRestaurant, isPremium }}>

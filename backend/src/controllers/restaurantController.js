@@ -301,6 +301,37 @@ const getRestaurantInfo = async (req, res) => {
     const restInfo = result.rows[0];
     restInfo.stats = await SubscriptionService.getUsageStats(restaurante_id);
 
+    // Sanitizar config_diseno en base al plan para el admin panel
+    if (restInfo.config_diseno) {
+      let configDisenoObj = restInfo.config_diseno;
+      if (typeof configDisenoObj === 'string') {
+        try { configDisenoObj = JSON.parse(configDisenoObj); } catch (e) { configDisenoObj = {}; }
+      }
+      
+      const planConfig = SubscriptionService.getPlanConfig(restInfo.plan || 'basico');
+      const features = planConfig.features || {};
+
+      if (configDisenoObj.apariencia) {
+        if (!features.imagen_fondo) {
+          delete configDisenoObj.apariencia.fondo_imagen_url;
+          if (configDisenoObj.apariencia.fondo_tipo === 'imagen') {
+            configDisenoObj.apariencia.fondo_tipo = 'solido';
+          }
+        }
+        if (!features.configuracion_diseno) {
+          delete configDisenoObj.apariencia.border_radius_botones;
+          delete configDisenoObj.apariencia.border_radius_tarjetas;
+        }
+      }
+
+      if (configDisenoObj.elementos_visuales && !features.configuracion_diseno) {
+        delete configDisenoObj.elementos_visuales.glassmorphism;
+        delete configDisenoObj.elementos_visuales.sombras_habilitadas;
+      }
+      
+      restInfo.config_diseno = configDisenoObj;
+    }
+
     res.json(restInfo);
   } catch (error) {
     console.error('Error al obtener info del restaurante:', error);

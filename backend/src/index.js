@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const path = require('path');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const app = express();
@@ -10,12 +12,43 @@ const PORT = process.env.PORT || 4000;
 // Middleware
 const allowedOrigins = [
   process.env.FRONTEND_URL,
+  process.env.ADMIN_URL,
+  process.env.API_URL,
   'http://localhost:3000',
   'http://127.0.0.1:3000',
   'http://localhost:3001',
   'http://localhost:5173',
   'http://127.0.0.1:5173'
 ].filter(Boolean);
+
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", process.env.CLOUDFRONT_DOMAIN || '*'],
+      fontSrc: ["'self'", "https://fonts.googleapis.com", "https://fonts.gstatic.com"],
+      connectSrc: ["'self'", process.env.BACKEND_URL || '*'],
+      frameAncestors: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+    },
+  },
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: process.env.NODE_ENV === 'production'
+  },
+  frameguard: { action: 'deny' },
+  noSniff: true,
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+  xssFilter: true,
+  hidePoweredBy: true,
+  crossOriginEmbedderPolicy: false,
+  crossOriginOpenerPolicy: true,
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+}));
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -27,10 +60,34 @@ app.use(cors({
       callback(new Error('Not allowed by CORS'));
     }
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['X-Total-Count'],
+  maxAge: 86400 // 24 horas
 }));
+
 app.use(express.json());
 app.use(cookieParser());
+
+// Rate Limiting
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 100, // 100 peticiones
+  message: 'Demasiadas peticiones, por favor intenta más tarde'
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: 'Demasiados intentos, bloqueado por 15 minutos'
+});
+
+const supportLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hora
+  max: 100,
+  message: 'Límite de mensajes de soporte excedido'
+});
 
 // Logger de peticiones para depuración
 app.use((req, res, next) => {
@@ -50,14 +107,17 @@ require('./config/redis');
 
 
 // Routes
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
 app.use('/api/auth', require('./routes/authRoutes'));
-app.use('/api/menu', require('./routes/menuRoutes'));
-app.use('/api/categories', require('./routes/categoryRoutes'));
-app.use('/api/restaurants', require('./routes/restaurantRoutes'));
-app.use('/api/admin', require('./routes/adminRoutes'));
+
+app.use('/api/menu', globalLimiter, require('./routes/menuRoutes'));
+app.use('/api/categories', globalLimiter, require('./routes/categoryRoutes'));
+app.use('/api/restaurants', globalLimiter, require('./routes/restaurantRoutes'));
+app.use('/api/admin', globalLimiter, require('./routes/adminRoutes'));
 app.use('/api/public/menu', require('./routes/publicRoutes'));
 app.use('/api/search', require('./routes/searchRoutes'));
-app.use('/api/support', require('./routes/supportRoutes'));
+app.use('/api/support', supportLimiter, require('./routes/supportRoutes'));
 
 app.get('/', (req, res) => {
   res.json({ message: 'MexxicanMX Backend API is running' });

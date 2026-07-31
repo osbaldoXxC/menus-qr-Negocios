@@ -594,25 +594,6 @@ export function Configuracion(): JSX.Element {
             </p>
           </div>
         </div>
-        
-        <div className="flex items-center gap-3">
-          <button className="px-5 py-2.5 rounded-xl border border-apple-border dark:border-apple-dark-border text-sm font-bold bg-white dark:bg-black text-apple-text dark:text-apple-dark-text hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors flex items-center gap-2">
-            <Eye size={16} />
-            Vista Previa
-          </button>
-          <button 
-            onClick={handleSubmit}
-            disabled={saving}
-            className="px-6 py-2.5 rounded-xl bg-apple-blue text-white text-sm font-bold hover:bg-blue-600 transition-colors shadow-apple-sm flex items-center gap-2"
-          >
-            {saving ? (
-               <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-            ) : (
-               <CheckCircle2 size={16} />
-            )}
-            Guardar Cambios
-          </button>
-        </div>
       </div>
 
       {/* Tabs */}
@@ -624,16 +605,18 @@ export function Configuracion(): JSX.Element {
           <Palette size={18} />
           Identidad & Estilos
         </button>
-        <button 
-          onClick={() => setShowFondoEditor(true)}
-          className={`pb-4 text-sm font-bold border-b-2 flex items-center gap-2 transition-colors whitespace-nowrap ${showFondoEditor ? 'border-apple-blue text-apple-blue' : 'border-transparent text-apple-text-secondary hover:text-apple-text'}`}
-        >
-          <ImageIcon size={18} />
-          Dimensiones de Imagen
-        </button>
+        {isPremium && (
+          <button 
+            onClick={() => setShowFondoEditor(true)}
+            className={`pb-4 text-sm font-bold border-b-2 flex items-center gap-2 transition-colors whitespace-nowrap ${showFondoEditor ? 'border-apple-blue text-apple-blue' : 'border-transparent text-apple-text-secondary hover:text-apple-text'}`}
+          >
+            <ImageIcon size={18} />
+            Dimensiones de Imagen
+          </button>
+        )}
       </div>
 
-      {showFondoEditor ? (
+      {showFondoEditor && isPremium ? (
         <ResponsiveImageEditor
           isOpen={true}
           onClose={() => setShowFondoEditor(false)}
@@ -924,7 +907,7 @@ export function Configuracion(): JSX.Element {
                   >
                     Degradado Premium
                   </button>
-                  {['premium', 'prueba'].includes(theme.plan) && (
+                  {isPremium && (
                   <button
                     type="button"
                     onClick={() => {
@@ -1215,7 +1198,7 @@ export function Configuracion(): JSX.Element {
             </section>
 
             {/* 3. Componentes y Bordes */}
-            {['premium', 'prueba'].includes(theme.plan) && (
+            {isPremium && (
             <>
             <section className="p-8 rounded-[2.5rem] bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border shadow-apple-sm space-y-8">
               <h3 className="text-[11px] font-bold text-apple-blue tracking-[0.2em] uppercase flex items-center gap-2 border-b border-apple-border dark:border-apple-dark-border pb-4">

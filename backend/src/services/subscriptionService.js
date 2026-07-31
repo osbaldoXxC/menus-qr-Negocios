@@ -147,12 +147,18 @@ class SubscriptionService {
 
     const currentCount = parseInt(countRows[0].total, 10);
     
+    let dias_restantes = 0;
+    if (restRows[0].suscripcion_expira_en) {
+      dias_restantes = Math.max(0, Math.ceil((new Date(restRows[0].suscripcion_expira_en) - new Date()) / (1000 * 60 * 60 * 24)));
+    }
+    
     return {
       plan: restRows[0].plan,
       nombre_plan: planConfig.nombre,
       suscripcion_activa: restRows[0].suscripcion_activa,
       estado: restRows[0].estado,
       expira_en: restRows[0].suscripcion_expira_en,
+      dias_restantes: dias_restantes,
       platillos: {
         actuales: currentCount,
         maximo: planConfig.max_platillos,

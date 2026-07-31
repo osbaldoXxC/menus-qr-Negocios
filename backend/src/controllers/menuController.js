@@ -255,7 +255,7 @@ const getPublicMenu = async (req, res) => {
     let restRes;
     if (isUuid) {
       restRes = await db.query(
-        `SELECT r.id, r.nombre_negocio, r.suscripcion_activa, 
+        `SELECT r.id, r.nombre_negocio, r.suscripcion_activa, r.plan,
                 t.logo_url, t.banner_url, t.color_primario, t.color_fondo, 
                 t.fuente_familia, t.layout_type, t.banner_promocional_activo, t.banner_promocional_texto,
                 t.config_diseno
@@ -266,14 +266,14 @@ const getPublicMenu = async (req, res) => {
       );
     } else {
       restRes = await db.query(
-        `SELECT r.id, r.nombre_negocio, r.suscripcion_activa, 
+        `SELECT r.id, r.nombre_negocio, r.suscripcion_activa, r.plan,
                 t.logo_url, t.banner_url, t.color_primario, t.color_fondo, 
                 t.fuente_familia, t.layout_type, t.banner_promocional_activo, t.banner_promocional_texto,
                 t.config_diseno
          FROM restaurantes r
          LEFT JOIN configuracion_tema t ON r.id = t.restaurante_id
-         WHERE LOWER(r.nombre_negocio) LIKE LOWER($1) OR r.id::text = $1`,
-        [`%${restaurant_id}%`]
+         WHERE LOWER(r.nombre_negocio) LIKE LOWER('%' || $1 || '%') OR r.id::text = $1`,
+        [restaurant_id]
       );
     }
 
@@ -306,6 +306,35 @@ const getPublicMenu = async (req, res) => {
         configDisenoObj = {};
       }
     }
+    
+    // Fallback if not an object
+    if (!configDisenoObj || typeof configDisenoObj !== 'object') {
+      configDisenoObj = {};
+    }
+
+    // Sanitizar respuesta según plan del restaurante (Seguridad del backend)
+    const planConfig = SubscriptionService.getPlanConfig(restInfo.plan || 'basico');
+    const features = planConfig.features || {};
+
+    if (configDisenoObj.apariencia) {
+      if (!features.imagen_fondo) {
+        delete configDisenoObj.apariencia.fondo_imagen_url;
+        if (configDisenoObj.apariencia.fondo_tipo === 'imagen') {
+          configDisenoObj.apariencia.fondo_tipo = 'solido';
+        }
+      }
+      
+      if (!features.configuracion_diseno) {
+        delete configDisenoObj.apariencia.border_radius_botones;
+        delete configDisenoObj.apariencia.border_radius_tarjetas;
+      }
+    }
+
+    if (configDisenoObj.elementos_visuales && !features.configuracion_diseno) {
+      delete configDisenoObj.elementos_visuales.glassmorphism;
+      delete configDisenoObj.elementos_visuales.sombras_habilitadas;
+    }
+
 
     // 4. Estructurar la respuesta
     const response = {

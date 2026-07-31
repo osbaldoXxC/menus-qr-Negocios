@@ -55,7 +55,9 @@ export function AdminSupport() {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchConversaciones();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const selectConversacion = async (conv_id: string) => {

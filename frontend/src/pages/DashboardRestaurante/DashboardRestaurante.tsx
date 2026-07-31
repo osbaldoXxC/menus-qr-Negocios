@@ -43,11 +43,10 @@ export function DashboardRestaurante() {
   };
 
   const getDiasRestantes = () => {
-    if (!restauranteInfo?.fecha_fin_suscripcion) return 30;
-    const fin = new Date(restauranteInfo.fecha_fin_suscripcion);
-    const hoy = new Date();
-    const diff = Math.ceil((fin.getTime() - hoy.getTime()) / (1000 * 3600 * 24));
-    return diff > 0 ? diff : 0;
+    if (restauranteInfo?.stats?.dias_restantes !== undefined) {
+      return restauranteInfo.stats.dias_restantes;
+    }
+    return 0;
   };
 
   if (loading) {
@@ -69,7 +68,7 @@ export function DashboardRestaurante() {
 
   const stats = [
     { label: 'Platillos en menú', value: platillos.length, icon: Utensils, color: 'text-apple-blue', bg: 'bg-apple-blue/10' },
-    { label: 'Suscripción Premium', value: `${getDiasRestantes()} restantes`, icon: Zap, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+    { label: `Suscripción ${restauranteInfo?.stats?.nombre_plan || 'Estándar'}`, value: `${getDiasRestantes()} restantes`, icon: Zap, color: 'text-amber-500', bg: 'bg-amber-500/10' },
   ];
 
   return (

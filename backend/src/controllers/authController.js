@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const redisClient = require('../config/redis');
 const crypto = require('crypto');
 const { enviarCorreoResend } = require('../config/mailer');
+const logger = require('../config/logger');
 
 
 const register = async (req, res) => {
@@ -77,9 +78,29 @@ const login = async (req, res) => {
   }
 
   try {
+    // Verificar si la cuenta está bloqueada
+    const lockedKey = `locked:${email}`;
+    const locked = await redisClient.get(lockedKey);
+    if (locked) {
+      logger.warn('Intento de login en cuenta bloqueada', { email });
+      return res.status(403).json({
+        mensaje: 'Cuenta bloqueada temporalmente por seguridad. Intenta más tarde.'
+      });
+    }
+
     // 1. Buscar usuario
     const result = await db.query('SELECT id, password_hash, rol, suscripcion_activa, email_verificado, estado FROM restaurantes WHERE email = $1 LIMIT 1', [email]);
     if (result.rows.length === 0) {
+      // Incrementar contador de intentos fallidos
+      const attempts = await redisClient.incr(`failed:${email}`);
+      if (attempts >= 5) {
+        await redisClient.setEx(lockedKey, 900, 'locked'); // 15 minutos
+        await redisClient.del(`failed:${email}`);
+        logger.warn('Cuenta bloqueada por múltiples intentos fallidos', { email });
+      } else {
+        await redisClient.expire(`failed:${email}`, 3600); // 1 hora
+      }
+      logger.warn('Intento de login fallido (credenciales incorrectas)', { email, attempts });
       return res.status(401).json({ mensaje: 'Credenciales inválidas' });
     }
 
@@ -88,8 +109,19 @@ const login = async (req, res) => {
     // 2. Comparar password
     const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
+      const attempts = await redisClient.incr(`failed:${email}`);
+      if (attempts >= 5) {
+        await redisClient.setEx(lockedKey, 900, 'locked');
+        await redisClient.del(`failed:${email}`);
+      } else {
+        await redisClient.expire(`failed:${email}`, 3600);
+      }
       return res.status(401).json({ mensaje: 'Credenciales inválidas' });
     }
+
+    // Resetear contador en login exitoso
+    await redisClient.del(`failed:${email}`);
+    logger.info('Usuario autenticado', { email, userId: user.id, rol: user.rol });
 
     // 3. Verificar si el correo electrónico ha sido verificado (excluyendo SUPER_ADMIN)
     if (!user.email_verificado && user.rol !== 'SUPER_ADMIN') {

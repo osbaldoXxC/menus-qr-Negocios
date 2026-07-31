@@ -25,35 +25,40 @@ async function runMigrations() {
       ALTER TABLE platillos ADD COLUMN IF NOT EXISTS porcion VARCHAR(100) DEFAULT '';
       ALTER TABLE platillos ADD COLUMN IF NOT EXISTS etiquetas_dieteticas JSONB DEFAULT '[]'::jsonb;
 
-      INSERT INTO restaurantes (id, nombre_negocio, email, password_hash, nombre_dueno, rol, plan, suscripcion_activa, email_verificado, estado)
-      VALUES (
-        '11111111-1111-1111-1111-111111111111',
-        'Super Admin MexxicanMX',
-        'admin@mexxican.mx',
-        '$2a$12$.uE.vltFrnP2TT0S8uLNZ.ourKbJfk3OSX4w/GGEWuaRcQjqjDv6y',
-        'Super Administrador',
-        'SUPER_ADMIN',
-        'premium',
-        true,
-        true,
-        'aprobado'
-      )
-      ON CONFLICT (email) DO UPDATE SET password_hash = EXCLUDED.password_hash, rol = 'SUPER_ADMIN', email_verificado = true, suscripcion_activa = true, estado = 'aprobado';
+      CREATE TABLE IF NOT EXISTS soporte_conversaciones (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        restaurante_id UUID REFERENCES restaurantes(id) ON DELETE CASCADE,
+        admin_id UUID REFERENCES restaurantes(id) ON DELETE SET NULL,
+        estado VARCHAR(20) DEFAULT 'pendiente',
+        calificacion INT DEFAULT NULL,
+        fecha_creacion TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        fecha_cierre TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+        ultima_actividad TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        mensajes_restaurante_count INT DEFAULT 0,
+        leido_admin BOOLEAN DEFAULT false,
+        leido_restaurante BOOLEAN DEFAULT true
+      );
 
-      INSERT INTO restaurantes (id, nombre_negocio, email, password_hash, nombre_dueno, rol, plan, suscripcion_activa, email_verificado, estado)
-      VALUES (
-        '11111111-1111-1111-1111-111111111112',
-        'Admin System',
-        'admin@test.com',
-        '$2a$12$.uE.vltFrnP2TT0S8uLNZ.ourKbJfk3OSX4w/GGEWuaRcQjqjDv6y',
-        'Administrador',
-        'SUPER_ADMIN',
-        'premium',
-        true,
-        true,
-        'aprobado'
-      )
-      ON CONFLICT (email) DO UPDATE SET password_hash = EXCLUDED.password_hash, rol = 'SUPER_ADMIN', email_verificado = true, suscripcion_activa = true, estado = 'aprobado';
+      ALTER TABLE soporte_conversaciones ADD COLUMN IF NOT EXISTS admin_id UUID REFERENCES restaurantes(id) ON DELETE SET NULL;
+      ALTER TABLE soporte_conversaciones ADD COLUMN IF NOT EXISTS calificacion INT DEFAULT NULL;
+      ALTER TABLE soporte_conversaciones ADD COLUMN IF NOT EXISTS fecha_creacion TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
+      ALTER TABLE soporte_conversaciones ADD COLUMN IF NOT EXISTS fecha_cierre TIMESTAMP WITH TIME ZONE DEFAULT NULL;
+      ALTER TABLE soporte_conversaciones ADD COLUMN IF NOT EXISTS ultima_actividad TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
+      ALTER TABLE soporte_conversaciones ADD COLUMN IF NOT EXISTS mensajes_restaurante_count INT DEFAULT 0;
+      ALTER TABLE soporte_conversaciones ADD COLUMN IF NOT EXISTS leido_admin BOOLEAN DEFAULT false;
+      ALTER TABLE soporte_conversaciones ADD COLUMN IF NOT EXISTS leido_restaurante BOOLEAN DEFAULT true;
+      ALTER TABLE soporte_conversaciones ADD COLUMN IF NOT EXISTS asunto VARCHAR(255) DEFAULT 'Asunto General';
+      ALTER TABLE soporte_conversaciones ADD COLUMN IF NOT EXISTS comentario_calificacion TEXT DEFAULT NULL;
+
+      CREATE TABLE IF NOT EXISTS soporte_mensajes (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        conversacion_id UUID REFERENCES soporte_conversaciones(id) ON DELETE CASCADE,
+        remitente_id UUID REFERENCES restaurantes(id) ON DELETE CASCADE,
+        tipo_remitente VARCHAR(20),
+        contenido TEXT NOT NULL,
+        fecha_envio TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+
     `);
     console.log('[DB Migration] Columnas y credenciales de Super Admin verificadas correctamente.');
   } catch (err) {

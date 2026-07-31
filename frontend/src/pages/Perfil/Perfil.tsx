@@ -15,7 +15,10 @@ export function Perfil() {
     email: '',
     telefono: '',
     restaurante: '',
-    plan: 'Pro',
+    plan: 'Estándar',
+    estado: 'Activo',
+    dias_restantes: 0,
+    expira_en: '',
   });
   const [passwordData, setPasswordData] = useState({
     actual: '',
@@ -36,7 +39,10 @@ export function Perfil() {
         email: info.email || '',
         telefono: info.telefono || '',
         restaurante: info.nombre_negocio || '',
-        plan: info.plan || 'Pro',
+        plan: info.stats?.nombre_plan || info.plan || 'Estándar',
+        estado: info.suscripcion_activa ? 'Activo' : 'Inactivo',
+        dias_restantes: info.stats?.dias_restantes || 0,
+        expira_en: info.stats?.expira_en ? new Date(info.stats.expira_en).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) : 'N/A',
       });
     } catch (error) {
       console.error('Error cargando perfil:', error);
@@ -100,24 +106,26 @@ export function Perfil() {
   }
 
   return (
-    <div className="py-12 px-6 lg:px-12 max-w-4xl mx-auto min-h-screen">
+    <div className="py-8 sm:py-12 px-4 sm:px-6 lg:px-12 max-w-4xl mx-auto min-h-screen">
       <motion.div
-        className="mb-12 flex flex-col md:flex-row items-center gap-8"
+        className="mb-8 sm:mb-12 flex flex-col md:flex-row items-center gap-6 sm:gap-8"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <div className="w-32 h-32 rounded-[2.5rem] bg-apple-blue/10 border border-apple-blue/20 flex items-center justify-center text-5xl shadow-apple-md">
+        <div className="w-24 h-24 sm:w-32 sm:h-32 shrink-0 rounded-[2rem] sm:rounded-[2.5rem] bg-apple-blue/10 border border-apple-blue/20 flex items-center justify-center text-4xl sm:text-5xl shadow-apple-md">
           👤
         </div>
-        <div className="text-center md:text-left">
-          <h1 className="text-4xl font-bold tracking-tight mb-2">{userData.nombre}</h1>
-          <div className="flex flex-wrap justify-center md:justify-start gap-4">
-            <span className="flex items-center gap-1.5 text-apple-text-secondary font-medium">
-              <Mail size={16} /> {userData.email}
+        <div className="text-center md:text-left min-w-0 w-full">
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-3 break-words">{userData.nombre}</h1>
+          <div className="flex flex-col sm:flex-row flex-wrap items-center md:items-start justify-center md:justify-start gap-3 sm:gap-4">
+            <span className="flex items-center justify-center md:justify-start gap-1.5 text-apple-text-secondary font-medium break-all sm:break-words w-full sm:w-auto">
+              <Mail size={16} className="shrink-0" /> 
+              <span className="break-all sm:break-words">{userData.email}</span>
             </span>
             {userData.telefono && (
-              <span className="flex items-center gap-1.5 text-apple-text-secondary font-medium">
-                <Phone size={16} /> {userData.telefono}
+              <span className="flex items-center justify-center md:justify-start gap-1.5 text-apple-text-secondary font-medium w-full sm:w-auto">
+                <Phone size={16} className="shrink-0" /> 
+                <span>{userData.telefono}</span>
               </span>
             )}
           </div>
@@ -134,23 +142,23 @@ export function Perfil() {
         </motion.div>
       )}
 
-      <div className="grid md:grid-cols-2 gap-8">
+      <div className="grid md:grid-cols-2 gap-6 sm:gap-8">
         {/* Información Personal */}
         <motion.div
-          className="p-8 rounded-[2.5rem] bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border shadow-apple-sm"
+          className="p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border shadow-apple-sm flex flex-col"
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-8 gap-4">
             <h3 className="text-xl font-bold flex items-center gap-2">
-              <User size={20} className="text-apple-blue" />
+              <User size={20} className="text-apple-blue shrink-0" />
               Datos del Dueño
             </h3>
             {!editando && (
               <button
                 onClick={() => setEditando(true)}
-                className="text-apple-blue font-bold text-sm hover:underline"
+                className="text-apple-blue font-bold text-sm hover:underline shrink-0"
               >
                 Editar
               </button>
@@ -204,18 +212,18 @@ export function Perfil() {
               </div>
             </div>
           ) : (
-            <div className="space-y-6">
-              <div className="flex justify-between items-center py-2 border-b border-apple-border dark:border-apple-dark-border">
-                <span className="text-apple-text-secondary font-medium">Nombre</span>
-                <span className="font-bold">{userData.nombre}</span>
+            <div className="space-y-4 sm:space-y-6">
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center py-3 border-b border-apple-border dark:border-apple-dark-border gap-1">
+                <span className="text-apple-text-secondary font-medium whitespace-nowrap">Nombre</span>
+                <span className="font-bold text-left sm:text-right break-words">{userData.nombre}</span>
               </div>
-              <div className="flex justify-between items-center py-2 border-b border-apple-border dark:border-apple-dark-border">
-                <span className="text-apple-text-secondary font-medium">Correo</span>
-                <span className="font-bold">{userData.email}</span>
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center py-3 border-b border-apple-border dark:border-apple-dark-border gap-1">
+                <span className="text-apple-text-secondary font-medium whitespace-nowrap">Correo</span>
+                <span className="font-bold text-left sm:text-right break-all sm:break-words">{userData.email}</span>
               </div>
-              <div className="flex justify-between items-center py-2 border-b border-apple-border dark:border-apple-dark-border">
-                <span className="text-apple-text-secondary font-medium">Teléfono</span>
-                <span className="font-bold">{userData.telefono || '—'}</span>
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center py-3 border-b border-apple-border dark:border-apple-dark-border gap-1">
+                <span className="text-apple-text-secondary font-medium whitespace-nowrap">Teléfono</span>
+                <span className="font-bold text-left sm:text-right">{userData.telefono || '—'}</span>
               </div>
             </div>
           )}
@@ -223,53 +231,65 @@ export function Perfil() {
 
         {/* Restaurante & Plan */}
         <motion.div
-          className="p-8 rounded-[2.5rem] bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border shadow-apple-sm"
+          className="p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border shadow-apple-sm flex flex-col"
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
         >
           <h3 className="text-xl font-bold flex items-center gap-2 mb-8">
-            <Store size={20} className="text-apple-blue" />
+            <Store size={20} className="text-apple-blue shrink-0" />
             Negocio
           </h3>
           
-          <div className="space-y-6 mb-10">
-            <div className="flex justify-between items-center py-2 border-b border-apple-border dark:border-apple-dark-border">
-              <span className="text-apple-text-secondary font-medium">Nombre</span>
-              <span className="font-bold">{userData.restaurante}</span>
+          <div className="space-y-4 sm:space-y-6 mb-8 sm:mb-10">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center py-3 border-b border-apple-border dark:border-apple-dark-border gap-1">
+              <span className="text-apple-text-secondary font-medium whitespace-nowrap">Nombre</span>
+              <span className="font-bold text-left sm:text-right break-words">{userData.restaurante}</span>
             </div>
-            <div className="flex justify-between items-center py-2 border-b border-apple-border dark:border-apple-dark-border">
-              <span className="text-apple-text-secondary font-medium">Plan Actual</span>
-              <span className="px-3 py-1 bg-apple-blue/10 text-apple-blue rounded-full text-xs font-black uppercase tracking-widest">{userData.plan}</span>
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center py-3 border-b border-apple-border dark:border-apple-dark-border gap-1">
+              <span className="text-apple-text-secondary font-medium whitespace-nowrap">Plan Actual</span>
+              <span className="px-3 py-1 bg-apple-blue/10 text-apple-blue rounded-full text-xs font-black uppercase tracking-widest w-fit">{userData.plan}</span>
+            </div>
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center py-3 border-b border-apple-border dark:border-apple-dark-border gap-1">
+              <span className="text-apple-text-secondary font-medium whitespace-nowrap">Estado</span>
+              <span className="font-bold text-left sm:text-right">{userData.estado}</span>
+            </div>
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center py-3 border-b border-apple-border dark:border-apple-dark-border gap-1">
+              <span className="text-apple-text-secondary font-medium whitespace-nowrap">Días restantes</span>
+              <span className="font-bold text-left sm:text-right">{userData.dias_restantes} días</span>
+            </div>
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center py-3 border-b border-apple-border dark:border-apple-dark-border gap-1">
+              <span className="text-apple-text-secondary font-medium whitespace-nowrap">Fecha de vencimiento</span>
+              <span className="font-bold text-left sm:text-right">{userData.expira_en}</span>
             </div>
           </div>
 
           <button
             onClick={() => navigate('/precios')}
-            className="w-full flex items-center justify-between p-5 rounded-2xl bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border hover:border-apple-blue transition-all group"
+            className="w-full flex items-center justify-between p-4 sm:p-5 rounded-2xl bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border hover:border-apple-blue transition-all group mt-auto"
           >
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-apple-blue/10 rounded-xl text-apple-blue">
+            <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+              <div className="p-3 bg-apple-blue/10 rounded-xl text-apple-blue shrink-0">
                 <CreditCard size={20} />
               </div>
-              <div className="text-left">
-                <p className="font-bold text-sm">Mejorar Plan</p>
-                <p className="text-xs text-apple-text-tertiary">Obtén más funciones</p>
+              <div className="text-left min-w-0">
+                <p className="font-bold text-sm truncate">Mejorar Plan</p>
+                <p className="text-xs text-apple-text-tertiary truncate">Obtén más funciones</p>
               </div>
             </div>
-            <ChevronRight size={18} className="text-apple-text-tertiary group-hover:text-apple-blue transition-colors" />
+            <ChevronRight size={18} className="text-apple-text-tertiary group-hover:text-apple-blue transition-colors shrink-0 ml-2" />
           </button>
         </motion.div>
 
         {/* Seguridad */}
         <motion.div
-          className="p-8 rounded-[2.5rem] bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border shadow-apple-sm"
+          className="p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border shadow-apple-sm flex flex-col"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
           <h3 className="text-xl font-bold flex items-center gap-2 mb-8">
-            <Lock size={20} className="text-apple-blue" />
+            <Lock size={20} className="text-apple-blue shrink-0" />
             Seguridad
           </h3>
           
@@ -310,7 +330,7 @@ export function Perfil() {
 
         {/* Sesión */}
         <motion.div
-          className="p-8 rounded-[2.5rem] bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border shadow-apple-sm flex flex-col justify-center"
+          className="p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border shadow-apple-sm flex flex-col justify-center"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}

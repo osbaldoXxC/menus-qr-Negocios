@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import './App.css';
-import { AdminSupport } from './components/AdminSupport';
+import Support from './pages/Support/Support';
 
 interface Restaurante {
   id: string;
@@ -274,6 +274,8 @@ function App() {
   const approvedCount = restaurants.filter(r => r.estado === 'aprobado').length;
   const suspendedCount = restaurants.filter(r => r.estado === 'suspendido').length;
 
+  const [activeMenu, setActiveMenu] = useState<'dashboard' | 'soporte'>('dashboard');
+
   if (!isAuthenticated) {
     return (
       <div className="admin-login-wrapper">
@@ -346,241 +348,268 @@ function App() {
       <div className="app-blob blob-1"></div>
       <div className="app-blob blob-2"></div>
 
-      {/* Navbar */}
-      <header className="admin-navbar">
-        <div className="navbar-brand">
-          <div className="navbar-logo-container">
-            <TacoIcon className="navbar-logo-svg" />
-          </div>
-          <h1 className="navbar-title">MexxicanMX</h1>
-          <span className="navbar-badge">Super Admin</span>
-        </div>
-        <div className="navbar-actions">
-          <button className="btn-logout" onClick={handleLogout}>
-            <LogoutIcon className="btn-logout-icon" />
-            <span>Cerrar Sesión</span>
-          </button>
-        </div>
-      </header>
-
-      {/* Main Container */}
-      <main className="admin-container">
-        <div className="dashboard-header-section">
-          <h2 className="dashboard-title">Panel de Control Central</h2>
-          <p className="dashboard-subtitle">Control de restaurantes, asignación de licencias y activación de planes en tiempo real.</p>
-        </div>
-
-        {/* Stats Section */}
-        <section className="stats-grid">
-          <div className="stat-card stat-card-total">
-            <div className="stat-header">
-              <h3 className="stat-title">Registrados</h3>
-              <span className="stat-icon-wrapper">
-                <StoreIcon />
-              </span>
+      {/* Main Layout wrapper */}
+      <div className="admin-layout">
+        
+        {/* Sidebar Menu */}
+        <aside className="admin-sidebar">
+          <div className="sidebar-brand">
+            <div className="navbar-logo-container">
+              <TacoIcon className="navbar-logo-svg" />
             </div>
-            <p className="stat-value">{totalCount}</p>
-          </div>
-          
-          <div className="stat-card stat-card-pending">
-            <div className="stat-header">
-              <h3 className="stat-title">Pendientes</h3>
-              <span className="stat-icon-wrapper">
-                <ClockIcon />
-              </span>
+            <div>
+              <h1 className="navbar-title" style={{ fontSize: '18px' }}>MexxicanMX</h1>
+              <span className="navbar-badge" style={{ fontSize: '9px', padding: '2px 6px', marginTop: '2px', display: 'inline-block' }}>Super Admin</span>
             </div>
-            <p className="stat-value">{pendingCount}</p>
           </div>
 
-          <div className="stat-card stat-card-approved">
-            <div className="stat-header">
-              <h3 className="stat-title">Aprobados</h3>
-              <span className="stat-icon-wrapper">
-                <CheckIcon />
-              </span>
-            </div>
-            <p className="stat-value">{approvedCount}</p>
-          </div>
-
-          <div className="stat-card stat-card-suspended">
-            <div className="stat-header">
-              <h3 className="stat-title">Suspendidos</h3>
-              <span className="stat-icon-wrapper">
-                <LockIcon />
-              </span>
-            </div>
-            <p className="stat-value">{suspendedCount}</p>
-          </div>
-        </section>
-
-        {/* Search & Tabs Controls */}
-        <section className="controls-bar">
-          <div className="search-wrapper">
-            <span className="search-icon-wrapper">
-              <SearchIcon />
-            </span>
-            <input
-              type="text"
-              placeholder="Buscar negocio por nombre o email..."
-              className="search-input"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-
-          <div className="filter-tabs">
+          <nav className="sidebar-nav">
             <button 
-              className={`filter-tab ${activeTab === 'todos' ? 'active' : ''}`}
-              onClick={() => setActiveTab('todos')}
+              className={`sidebar-menu-item ${activeMenu === 'dashboard' ? 'active' : ''}`}
+              onClick={() => setActiveMenu('dashboard')}
             >
-              Todos
+              <StoreIcon className="menu-icon" />
+              Restaurantes
             </button>
             <button 
-              className={`filter-tab ${activeTab === 'pendientes' ? 'active' : ''}`}
-              onClick={() => setActiveTab('pendientes')}
+              className={`sidebar-menu-item ${activeMenu === 'soporte' ? 'active' : ''}`}
+              onClick={() => setActiveMenu('soporte')}
             >
-              Pendientes <span className="tab-count">{pendingCount}</span>
-            </button>
-            <button 
-              className={`filter-tab ${activeTab === 'aprobados' ? 'active' : ''}`}
-              onClick={() => setActiveTab('aprobados')}
-            >
-              Aprobados <span className="tab-count">{approvedCount}</span>
-            </button>
-            <button 
-              className={`filter-tab ${activeTab === 'suspendidos' ? 'active' : ''}`}
-              onClick={() => setActiveTab('suspendidos')}
-            >
-              Suspendidos <span className="tab-count">{suspendedCount}</span>
-            </button>
-            <button 
-              className={`filter-tab ${activeTab === 'soporte' ? 'active' : ''}`}
-              onClick={() => setActiveTab('soporte')}
-              style={{ backgroundColor: activeTab === 'soporte' ? '#2997FF' : 'transparent', color: activeTab === 'soporte' ? 'white' : 'inherit' }}
-            >
+              <svg className="menu-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+              </svg>
               Soporte Premium
             </button>
-          </div>
-        </section>
+          </nav>
 
-        {activeTab === 'soporte' ? (
-          <AdminSupport />
-        ) : (
-          <section className="restaurants-list">
-          {loading ? (
-            <div className="loading-spinner-container">
-              <span className="loading-spinner"></span>
-              <p className="loading-text">Cargando restaurantes...</p>
-            </div>
-          ) : filteredRestaurants.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-state-icon-wrapper">
-                <StoreIcon />
+          <div className="sidebar-footer">
+            <button className="btn-logout-sidebar" onClick={handleLogout}>
+              <LogoutIcon className="btn-logout-icon" />
+              Cerrar Sesión
+            </button>
+          </div>
+        </aside>
+
+        {/* Content Area */}
+        <main className="admin-content-area">
+          {activeMenu === 'soporte' ? (
+            <div className="p-8 h-full">
+              <div className="dashboard-header-section mb-6">
+                <h2 className="dashboard-title">Soporte Premium</h2>
+                <p className="dashboard-subtitle">Bandeja de entrada y atención al cliente.</p>
               </div>
-              <h3 className="empty-state-title">No hay restaurantes</h3>
-              <p className="empty-state-desc">No se encontraron negocios con los filtros actuales.</p>
+              <Support />
             </div>
           ) : (
-            <div className="table-responsive">
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>Negocio</th>
-                    <th>Plan</th>
-                    <th>Estado</th>
-                    <th>Vencimiento</th>
-                    <th>Licencia</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredRestaurants.map((r) => {
-                    const isApproved = r.estado === 'aprobado';
-                    const isSuspended = r.estado === 'suspendido';
+            <div className="p-8">
+              <div className="dashboard-header-section mb-6">
+                <h2 className="dashboard-title">Panel de Control Central</h2>
+                <p className="dashboard-subtitle">Control de restaurantes, asignación de licencias y activación de planes.</p>
+              </div>
 
-                    return (
-                      <tr key={r.id} className={`row-state-${r.estado}`}>
-                        <td>
-                          <div className="restaurant-name-cell">
-                            <span className="restaurant-name">{r.nombre_negocio}</span>
-                            <span className="restaurant-email">{r.email}</span>
-                          </div>
-                        </td>
-                        <td>
-                          <span className={`badge badge-plan-${r.plan}`}>
-                            {r.plan}
-                          </span>
-                        </td>
-                        <td>
-                          <span className={`badge badge-${r.estado}`}>
-                            {r.estado}
-                          </span>
-                        </td>
-                        <td>
-                          {r.suscripcion_expira_en ? (
-                            <span className="date-text">
-                              {new Date(r.suscripcion_expira_en).toLocaleDateString('es-MX', {
-                                year: 'numeric',
-                                month: 'short',
-                                day: 'numeric',
-                              })}
-                            </span>
-                          ) : (
-                            <span className="no-date-text">Sin asignar</span>
-                          )}
-                        </td>
-                        <td>
-                          {r.dias_licencia > 0 ? (
-                            <span className="days-text">{r.dias_licencia} días</span>
-                          ) : (
-                            <span className="no-days-text">—</span>
-                          )}
-                        </td>
-                        <td>
-                          <div className="actions-cell flex gap-2 items-center">
-                            <div className="approve-box flex items-center gap-2">
-                              <select
-                                className="approve-input-days"
-                                style={{ width: 'auto', padding: '0 8px' }}
-                                value={planInput[r.id] || 'basico'}
-                                onChange={(e) => updatePlanInputValue(r.id, e.target.value)}
-                                title="Plan"
-                              >
-                                <option value="prueba">Prueba</option>
-                                <option value="estandar">Estándar</option>
-                                <option value="premium">Premium</option>
-                              </select>
-                              <input
-                                type="number"
-                                min="1"
-                                max="365"
-                                className="approve-input-days"
-                                value={daysInput[r.id] || 30}
-                                onChange={(e) => updateDaysInputValue(r.id, parseInt(e.target.value) || 0)}
-                                title="Días de acceso"
-                              />
-                              <button className="btn-approve" onClick={() => handleApprove(r.id)}>
-                                {isApproved ? 'Guardar Tiempo' : isSuspended ? 'Reactivar' : 'Aprobar'}
-                              </button>
-                            </div>
-                            {isApproved && (
-                              <button className="btn-suspend" onClick={() => openSuspendModal(r)}>
-                                <AlertIcon className="btn-suspend-icon" />
-                                <span>Cancelar Acceso</span>
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+              {/* Stats Section */}
+              <section className="stats-grid">
+                <div className="stat-card stat-card-total">
+                  <div className="stat-header">
+                    <h3 className="stat-title">Registrados</h3>
+                    <span className="stat-icon-wrapper">
+                      <StoreIcon />
+                    </span>
+                  </div>
+                  <p className="stat-value">{totalCount}</p>
+                </div>
+                
+                <div className="stat-card stat-card-pending">
+                  <div className="stat-header">
+                    <h3 className="stat-title">Pendientes</h3>
+                    <span className="stat-icon-wrapper">
+                      <ClockIcon />
+                    </span>
+                  </div>
+                  <p className="stat-value">{pendingCount}</p>
+                </div>
+
+                <div className="stat-card stat-card-approved">
+                  <div className="stat-header">
+                    <h3 className="stat-title">Aprobados</h3>
+                    <span className="stat-icon-wrapper">
+                      <CheckIcon />
+                    </span>
+                  </div>
+                  <p className="stat-value">{approvedCount}</p>
+                </div>
+
+                <div className="stat-card stat-card-suspended">
+                  <div className="stat-header">
+                    <h3 className="stat-title">Suspendidos</h3>
+                    <span className="stat-icon-wrapper">
+                      <LockIcon />
+                    </span>
+                  </div>
+                  <p className="stat-value">{suspendedCount}</p>
+                </div>
+              </section>
+
+              {/* Search & Tabs Controls */}
+              <section className="controls-bar">
+                <div className="search-wrapper">
+                  <span className="search-icon-wrapper">
+                    <SearchIcon />
+                  </span>
+                  <input
+                    type="text"
+                    placeholder="Buscar negocio por nombre o email..."
+                    className="search-input"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+
+                <div className="filter-tabs">
+                  <button 
+                    className={`filter-tab ${activeTab === 'todos' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('todos')}
+                  >
+                    Todos
+                  </button>
+                  <button 
+                    className={`filter-tab ${activeTab === 'pendientes' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('pendientes')}
+                  >
+                    Pendientes <span className="tab-count">{pendingCount}</span>
+                  </button>
+                  <button 
+                    className={`filter-tab ${activeTab === 'aprobados' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('aprobados')}
+                  >
+                    Aprobados <span className="tab-count">{approvedCount}</span>
+                  </button>
+                  <button 
+                    className={`filter-tab ${activeTab === 'suspendidos' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('suspendidos')}
+                  >
+                    Suspendidos <span className="tab-count">{suspendedCount}</span>
+                  </button>
+                </div>
+              </section>
+
+              <section className="restaurants-list">
+                {loading ? (
+                  <div className="loading-spinner-container">
+                    <span className="loading-spinner"></span>
+                    <p className="loading-text">Cargando restaurantes...</p>
+                  </div>
+                ) : filteredRestaurants.length === 0 ? (
+                  <div className="empty-state">
+                    <div className="empty-state-icon-wrapper">
+                      <StoreIcon />
+                    </div>
+                    <h3 className="empty-state-title">No hay restaurantes</h3>
+                    <p className="empty-state-desc">No se encontraron negocios con los filtros actuales.</p>
+                  </div>
+                ) : (
+                  <div className="table-responsive">
+                    <table className="admin-table">
+                      <thead>
+                        <tr>
+                          <th>Negocio</th>
+                          <th>Plan</th>
+                          <th>Estado</th>
+                          <th>Vencimiento</th>
+                          <th>Licencia</th>
+                          <th>Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredRestaurants.map((r) => {
+                          const isApproved = r.estado === 'aprobado';
+                          const isSuspended = r.estado === 'suspendido';
+
+                          return (
+                            <tr key={r.id} className={`row-state-${r.estado}`}>
+                              <td>
+                                <div className="restaurant-name-cell">
+                                  <span className="restaurant-name">{r.nombre_negocio}</span>
+                                  <span className="restaurant-email">{r.email}</span>
+                                </div>
+                              </td>
+                              <td>
+                                <span className={`badge badge-plan-${r.plan}`}>
+                                  {r.plan}
+                                </span>
+                              </td>
+                              <td>
+                                <span className={`badge badge-${r.estado}`}>
+                                  {r.estado}
+                                </span>
+                              </td>
+                              <td>
+                                {r.suscripcion_expira_en ? (
+                                  <span className="date-text">
+                                    {new Date(r.suscripcion_expira_en).toLocaleDateString('es-MX', {
+                                      year: 'numeric',
+                                      month: 'short',
+                                      day: 'numeric',
+                                    })}
+                                  </span>
+                                ) : (
+                                  <span className="no-date-text">Sin asignar</span>
+                                )}
+                              </td>
+                              <td>
+                                {r.dias_licencia > 0 ? (
+                                  <span className="days-text">{r.dias_licencia} días</span>
+                                ) : (
+                                  <span className="no-days-text">—</span>
+                                )}
+                              </td>
+                              <td>
+                                <div className="actions-cell flex gap-2 items-center">
+                                  <div className="approve-box flex items-center gap-2">
+                                    <select
+                                      className="approve-input-days"
+                                      style={{ width: 'auto', padding: '0 8px' }}
+                                      value={planInput[r.id] || 'basico'}
+                                      onChange={(e) => updatePlanInputValue(r.id, e.target.value)}
+                                      title="Plan"
+                                    >
+                                      <option value="prueba">Prueba</option>
+                                      <option value="estandar">Estándar</option>
+                                      <option value="premium">Premium</option>
+                                    </select>
+                                    <input
+                                      type="number"
+                                      min="1"
+                                      max="365"
+                                      className="approve-input-days"
+                                      value={daysInput[r.id] || 30}
+                                      onChange={(e) => updateDaysInputValue(r.id, parseInt(e.target.value) || 0)}
+                                      title="Días de acceso"
+                                    />
+                                    <button className="btn-approve" onClick={() => handleApprove(r.id)}>
+                                      {isApproved ? 'Guardar Tiempo' : isSuspended ? 'Reactivar' : 'Aprobar'}
+                                    </button>
+                                  </div>
+                                  {isApproved && (
+                                    <button className="btn-suspend" onClick={() => openSuspendModal(r)}>
+                                      <AlertIcon className="btn-suspend-icon" />
+                                      <span>Cancelar Acceso</span>
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
             </div>
           )}
-        </section>
-        )}
-      </main>
+        </main>
+      </div>
 
       {/* Kill Switch Warning Modal */}
       {showSuspendModal && selectedRestaurante && (

@@ -1,25 +1,35 @@
 const express = require('express');
 const router = express.Router();
-const { 
-  getConversationsAdmin, 
-  getConversationRestaurante, 
-  sendMessageRestaurante, 
-  getConversationMessagesAdmin, 
-  sendMessageAdmin, 
-  resolveConversation 
-} = require('../controllers/supportController');
 const authMiddleware = require('../middleware/authMiddleware');
 const roleMiddleware = require('../middleware/roleMiddleware');
-const { requireFeature, subscriptionMiddleware } = require('../middleware/subscriptionMiddleware');
 
-// Rutas de Restaurante
-router.get('/my-conversation', authMiddleware, roleMiddleware(['RESTAURANTE']), subscriptionMiddleware, requireFeature('soporte_premium'), getConversationRestaurante);
-router.post('/my-conversation/messages', authMiddleware, roleMiddleware(['RESTAURANTE']), subscriptionMiddleware, requireFeature('soporte_premium'), sendMessageRestaurante);
+const {
+  streamConversations,
+  getMisConversaciones,
+  sendMessageRestaurante,
+  rateConversacion,
+  getConversationsAdmin,
+  getConversationMessagesAdmin,
+  aceptarConversacion,
+  sendMessageAdmin,
+  closeConversation,
+  getDashboardAdmin
+} = require('../controllers/supportController');
 
-// Rutas de Admin
-router.get('/admin/conversations', authMiddleware, roleMiddleware(['SUPER_ADMIN']), getConversationsAdmin);
-router.get('/admin/conversations/:conversacion_id/messages', authMiddleware, roleMiddleware(['SUPER_ADMIN']), getConversationMessagesAdmin);
-router.post('/admin/conversations/:conversacion_id/messages', authMiddleware, roleMiddleware(['SUPER_ADMIN']), sendMessageAdmin);
-router.put('/admin/conversations/:conversacion_id/status', authMiddleware, roleMiddleware(['SUPER_ADMIN']), resolveConversation);
+// Ruta para eventos SSE en tiempo real
+router.get('/stream', authMiddleware, streamConversations);
+
+// Rutas para Restaurantes
+router.get('/my-conversations', authMiddleware, roleMiddleware(['RESTAURANTE']), getMisConversaciones);
+router.post('/my-conversations/messages', authMiddleware, roleMiddleware(['RESTAURANTE']), sendMessageRestaurante);
+router.post('/my-conversations/:conversacion_id/rate', authMiddleware, roleMiddleware(['RESTAURANTE']), rateConversacion);
+
+// Rutas para Admins (Soporte)
+router.get('/admin/dashboard', authMiddleware, roleMiddleware(['SUPER_ADMIN']), getDashboardAdmin);
+router.get('/admin/conversaciones', authMiddleware, roleMiddleware(['SUPER_ADMIN']), getConversationsAdmin);
+router.get('/admin/conversacion/:conversacion_id', authMiddleware, roleMiddleware(['SUPER_ADMIN']), getConversationMessagesAdmin);
+router.post('/admin/conversacion/:conversacion_id/aceptar', authMiddleware, roleMiddleware(['SUPER_ADMIN']), aceptarConversacion);
+router.post('/admin/conversacion/:conversacion_id/mensaje', authMiddleware, roleMiddleware(['SUPER_ADMIN']), sendMessageAdmin);
+router.post('/admin/conversacion/:conversacion_id/cerrar', authMiddleware, roleMiddleware(['SUPER_ADMIN']), closeConversation);
 
 module.exports = router;

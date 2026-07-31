@@ -53,6 +53,17 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    if (error.response?.status === 403) {
+      const msg = error.response?.data?.mensaje || '';
+      if (msg.includes('suspendida') || msg.includes('cancelada')) {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('rol');
+        localStorage.removeItem('restaurante_id');
+        window.location.href = '/login';
+        return Promise.reject(error);
+      }
+    }
+
     // Only attempt refresh on 401 and if we haven't already retried
     if (error.response?.status === 401 && !originalRequest._retry) {
       const token = localStorage.getItem('access_token');

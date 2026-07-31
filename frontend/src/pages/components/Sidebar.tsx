@@ -19,6 +19,7 @@ import {
 import { Logo } from './Logo';
 import { authService } from '../../services/auth';
 import { ThemeContext } from '../../context/ThemeContext';
+import { useRestaurant } from '../../context/RestaurantContext';
 
 interface SidebarItemProps {
   icon: any;
@@ -90,6 +91,8 @@ export function Sidebar() {
   const rol = user.rol?.toLowerCase() || '';
   const isSuperAdmin = rol === 'super_admin';
 
+  const { isPremium } = useRestaurant();
+
   const mainItems = [
     { icon: LayoutDashboard, label: 'Panel de Control', ruta: '/dashboard/restaurante' },
     { icon: Utensils, label: 'Mi Menú', ruta: '/dashboard/platillos' },
@@ -99,7 +102,7 @@ export function Sidebar() {
 
   const secondaryItems = [
     { icon: Settings, label: 'Configuración', ruta: '/dashboard/configuracion' },
-    { icon: MessageSquare, label: 'Soporte Premium', ruta: '/dashboard/soporte' },
+    ...(isPremium ? [{ icon: MessageSquare, label: 'Soporte Premium', ruta: '/dashboard/soporte' }] : []),
     { icon: User, label: 'Mi Perfil', ruta: '/perfil' },
   ];
 
