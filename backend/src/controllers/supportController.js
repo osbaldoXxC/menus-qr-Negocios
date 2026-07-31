@@ -105,7 +105,7 @@ const getMisConversaciones = async (req, res) => {
     
     // get messages for all conversations
     for (let i = 0; i < conversaciones.length; i++) {
-        const msgQuery = `SELECT id, conversacion_id, remitente_id, tipo_remitente AS remitente_tipo, contenido AS mensaje, leido, fecha_envio AS created_at FROM soporte_mensajes WHERE conversacion_id = $1 ORDER BY fecha_envio ASC`;
+        const msgQuery = `SELECT id, conversacion_id, remitente_id, remitente_tipo, mensaje, leido, created_at FROM soporte_mensajes WHERE conversacion_id = $1 ORDER BY created_at ASC`;
         const msgResult = await db.query(msgQuery, [conversaciones[i].id]);
         conversaciones[i].mensajes = msgResult.rows;
     }
@@ -154,7 +154,7 @@ const sendMessageRestaurante = async (req, res) => {
 
     // Insert message
     const msgResult = await db.query(
-      `INSERT INTO soporte_mensajes (conversacion_id, remitente_id, tipo_remitente, contenido) VALUES ($1, $2, 'RESTAURANTE', $3) RETURNING id, conversacion_id, remitente_id, tipo_remitente AS remitente_tipo, contenido AS mensaje, leido, fecha_envio AS created_at`,
+      `INSERT INTO soporte_mensajes (conversacion_id, remitente_id, remitente_tipo, mensaje) VALUES ($1, $2, 'RESTAURANTE', $3) RETURNING id, conversacion_id, remitente_id, remitente_tipo, mensaje, leido, created_at`,
       [conversacion.id, restaurante_id, mensaje]
     );
 
@@ -249,7 +249,7 @@ const getConversationMessagesAdmin = async (req, res) => {
   try {
     await db.query('BEGIN');
     await db.query(`UPDATE soporte_conversaciones SET leido_admin = true WHERE id = $1`, [conversacion_id]);
-    const result = await db.query(`SELECT id, conversacion_id, remitente_id, tipo_remitente AS remitente_tipo, contenido AS mensaje, leido, fecha_envio AS created_at FROM soporte_mensajes WHERE conversacion_id = $1 ORDER BY fecha_envio ASC`, [conversacion_id]);
+    const result = await db.query(`SELECT id, conversacion_id, remitente_id, remitente_tipo, mensaje, leido, created_at FROM soporte_mensajes WHERE conversacion_id = $1 ORDER BY created_at ASC`, [conversacion_id]);
     await db.query('COMMIT');
     res.json(result.rows);
   } catch (error) {
@@ -334,7 +334,7 @@ const sendMessageAdmin = async (req, res) => {
     if (conv.estado === 'pendiente') {
       const presMsg = `Buenos días. Soy \${admin_name}, del equipo de soporte. Con gusto atenderé tu solicitud.`;
       await db.query(
-        `INSERT INTO soporte_mensajes (conversacion_id, remitente_id, tipo_remitente, contenido) VALUES ($1, $2, 'SOPORTE', $3)`,
+        `INSERT INTO soporte_mensajes (conversacion_id, remitente_id, remitente_tipo, mensaje) VALUES ($1, $2, 'SOPORTE', $3)`,
         [conversacion_id, admin_id, presMsg]
       );
       
@@ -347,7 +347,7 @@ const sendMessageAdmin = async (req, res) => {
     }
 
     const msgResult = await db.query(
-      `INSERT INTO soporte_mensajes (conversacion_id, remitente_id, tipo_remitente, contenido) VALUES ($1, $2, 'SOPORTE', $3) RETURNING id, conversacion_id, remitente_id, tipo_remitente AS remitente_tipo, contenido AS mensaje, leido, fecha_envio AS created_at`,
+      `INSERT INTO soporte_mensajes (conversacion_id, remitente_id, remitente_tipo, mensaje) VALUES ($1, $2, 'SOPORTE', $3) RETURNING id, conversacion_id, remitente_id, remitente_tipo, mensaje, leido, created_at`,
       [conversacion_id, admin_id, mensaje]
     );
 
@@ -420,7 +420,7 @@ const getDashboardAdmin = async (req, res) => {
         admin_id,
         r.nombre_dueno as nombre_agente,
         COUNT(*) as tickets_atendidos,
-        COUNT(CASE WHEN estado = 'cerrada' THEN 1 END) as cerrados,
+        COUNT(CASE WHEN c.estado = 'cerrada' THEN 1 END) as cerrados,
         AVG(calificacion) as avg_rating,
         COUNT(calificacion) as calificaciones
       FROM soporte_conversaciones c
