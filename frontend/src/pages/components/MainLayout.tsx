@@ -31,7 +31,7 @@ export function MainLayout({ children }: MainLayoutProps) {
   const showFooter = !useSidebar && !isSelfContained && !['/login', '/register'].includes(location.pathname);
 
   return (
-    <div className={`flex min-h-screen relative overflow-x-clip bg-apple-bg dark:bg-apple-dark-bg transition-colors duration-300 ${useSidebar ? 'flex-row' : 'flex-col'}`}>
+    <div className={`flex min-h-screen relative overflow-x-clip bg-apple-bg dark:bg-apple-dark-bg transition-colors duration-300 ${useSidebar ? 'flex-col lg:flex-row' : 'flex-col'}`}>
       {/* Decorative Mesh Gradients */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] rounded-full bg-apple-blue/5 blur-[120px] dark:bg-apple-blue/10" />
@@ -45,7 +45,7 @@ export function MainLayout({ children }: MainLayoutProps) {
         <Header />
       ) : null}
       
-      <main className={`flex-1 relative z-10 w-full transition-all duration-300 ${useSidebar ? 'min-h-screen bg-apple-bg dark:bg-apple-dark-bg' : 'flex flex-col'}`}>
+      <main className={`flex-1 relative z-10 w-full transition-all duration-300 ${useSidebar ? 'min-h-screen bg-apple-bg dark:bg-apple-dark-bg pt-16 lg:pt-0' : 'flex flex-col'}`}>
         {children}
         {showFooter && <Footer />}
       </main>

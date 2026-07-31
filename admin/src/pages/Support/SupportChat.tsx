@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Conversation } from './Support';
+import type { Conversation } from './Support';
+import { fetchWithAuth } from '../../services/api';
 
 interface SupportChatProps {
   conversation: Conversation;
@@ -25,13 +26,7 @@ export default function SupportChat({ conversation, onClose }: SupportChatProps)
   
   const isClosed = conversation.state === 'closed';
 
-  const getHeaders = () => {
-    const token = localStorage.getItem('admin_access_token');
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    };
-  };
+
 
   useEffect(() => {
     fetchMessages();
@@ -46,15 +41,13 @@ export default function SupportChat({ conversation, onClose }: SupportChatProps)
 
   async function fetchMessages() {
     try {
-      const res = await fetch(`${API_BASE_URL}/support/admin/conversacion/${conversation.id}`, {
-        headers: getHeaders()
-      });
+      const res = await fetchWithAuth(`${API_BASE_URL}/support/admin/conversacion/${conversation.id}`);
       if (res.ok) {
         const data = await res.json();
         const mapped = data.map((m: { id: string, remitente_tipo: string, mensaje: string, created_at: string }) => ({
           id: m.id,
-          senderName: m.remitente_tipo === 'SOPORTE' ? 'Soporte Admin' : conversation.restaurantName,
-          senderType: m.remitente_tipo === 'SOPORTE' ? 'admin' : 'restaurant',
+          senderName: m.remitente_tipo?.toUpperCase() === 'SOPORTE' || m.remitente_tipo?.toLowerCase() === 'admin' ? 'Soporte Admin' : conversation.restaurantName,
+          senderType: m.remitente_tipo?.toUpperCase() === 'SOPORTE' || m.remitente_tipo?.toLowerCase() === 'admin' ? 'admin' : 'restaurant',
           content: m.mensaje,
           timestamp: m.created_at
         }));
@@ -85,9 +78,8 @@ export default function SupportChat({ conversation, onClose }: SupportChatProps)
     setMessages(prev => [...prev, tempMsg]);
 
     try {
-      const res = await fetch(`${API_BASE_URL}/support/admin/conversacion/${conversation.id}/mensaje`, {
+      const res = await fetchWithAuth(`${API_BASE_URL}/support/admin/conversacion/${conversation.id}/mensaje`, {
         method: 'POST',
-        headers: getHeaders(),
         body: JSON.stringify({ mensaje: text })
       });
       if (!res.ok) {
@@ -105,9 +97,8 @@ export default function SupportChat({ conversation, onClose }: SupportChatProps)
     
     setClosing(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/support/admin/conversacion/${conversation.id}/cerrar`, {
+      const res = await fetchWithAuth(`${API_BASE_URL}/support/admin/conversacion/${conversation.id}/cerrar`, {
         method: 'POST',
-        headers: getHeaders(),
         body: JSON.stringify({ estado: 'cerrada' })
       });
       if (res.ok) {

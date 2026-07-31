@@ -22,7 +22,9 @@ export function Login() {
       const response = await authService.login(email, password);
       const rol = (response.rol || '').toString().toUpperCase();
       sessionStorage.setItem('splash_shown', 'pending');
-      if (rol.includes('RESTAURANTE') || rol.includes('SUPER_ADMIN')) {
+      if (rol.includes('SUPER_ADMIN')) {
+        window.location.href = 'http://localhost:3001';
+      } else if (rol.includes('RESTAURANTE')) {
         navigate('/dashboard/restaurante');
       } else {
         navigate('/descubrir');

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import './App.css';
 import Support from './pages/Support/Support';
+import { fetchWithAuth } from './services/api';
 
 interface Restaurante {
   id: string;
@@ -103,27 +104,23 @@ function App() {
       setIsAuthenticated(true);
       fetchRestaurantes(token);
     } else {
+      if (rol && rol !== 'SUPER_ADMIN') {
+        localStorage.removeItem('admin_access_token');
+        localStorage.removeItem('admin_rol');
+      }
       setLoading(false);
     }
   }, []);
-
-  const getHeaders = (tokenOverride?: string) => {
-    const token = tokenOverride || localStorage.getItem('admin_access_token');
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-    };
-  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginLoading(true);
     setLoginError('');
     try {
-      const res = await fetch(`${API_BASE_URL}/auth/login`, {
+      const res = await fetchWithAuth(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: loginEmail, password: loginPassword }),
+        credentials: 'include', // Necesario para guardar cookie en login
       });
 
       const data = await res.json();
@@ -146,7 +143,12 @@ function App() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await fetchWithAuth(`${API_BASE_URL}/auth/logout`, { method: 'POST', credentials: 'include' });
+    } catch (e) {
+      console.error(e);
+    }
     localStorage.removeItem('admin_access_token');
     localStorage.removeItem('admin_rol');
     setIsAuthenticated(false);
@@ -156,16 +158,15 @@ function App() {
   const fetchRestaurantes = async (tokenOverride?: string) => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/admin/restaurants`, {
-        headers: getHeaders(tokenOverride),
+      const headers: any = {};
+      if (tokenOverride) headers['Authorization'] = `Bearer ${tokenOverride}`;
+
+      const res = await fetchWithAuth(`${API_BASE_URL}/admin/restaurants`, {
+        headers
       });
 
       const data = await res.json();
       if (!res.ok) {
-        if (res.status === 401 || res.status === 403) {
-          handleLogout();
-          return;
-        }
         throw new Error(data.mensaje || 'Error al obtener restaurantes');
       }
 
@@ -190,9 +191,8 @@ function App() {
     const dias = daysInput[id] || 30;
     const plan = planInput[id] || 'basico';
     try {
-      const res = await fetch(`${API_BASE_URL}/admin/restaurants/${id}/approve`, {
+      const res = await fetchWithAuth(`${API_BASE_URL}/admin/restaurants/${id}/approve`, {
         method: 'PUT',
-        headers: getHeaders(),
         body: JSON.stringify({ dias_licencia: dias, plan }),
       });
 
@@ -214,9 +214,8 @@ function App() {
     if (!selectedRestaurante) return;
     setSuspendingLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/admin/restaurants/${selectedRestaurante.id}/suspend`, {
+      const res = await fetchWithAuth(`${API_BASE_URL}/admin/restaurants/${selectedRestaurante.id}/suspend`, {
         method: 'PUT',
-        headers: getHeaders(),
       });
 
       const data = await res.json();

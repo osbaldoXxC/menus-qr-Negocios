@@ -149,7 +149,10 @@ class SubscriptionService {
     
     let dias_restantes = 0;
     if (restRows[0].suscripcion_expira_en) {
-      dias_restantes = Math.max(0, Math.ceil((new Date(restRows[0].suscripcion_expira_en) - new Date()) / (1000 * 60 * 60 * 24)));
+      const expDate = new Date(restRows[0].suscripcion_expira_en);
+      // Calcular la diferencia exacta en milisegundos y usar Math.ceil para no perder el día en curso
+      const diffTime = expDate.getTime() - Date.now();
+      dias_restantes = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
     }
     
     return {

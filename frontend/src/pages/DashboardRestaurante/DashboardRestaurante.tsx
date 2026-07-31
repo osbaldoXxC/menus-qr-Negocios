@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { restauranteService } from '../../services/restaurante';
+import { useRestaurant } from '../../context/RestaurantContext';
 import { LayoutDashboard, QrCode, Utensils, Zap, ExternalLink, Copy, Download, PlusCircle, ChevronRight } from 'lucide-react';
 import { getPublicMenuUrl } from '../../utils/menuUtils';
 
 export function DashboardRestaurante() {
   const navigate = useNavigate();
-  const [restauranteInfo, setRestauranteInfo] = useState<any>(null);
+  const { restaurant, limits, isPremium, loading: contextLoading } = useRestaurant();
   const [platillos, setPlatillos] = useState<any[]>([]);
   const [qrData, setQrData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -15,12 +16,10 @@ export function DashboardRestaurante() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [info, platillosData, qrRes] = await Promise.all([
-          restauranteService.getRestauranteInfo(),
+        const [platillosData, qrRes] = await Promise.all([
           restauranteService.getPlatillos(),
           restauranteService.getQR().catch(() => null),
         ]);
-        setRestauranteInfo(info);
         setPlatillos(platillosData);
         setQrData(qrRes);
       } catch (error) {
@@ -29,27 +28,23 @@ export function DashboardRestaurante() {
         setLoading(false);
       }
     };
-    fetchData();
-  }, []);
+    
+    if (!contextLoading) {
+      fetchData();
+    }
+  }, [contextLoading]);
 
   const handleDescargarQR = () => {
     if (!qrData?.qr_base64) return;
     const a = document.createElement('a');
     a.href = qrData.qr_base64;
-    a.download = `qr-${restauranteInfo?.nombre_negocio || 'restaurante'}.png`;
+    a.download = `qr-${restaurant?.nombre_negocio || 'restaurante'}.png`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
   };
 
-  const getDiasRestantes = () => {
-    if (restauranteInfo?.stats?.dias_restantes !== undefined) {
-      return restauranteInfo.stats.dias_restantes;
-    }
-    return 0;
-  };
-
-  if (loading) {
+  if (contextLoading || loading) {
     return (
       <div className="min-h-[80vh] flex items-center justify-center">
         <div className="text-center">
@@ -68,7 +63,7 @@ export function DashboardRestaurante() {
 
   const stats = [
     { label: 'Platillos en menú', value: platillos.length, icon: Utensils, color: 'text-apple-blue', bg: 'bg-apple-blue/10' },
-    { label: `Suscripción ${restauranteInfo?.stats?.nombre_plan || 'Estándar'}`, value: `${getDiasRestantes()} restantes`, icon: Zap, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+    { label: `Suscripción ${restaurant?.plan || 'estándar'}`, value: `${restaurant?.dias_restantes || 0} restantes`, icon: Zap, color: 'text-amber-500', bg: 'bg-amber-500/10' },
   ];
 
   return (
@@ -80,10 +75,10 @@ export function DashboardRestaurante() {
         transition={{ duration: 0.5 }}
       >
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-2">
-          Hola, {restauranteInfo?.nombre_dueño || 'Chef'} 👋
+          Hola, {restaurant?.nombre_negocio || 'Chef'} 👋
         </h1>
         <p className="text-lg text-apple-text-secondary dark:text-apple-dark-text-secondary font-medium">
-          Todo listo para gestionar <span className="text-apple-text dark:text-apple-dark-text font-bold">{restauranteInfo?.nombre_negocio || 'tu restaurante'}</span>
+          Todo listo para gestionar <span className="text-apple-text dark:text-apple-dark-text font-bold">{restaurant?.nombre_negocio || 'tu restaurante'}</span>
         </p>
       </motion.div>
 
@@ -131,7 +126,7 @@ export function DashboardRestaurante() {
                 </button>
                 <button 
                   onClick={() => {
-                    const menuUrl = getPublicMenuUrl(restauranteInfo?.id, qrData?.url_menu);
+                    const menuUrl = getPublicMenuUrl(restaurant?.id, qrData?.url_menu);
                     navigator.clipboard.writeText(menuUrl);
                     alert('URL copiada al portapapeles: ' + menuUrl);
                   }}

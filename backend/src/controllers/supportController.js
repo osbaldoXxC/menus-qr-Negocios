@@ -170,11 +170,25 @@ const sendMessageRestaurante = async (req, res) => {
 
     await db.query('COMMIT');
     
+    const mensajeGuardado = msgResult.rows[0];
+
     if (isNew) {
       await logAudit(conversacion.id, 'CREADA', restaurante_id, 'RESTAURANTE', 'Conversación creada por el restaurante');
+      
+      // Auto welcome message
+      const autoMsg = "Hola, bienvenido al soporte de Mexicana MX. Ya estamos revisando tu caso. En unos momentos un agente te responderá.";
+      const autoMsgResult = await db.query(
+        `INSERT INTO soporte_mensajes (conversacion_id, remitente_id, remitente_tipo, mensaje) VALUES ($1, NULL, 'SOPORTE', $2) RETURNING id, conversacion_id, remitente_id, remitente_tipo, mensaje, leido, created_at`,
+        [conversacion.id, autoMsg]
+      );
+      
+      const autoMensajeGuardado = autoMsgResult.rows[0];
+      
+      notifyUser(restaurante_id, 'NEW_MESSAGE', {
+        conversacion_id: conversacion.id,
+        mensaje: autoMensajeGuardado
+      });
     }
-
-    const mensajeGuardado = msgResult.rows[0];
     
     // Notify admins via SSE
     notifySuperAdmins('NEW_MESSAGE', {
@@ -295,6 +309,18 @@ const aceptarConversacion = async (req, res) => {
       conversacion_id: conversacion_id,
       admin_id: admin_id
     });
+    const admin_name = req.user.nombre_dueno || 'Soporte';
+    notifyUser(conv.restaurante_id, 'CONVERSATION_UPDATED', {
+      conversacion_id: conversacion_id,
+      estado: 'en_atencion',
+      admin_id: admin_id,
+      agente_nombre: admin_name
+    });
+    notifySuperAdmins('CONVERSATION_UPDATED', {
+      conversacion_id: conversacion_id,
+      estado: 'en_atencion',
+      admin_id: admin_id
+    });
 
     res.json(updatedResult.rows[0]);
   } catch (error) {
@@ -331,6 +357,7 @@ const sendMessageAdmin = async (req, res) => {
       return res.status(403).json({ error: 'La conversación está asignada a otro agente.' });
     }
 
+    let estadoChanged = false;
     if (conv.estado === 'pendiente') {
       const presMsg = `Buenos días. Soy \${admin_name}, del equipo de soporte. Con gusto atenderé tu solicitud.`;
       await db.query(
@@ -344,6 +371,7 @@ const sendMessageAdmin = async (req, res) => {
       );
 
       await logAudit(conversacion_id, 'ASIGNADA', admin_id, 'SOPORTE', 'Asignada automáticamente al enviar mensaje');
+      estadoChanged = true;
     }
 
     const msgResult = await db.query(
@@ -369,6 +397,20 @@ const sendMessageAdmin = async (req, res) => {
       conversacion_id: conversacion_id,
       mensaje: mensajeGuardado
     });
+
+    if (estadoChanged) {
+      notifyUser(conv.restaurante_id, 'CONVERSATION_UPDATED', {
+        conversacion_id: conversacion_id,
+        estado: 'en_atencion',
+        admin_id: admin_id,
+        agente_nombre: admin_name
+      });
+      notifySuperAdmins('CONVERSATION_UPDATED', {
+        conversacion_id: conversacion_id,
+        estado: 'en_atencion',
+        admin_id: admin_id
+      });
+    }
     
     res.status(201).json({ message: 'Admin message sent', mensaje: mensajeGuardado });
   } catch (error) {

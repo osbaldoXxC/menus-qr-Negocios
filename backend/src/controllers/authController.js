@@ -159,7 +159,8 @@ const login = async (req, res) => {
     ).catch(err => console.error('Error guardando refresh token hash (background):', err));
 
     // 7. Responder inmediatamente
-    res.cookie('refreshToken', refreshToken, {
+    const cookieName = user.rol === 'SUPER_ADMIN' ? 'admin_refreshToken' : 'refreshToken';
+    res.cookie(cookieName, refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'Strict',
@@ -345,7 +346,16 @@ const resetPassword = async (req, res) => {
 
 // POST /api/auth/refresh (Flujo de sesión OWASP A07)
 const refresh = async (req, res) => {
-  const refreshToken = req.cookies.refreshToken;
+  const origin = req.headers.origin || req.headers.referer || '';
+  const isAdminOrigin = origin.includes(':3001') || origin.includes('admin');
+  
+  let refreshToken;
+  
+  if (isAdminOrigin) {
+    refreshToken = req.cookies.admin_refreshToken;
+  } else {
+    refreshToken = req.cookies.refreshToken;
+  }
 
   if (!refreshToken) {
     return res.status(401).json({ mensaje: 'Acceso denegado. Token de actualización no proporcionado.' });
@@ -394,25 +404,32 @@ const refresh = async (req, res) => {
 // POST /api/auth/logout (Flujo de sesión OWASP A07)
 const logout = async (req, res) => {
   const refreshToken = req.cookies.refreshToken;
+  const adminRefreshToken = req.cookies.admin_refreshToken;
+  const tokenToRevoke = refreshToken || adminRefreshToken;
 
   try {
-    if (refreshToken) {
+    if (tokenToRevoke) {
       // Hashear el token para buscar y borrar de forma segura
-      const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+      const tokenHash = crypto.createHash('sha256').update(tokenToRevoke).digest('hex');
       await db.query('DELETE FROM refresh_tokens WHERE token = $1', [tokenHash]);
     }
-    
-    // Limpiar la cookie en el cliente
+
+    // Limpiar las cookies en el cliente
     res.clearCookie('refreshToken', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'Strict'
+      sameSite: 'Strict',
+    });
+    res.clearCookie('admin_refreshToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'Strict',
     });
 
-    res.json({ mensaje: 'Sesión cerrada con éxito.' });
+    res.json({ mensaje: 'Sesión cerrada exitosamente' });
   } catch (error) {
     console.error('Error en logout:', error);
-    res.status(500).json({ mensaje: 'Error interno del servidor.' });
+    res.status(500).json({ mensaje: 'Error al cerrar sesión' });
   }
 };
 

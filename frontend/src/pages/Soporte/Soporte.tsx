@@ -103,6 +103,11 @@ export function Soporte() {
               if (activeConvRef.current && closedConvId === activeConvRef.current.id) {
                 setConversacionActiva(prev => prev ? { ...prev, estado: 'cerrada' } : prev);
               }
+            } else if (data.type === 'CONVERSATION_UPDATED') {
+              const updatedConvId = data.payload.conversacion_id;
+              if (activeConvRef.current && updatedConvId === activeConvRef.current.id) {
+                setConversacionActiva(prev => prev ? { ...prev, estado: data.payload.estado, agente_nombre: data.payload.agente_nombre || prev.agente_nombre } : prev);
+              }
             }
           } catch (err) {
           console.error('Error parsing SSE message', err);
@@ -337,8 +342,9 @@ export function Soporte() {
         </div>
       ) : (
         mensajes.map(msg => {
-          const isMine = msg.remitente_tipo === 'restaurante';
-          const isSystem = msg.remitente_tipo === 'sistema';
+          const remitente = msg.remitente_tipo?.toLowerCase() || '';
+          const isMine = remitente === 'restaurante';
+          const isSystem = remitente === 'sistema';
           
           if (isSystem) {
              return (

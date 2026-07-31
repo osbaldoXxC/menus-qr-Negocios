@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './AdminSupport.css';
+import { fetchWithAuth } from '../services/api';
 
 interface Conversacion {
   id: string;
@@ -30,19 +31,11 @@ export function AdminSupport() {
   const [loading, setLoading] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const getHeaders = () => {
-    const token = localStorage.getItem('admin_access_token');
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    };
-  };
+
 
   const fetchConversaciones = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/support/admin/conversations`, {
-        headers: getHeaders()
-      });
+      const res = await fetchWithAuth(`${API_BASE_URL}/support/admin/conversations`);
       if (res.ok) {
         const data = await res.json();
         setConversaciones(data);
@@ -64,9 +57,7 @@ export function AdminSupport() {
     setActiveConv(conv_id);
     setMensajes([]);
     try {
-      const res = await fetch(`${API_BASE_URL}/support/admin/conversations/${conv_id}/messages`, {
-        headers: getHeaders()
-      });
+      const res = await fetchWithAuth(`${API_BASE_URL}/support/admin/conversations/${conv_id}/messages`);
       if (res.ok) {
         const data = await res.json();
         setMensajes(data);
@@ -84,9 +75,8 @@ export function AdminSupport() {
     setNuevoMensaje('');
 
     try {
-      const res = await fetch(`${API_BASE_URL}/support/admin/conversations/${activeConv}/messages`, {
+      const res = await fetchWithAuth(`${API_BASE_URL}/support/admin/conversations/${activeConv}/messages`, {
         method: 'POST',
-        headers: getHeaders(),
         body: JSON.stringify({ mensaje: texto })
       });
 
@@ -104,9 +94,8 @@ export function AdminSupport() {
 
   const resolverConversacion = async (conv_id: string) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/support/admin/conversations/${conv_id}/status`, {
+      const res = await fetchWithAuth(`${API_BASE_URL}/support/admin/conversations/${conv_id}/status`, {
         method: 'PUT',
-        headers: getHeaders(),
         body: JSON.stringify({ estado: 'resuelto' })
       });
       if (res.ok) {

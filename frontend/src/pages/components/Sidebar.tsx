@@ -257,13 +257,11 @@ export function Sidebar() {
       </AnimatePresence>
 
       {/* Page Content Margin Adjuster */}
-      {!isMobile && (
-        <div 
-          className="flex-shrink-0 transition-all duration-300" 
-          style={{ width: collapsed ? 88 : 260 }} 
-        />
-      )}
-      {isMobile && <div className="h-16" />}
+      <div 
+        className="flex-shrink-0 transition-all duration-300 hidden lg:block" 
+        style={{ width: collapsed ? 88 : 260 }} 
+      />
+
     </>
   );
 }

@@ -47,8 +47,17 @@ function HomeRedirect() {
   const { isAuthenticated, rol } = authService.getCurrentUser();
   const userRol = rol?.toLowerCase() || '';
 
-  if (isAuthenticated && (userRol === 'restaurante' || userRol === 'super_admin')) {
-    return <Navigate to="/dashboard/restaurante" replace />;
+  if (isAuthenticated) {
+    if (userRol === 'super_admin') {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('rol');
+      localStorage.removeItem('restaurante_id');
+      window.location.href = 'http://localhost:3001';
+      return null;
+    }
+    if (userRol === 'restaurante') {
+      return <Navigate to="/dashboard/restaurante" replace />;
+    }
   }
 
   // Por defecto, la raíz es para Comensales
@@ -92,44 +101,44 @@ function AnimatedRoutes() {
 
             {/* Shared Profile */}
             <Route path="/perfil" element={
-              <ProtectedRoute allowedRoles={['COMENSAL', 'RESTAURANTE', 'SUPER_ADMIN']}>
+              <ProtectedRoute allowedRoles={['COMENSAL', 'RESTAURANTE']}>
                 <Perfil />
               </ProtectedRoute>
             } />
 
             {/* Dashboard */}
             <Route path="/dashboard/restaurante" element={
-              <ProtectedRoute allowedRoles={['RESTAURANTE', 'SUPER_ADMIN']}>
+              <ProtectedRoute allowedRoles={['RESTAURANTE']}>
                 <DashboardRestaurante />
               </ProtectedRoute>
             } />
             <Route path="/dashboard/platillos" element={
-              <ProtectedRoute allowedRoles={['RESTAURANTE', 'SUPER_ADMIN']}>
+              <ProtectedRoute allowedRoles={['RESTAURANTE']}>
                 <MiMenu />
               </ProtectedRoute>
             } />
             <Route path="/dashboard/platillos/nuevo" element={
-              <ProtectedRoute allowedRoles={['RESTAURANTE', 'SUPER_ADMIN']}>
+              <ProtectedRoute allowedRoles={['RESTAURANTE']}>
                 <NuevoPlatillo />
               </ProtectedRoute>
             } />
             <Route path="/dashboard/platillos/editar/:id" element={
-              <ProtectedRoute allowedRoles={['RESTAURANTE', 'SUPER_ADMIN']}>
+              <ProtectedRoute allowedRoles={['RESTAURANTE']}>
                 <NuevoPlatillo />
               </ProtectedRoute>
             } />
             <Route path="/dashboard/qr" element={
-              <ProtectedRoute allowedRoles={['RESTAURANTE', 'SUPER_ADMIN']}>
+              <ProtectedRoute allowedRoles={['RESTAURANTE']}>
                 <CodigoQR />
               </ProtectedRoute>
             } />
             <Route path="/dashboard/configuracion" element={
-              <ProtectedRoute allowedRoles={['RESTAURANTE', 'SUPER_ADMIN']}>
+              <ProtectedRoute allowedRoles={['RESTAURANTE']}>
                 <Configuracion />
               </ProtectedRoute>
             } />
             <Route path="/dashboard/soporte" element={
-              <ProtectedRoute allowedRoles={['RESTAURANTE', 'SUPER_ADMIN']}>
+              <ProtectedRoute allowedRoles={['RESTAURANTE']}>
                 <Soporte />
               </ProtectedRoute>
             } />

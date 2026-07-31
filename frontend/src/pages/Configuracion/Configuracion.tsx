@@ -78,7 +78,7 @@ function colorWithOpacity(colorStr: string, opacity: number): string {
 
 export function Configuracion(): JSX.Element {
   const { isPremium } = useRestaurant();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingBg, setUploadingBg] = useState(false);

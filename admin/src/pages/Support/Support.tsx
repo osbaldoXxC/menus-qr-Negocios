@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './Support.css';
+import { fetchWithAuth } from '../../services/api';
 
 interface Restaurante {
   id: string;
@@ -9,7 +10,7 @@ interface Restaurante {
   estado: string;
 }
 
-interface Conversation {
+export interface Conversation {
   id: string | null;
   restaurantId: string;
   restaurantName: string;
@@ -70,21 +71,15 @@ export default function Support() {
     selectedConvRef.current = selectedConv;
   }, [selectedConv]);
 
-  const getHeaders = () => {
-    const token = localStorage.getItem('admin_access_token');
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    };
-  };
+
 
   const fetchAllData = async () => {
     try {
       setLoading(true);
-      const resRest = await fetch(`${API_BASE_URL}/admin/restaurants`, { headers: getHeaders() });
+      const resRest = await fetchWithAuth(`${API_BASE_URL}/admin/restaurants`);
       const restaurantes: Restaurante[] = await resRest.json();
       
-      const resConv = await fetch(`${API_BASE_URL}/support/admin/conversaciones`, { headers: getHeaders() });
+      const resConv = await fetchWithAuth(`${API_BASE_URL}/support/admin/conversaciones`);
       const convData = await resConv.json();
       const activeConvs = Array.isArray(convData) ? convData : (convData.conversations || []);
 
@@ -121,7 +116,7 @@ export default function Support() {
   const fetchDashboard = async () => {
     setLoadingDashboard(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/support/admin/dashboard`, { headers: getHeaders() });
+      const res = await fetchWithAuth(`${API_BASE_URL}/support/admin/dashboard`);
       if (res.ok) {
         const data = await res.json();
         setDashboardData({
@@ -250,9 +245,7 @@ export default function Support() {
   const fetchMessages = async (convId: string) => {
     setLoadingChat(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/support/admin/conversacion/${convId}`, {
-        headers: getHeaders()
-      });
+      const res = await fetchWithAuth(`${API_BASE_URL}/support/admin/conversacion/${convId}`);
       if (res.ok) {
         const data = await res.json();
           const mapped = data.map((m: { id: string, remitente_tipo: string, mensaje: string, created_at: string }) => ({
@@ -303,9 +296,8 @@ export default function Support() {
     try {
       if (targetConvId) {
         // Send message
-        const res = await fetch(`${API_BASE_URL}/support/admin/conversacion/${targetConvId}/mensaje`, {
+        const res = await fetchWithAuth(`${API_BASE_URL}/support/admin/conversacion/${targetConvId}/mensaje`, {
           method: 'POST',
-          headers: getHeaders(),
           body: JSON.stringify({ mensaje: text })
         });
         
@@ -331,9 +323,8 @@ export default function Support() {
     
     setClosing(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/support/admin/conversacion/${selectedConv.id}/cerrar`, {
+      const res = await fetchWithAuth(`${API_BASE_URL}/support/admin/conversacion/${selectedConv.id}/cerrar`, {
         method: 'POST',
-        headers: getHeaders(),
         body: JSON.stringify({ estado: 'cerrada' })
       });
       if (res.ok) {
@@ -353,9 +344,8 @@ export default function Support() {
     if (!selectedConv?.id) return;
     setAccepting(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/support/admin/conversacion/${selectedConv.id}/aceptar`, {
-        method: 'POST',
-        headers: getHeaders()
+      const res = await fetchWithAuth(`${API_BASE_URL}/support/admin/conversacion/${selectedConv.id}/aceptar`, {
+        method: 'POST'
       });
       if (res.ok) {
         setSelectedConv({ ...selectedConv, state: 'active' });

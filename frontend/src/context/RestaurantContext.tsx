@@ -1,5 +1,6 @@
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 import { authService } from '../services/auth';
+import api from '../services/api';
 
 interface RestaurantInfo {
   id: string;
@@ -8,6 +9,7 @@ interface RestaurantInfo {
   estado: string;
   suscripcion_activa: boolean;
   dias_licencia: number;
+  dias_restantes: number;
 }
 
 interface Limits {
@@ -62,22 +64,21 @@ export function RestaurantProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    setLoading(true);
+
     try {
       const token = localStorage.getItem('access_token');
-      const res = await fetch(`${API_BASE_URL}/restaurants/info`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (res.ok) {
-        const data = await res.json();
+      const res = await api.get('/restaurants/info');
+      const data = res.data;
+      if (data) {
         setRestaurant({
           id: data.id,
           nombre_negocio: data.nombre_negocio,
           plan: data.plan || 'basico',
           estado: data.estado,
           suscripcion_activa: data.suscripcion_activa,
-          dias_licencia: data.dias_licencia
+          dias_licencia: data.dias_licencia,
+          dias_restantes: data.stats?.dias_restantes || 0
         });
 
         // Set limits dynamically from backend response
