@@ -69,22 +69,28 @@ app.use(express.json());
 app.use(cookieParser());
 
 // Rate Limiting
-const globalLimiter = rateLimit({
+const restaurantLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minuto
+  max: 1000, // 1000 peticiones por minuto para restaurantes y admin
+  message: { mensaje: 'Límite de peticiones de restaurante excedido (máximo 1000 por minuto)' }
+});
+
+const publicMenuLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100, // 100 peticiones
-  message: 'Demasiadas peticiones, por favor intenta más tarde'
+  max: 100, // 100 peticiones máximo por 15 minutos para menú público
+  message: { mensaje: 'Límite de consultas al menú público alcanzado (máximo 100 por 15 minutos)' }
 });
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5,
-  message: 'Demasiados intentos, bloqueado por 15 minutos'
+  max: 30,
+  message: { mensaje: 'Demasiados intentos de autenticación, bloqueado por 15 minutos' }
 });
 
 const supportLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hora
-  max: 100,
-  message: 'Límite de mensajes de soporte excedido'
+  max: 200,
+  message: { mensaje: 'Límite de mensajes de soporte excedido' }
 });
 
 // Logger de peticiones para depuración
@@ -102,19 +108,17 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 const dbConfig = require('./config/db');
 require('./config/redis');
 
-
-
 // Routes
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
 app.use('/api/auth', require('./routes/authRoutes'));
 
-app.use('/api/menu', globalLimiter, require('./routes/menuRoutes'));
-app.use('/api/categories', globalLimiter, require('./routes/categoryRoutes'));
-app.use('/api/restaurants', globalLimiter, require('./routes/restaurantRoutes'));
-app.use('/api/admin', globalLimiter, require('./routes/adminRoutes'));
-app.use('/api/public/menu', require('./routes/publicRoutes'));
-app.use('/api/search', require('./routes/searchRoutes'));
+app.use('/api/menu', restaurantLimiter, require('./routes/menuRoutes'));
+app.use('/api/categories', restaurantLimiter, require('./routes/categoryRoutes'));
+app.use('/api/restaurants', restaurantLimiter, require('./routes/restaurantRoutes'));
+app.use('/api/admin', restaurantLimiter, require('./routes/adminRoutes'));
+app.use('/api/public/menu', publicMenuLimiter, require('./routes/publicRoutes'));
+app.use('/api/search', restaurantLimiter, require('./routes/searchRoutes'));
 app.use('/api/support', supportLimiter, require('./routes/supportRoutes'));
 
 app.get('/', (req, res) => {

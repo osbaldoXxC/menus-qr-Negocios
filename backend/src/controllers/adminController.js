@@ -7,7 +7,7 @@ const getAllRestaurants = async (req, res) => {
       SELECT 
         r.id, 
         r.nombre_negocio, 
-        r."nombre_dueño" as "nombre_dueño", 
+        r.nombre_dueno as "nombre_dueño", 
         r.email, 
         COALESCE(r.plan, 'basico') as plan, 
         r.suscripcion_activa, 
