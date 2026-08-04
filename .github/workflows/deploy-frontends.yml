@@ -1,0 +1,79 @@
+name: Deploy Frontends to AWS (Develop)
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  deploy-frontend:
+    name: Build & Deploy User Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+
+      - name: Install & Build Frontend
+        working-directory: ./frontend
+        run: |
+          npm ci
+          npm run build
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL_DEV }}
+
+      - name: Deploy Frontend to S3 Bucket
+        run: |
+          aws s3 sync ./frontend/dist s3://${{ secrets.AWS_S3_BUCKET_FRONTEND_DEV }} --delete
+
+      - name: Invalidate CloudFront Cache (Frontend)
+        if: ${{ secrets.AWS_CLOUDFRONT_DIST_ID_FRONTEND_DEV != '' }}
+        run: |
+          aws cloudfront create-invalidation --distribution-id ${{ secrets.AWS_CLOUDFRONT_DIST_ID_FRONTEND_DEV }} --paths "/*"
+
+  deploy-admin:
+    name: Build & Deploy Admin Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+
+      - name: Install & Build Admin
+        working-directory: ./admin
+        run: |
+          npm ci
+          npm run build
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL_DEV }}
+
+      - name: Deploy Admin to S3 Bucket
+        run: |
+          aws s3 sync ./admin/dist s3://${{ secrets.AWS_S3_BUCKET_ADMIN_DEV }} --delete
+
+      - name: Invalidate CloudFront Cache (Admin)
+        if: ${{ secrets.AWS_CLOUDFRONT_DIST_ID_ADMIN_DEV != '' }}
+        run: |
+          aws cloudfront create-invalidation --distribution-id ${{ secrets.AWS_CLOUDFRONT_DIST_ID_ADMIN_DEV }} --paths "/*"
