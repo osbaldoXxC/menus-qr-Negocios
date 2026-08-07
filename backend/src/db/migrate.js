@@ -1,7 +1,21 @@
+/**
+ * LEGACY MIGRATION RUNNER - DEPRECATED
+ *
+ * This file is kept for backwards compatibility only.
+ *
+ * PRIMARY SCHEMA DEFINITION: backend/src/db/init.sql (Docker EntryPoint)
+ * RUNTIME SAFETY NET: backend/src/config/db.js (backwards compatibility ALTERs)
+ *
+ * All schema definitions have been consolidated into init.sql as the single source of truth.
+ * This script should not be used for new migrations.
+ *
+ * Execution: npm run db:migrate (if needed for legacy reasons)
+ */
+
 const db = require('../config/db');
 
 async function runMigrations() {
-  console.log('🏁 Iniciando migraciones de base de datos...');
+  console.log('🏁 LEGACY: Iniciando migraciones de base de datos...');
   
   const client = await db.pool.connect();
   
