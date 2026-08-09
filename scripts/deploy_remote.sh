@@ -10,8 +10,8 @@ mkdir -p /home/ubuntu/app
 unzip -o /home/ubuntu/backend_app.zip -d /home/ubuntu/app
 cd /home/ubuntu/app
 
-echo "[REMOTE DEPLOY] Levantando servicios Backend y PostgreSQL (mexxicanmx_db_prod con pgvector, redis, backend, ai-engine)..."
-sudo docker compose -f compose.prod.yml up -d --build postgres redis backend ai-engine
+echo "[REMOTE DEPLOY] Levantando servicios Backend, ML Service y PostgreSQL (mexxicanmx_db_prod con pgvector, redis, backend, ml-service, ai-engine)..."
+sudo docker compose -f compose.prod.yml up -d --build postgres redis backend ml-service ai-engine
 
 echo "[REMOTE DEPLOY] Creando usuario SUPER_ADMIN (baldo2005_@outlook.com)..."
 sleep 3

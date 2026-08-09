@@ -427,10 +427,141 @@ const getDishes = async (req, res) => {
   }
 };
 
+const getPublicRecommendations = async (req, res) => {
+  try {
+    const { restaurant_id } = req.params;
+    const { craving = {}, diet = 'none', allergies = [], socialContext = 'solo', limit = 5 } = req.body || {};
+
+    if (!restaurant_id) {
+      return res.status(400).json({ mensaje: 'ID de restaurante requerido' });
+    }
+
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(restaurant_id);
+    let restRes;
+    if (isUuid) {
+      restRes = await db.query(
+        `SELECT id, nombre_negocio, suscripcion_activa, slug FROM restaurantes WHERE id = $1`,
+        [restaurant_id]
+      );
+    } else {
+      restRes = await db.query(
+        `SELECT id, nombre_negocio, suscripcion_activa, slug FROM restaurantes WHERE LOWER(nombre_negocio) LIKE LOWER('%' || $1 || '%') OR id::text = $1`,
+        [restaurant_id]
+      );
+    }
+
+    if (restRes.rows.length === 0) {
+      return res.status(404).json({ mensaje: 'Restaurante no encontrado' });
+    }
+
+    const restInfo = restRes.rows[0];
+    const realRestaurantId = restInfo.id;
+
+    if (!restInfo.suscripcion_activa) {
+      return res.status(403).json({ mensaje: 'Restaurante no disponible temporalmente' });
+    }
+
+    // Obtener exclusivamente los platillos activos de ESTE restaurante
+    const dishesRes = await db.query(
+      `SELECT p.id, p.nombre, p.descripcion, p.precio, p.url_imagen, p.activo,
+              p.ingredientes_principales, p.complementos, p.nivel_picante, p.porcion, p.etiquetas_dieteticas,
+              c.nombre as categoria_nombre
+       FROM platillos p
+       LEFT JOIN categorias_restaurante c ON p.categoria_id = c.id
+       WHERE p.restaurante_id = $1 AND p.activo = true
+       ORDER BY p.nombre ASC`,
+      [realRestaurantId]
+    );
+
+    const candidateDishes = dishesRes.rows;
+    const frontendBaseUrl = process.env.FRONTEND_URL || 'https://mexxicanmx.oamdevsol.site';
+    const menuSlug = restInfo.slug || realRestaurantId;
+    const menuUrl = `${frontendBaseUrl}/menu/${menuSlug}`;
+
+    const mlPayload = {
+      restaurant_id: realRestaurantId,
+      craving: craving || {},
+      diet: diet || 'none',
+      allergies: Array.isArray(allergies) ? allergies : [],
+      socialContext: socialContext || 'solo',
+      limit: parseInt(limit) || 5,
+      dishes: candidateDishes,
+      restaurant: {
+        id: realRestaurantId,
+        name: restInfo.nombre_negocio,
+        slug: menuSlug,
+        menuUrl: menuUrl
+      }
+    };
+
+    const mlServiceUrl = process.env.ML_SERVICE_URL || 'http://ml-service:8000';
+    const timeoutMs = parseInt(process.env.ML_SERVICE_TIMEOUT) || 4000;
+
+    try {
+      const mlResponse = await axios.post(`${mlServiceUrl}/recommendations`, mlPayload, { timeout: timeoutMs });
+      if (mlResponse.data && Array.isArray(mlResponse.data.recommendations)) {
+        return res.json(mlResponse.data);
+      }
+    } catch (mlErr) {
+      console.warn(`[ML Service Fallback] Error llamando a Python ML (${mlServiceUrl}):`, mlErr.message);
+    }
+
+    // Fallback heurístico en JS si el microservicio Python está inaccesible
+    const safeDishes = candidateDishes.filter(d => {
+      const text = `${d.nombre} ${d.descripcion} ${(d.ingredientes_principales||[]).join(' ')}`.toLowerCase();
+      if (allergies.some(a => text.includes(a.toLowerCase()))) return false;
+      return true;
+    });
+
+    const recommendations = safeDishes.slice(0, parseInt(limit) || 5).map((d, index) => {
+      const score = Math.max(0.70, Number((0.99 - (index * 0.03)).toFixed(2)));
+      return {
+        dish: {
+          id: d.id,
+          nombre: d.nombre,
+          descripcion: d.descripcion || '',
+          precio: parseFloat(d.precio) || 0,
+          url_imagen: d.url_imagen || '',
+          nivel_picante: d.nivel_picante || 0,
+          porcion: d.porcion || '',
+          categoria_nombre: d.categoria_nombre || '',
+          etiquetas_dieteticas: d.etiquetas_dieteticas || [],
+          ingredientes_principales: d.ingredientes_principales || []
+        },
+        restaurant: {
+          id: realRestaurantId,
+          name: restInfo.nombre_negocio,
+          slug: menuSlug,
+          menuUrl: menuUrl
+        },
+        matchScore: score,
+        matchPercentage: Math.round(score * 100),
+        reasons: ["⭐ Platillo recomendado especialmente para ti", "✅ Compatible con tus restricciones alimenticias"],
+        tags: d.etiquetas_dieteticas || (d.ingredientes_principales ? d.ingredientes_principales.slice(0, 3) : [])
+      };
+    });
+
+    return res.json({
+      recommendations,
+      meta: {
+        restaurant_id: realRestaurantId,
+        totalCandidates: candidateDishes.length,
+        recommendedCount: recommendations.length,
+        fallback: true
+      }
+    });
+
+  } catch (error) {
+    console.error('Error en getPublicRecommendations:', error);
+    res.status(500).json({ mensaje: 'Error procesando recomendaciones' });
+  }
+};
+
 module.exports = {
   createDish,
   updateDish,
   deleteDish,
   getPublicMenu,
-  getDishes
+  getDishes,
+  getPublicRecommendations
 };

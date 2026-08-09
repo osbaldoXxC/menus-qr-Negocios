@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { comensalService } from '../../services/comensal';
 import { getBreakpointFromWidth, getResolvedBreakpointConfig, BREAKPOINTS_LIST } from '../../utils/responsiveImageUtils';
+import { RecommendationWizard } from '../../components/RecommendationWizard/RecommendationWizard';
 
 export interface ComplementoObj {
   nombre: string;
@@ -181,6 +182,7 @@ export function PublicMenu() {
   const [loading, setLoading] = useState(true);
   const [menuData, setMenuData] = useState<{ restaurante: RestaurantInfo; categorias: Categoria[] } | null>(null);
   const [selectedPlatillo, setSelectedPlatillo] = useState<Platillo | null>(null);
+  const [isWizardOpen, setIsWizardOpen] = useState(false);
 
   // Algoritmo de breakpoints inteligentes y escalado proporcional
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 390);
@@ -502,6 +504,31 @@ export function PublicMenu() {
 
       {/* ── CONTENIDO ── */}
       <main className="max-w-[900px] mx-auto px-5 pt-10 space-y-16">
+        {/* Banner Recomendador IA */}
+        <div className="p-5 md:p-6 rounded-3xl bg-gradient-to-r from-amber-500/20 via-orange-500/10 to-transparent border border-amber-500/30 backdrop-blur-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xl">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-2xl flex-shrink-0">
+              🤤
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                ¿No sabes qué pedir?
+                <span className="px-2 py-0.5 text-[10px] uppercase font-extrabold bg-amber-500 text-black rounded-full">IA Assistant</span>
+              </h3>
+              <p className="text-xs text-gray-300 mt-0.5">
+                Déjanos recomendarte algo según tu antojo y preferencias.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsWizardOpen(true)}
+            className="w-full md:w-auto px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-extrabold text-sm rounded-2xl shadow-lg transition flex items-center justify-center gap-2"
+          >
+            <span>🎯 Refinar búsqueda</span>
+          </button>
+        </div>
+
         {categorias.map((cat) => (
           <section key={cat.id} id={`cat-${cat.id}`}>
             <motion.h2
@@ -575,6 +602,24 @@ export function PublicMenu() {
           />
         )}
       </AnimatePresence>
+      {/* ── BOTÓN FLOTANTE Y MODAL RECOMENDADOR IA ── */}
+      <button
+        type="button"
+        onClick={() => setIsWizardOpen(true)}
+        className="fixed bottom-6 right-6 z-40 px-5 py-3.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-extrabold text-sm rounded-full shadow-2xl hover:scale-105 transition-all flex items-center gap-2 border border-amber-400/40 cursor-pointer"
+      >
+        <span className="text-xl">🤤</span>
+        <span className="hidden sm:inline">¿No sabes qué pedir?</span>
+      </button>
+
+      <RecommendationWizard
+        restaurantId={restaurant_id || ''}
+        restaurantName={restaurante.nombre}
+        restaurantLogoUrl={restaurante.logo_url}
+        primaryColor={primary}
+        isOpen={isWizardOpen}
+        onClose={() => setIsWizardOpen(false)}
+      />
     </div>
   );
 }

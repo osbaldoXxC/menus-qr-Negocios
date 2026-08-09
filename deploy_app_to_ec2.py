@@ -47,7 +47,7 @@ def deploy_backend_to_ec2():
     safe_print(f"[PACKAGING] Creando archivo comprimido {zip_filename}...")
     
     with zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
-        for root_dir in ['backend', 'ai-engine']:
+        for root_dir in ['backend', 'ai-engine', 'ml-service']:
             if os.path.exists(root_dir):
                 for base, _, files in os.walk(root_dir):
                     if 'node_modules' in base or '.git' in base or 'dist' in base:
