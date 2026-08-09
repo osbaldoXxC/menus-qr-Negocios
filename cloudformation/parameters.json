@@ -1,0 +1,54 @@
+[
+  {
+    "ParameterKey": "EnvironmentName",
+    "ParameterValue": "oamdevsol"
+  },
+  {
+    "ParameterKey": "VpcCidr",
+    "ParameterValue": "10.0.0.0/16"
+  },
+  {
+    "ParameterKey": "PublicSubnetCidr",
+    "ParameterValue": "10.0.1.0/24"
+  },
+  {
+    "ParameterKey": "SSHLocation",
+    "ParameterValue": "0.0.0.0/0"
+  },
+  {
+    "ParameterKey": "BucketPrefix",
+    "ParameterValue": "oamdevsol"
+  },
+  {
+    "ParameterKey": "AdminDomainName",
+    "ParameterValue": "admin.oamdevsol.site"
+  },
+  {
+    "ParameterKey": "RestaurantDomainName",
+    "ParameterValue": "mexxicanmx.oamdevsol.site"
+  },
+  {
+    "ParameterKey": "ImagesDomainName",
+    "ParameterValue": "images.oamdevsol.site"
+  },
+  {
+    "ParameterKey": "AcmCertificateArn",
+    "ParameterValue": ""
+  },
+  {
+    "ParameterKey": "InstanceType",
+    "ParameterValue": "t3.micro"
+  },
+  {
+    "ParameterKey": "KeyName",
+    "ParameterValue": ""
+  },
+  {
+    "ParameterKey": "EbsVolumeSize",
+    "ParameterValue": "20"
+  },
+  {
+    "ParameterKey": "RepositoryUrl",
+    "ParameterValue": "NONE"
+  }
+]

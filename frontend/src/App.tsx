@@ -52,7 +52,7 @@ function HomeRedirect() {
       localStorage.removeItem('access_token');
       localStorage.removeItem('rol');
       localStorage.removeItem('restaurante_id');
-      window.location.href = 'http://localhost:3001';
+      window.location.href = import.meta.env.VITE_ADMIN_URL || 'http://localhost:3001';
       return null;
     }
     if (userRol === 'restaurante') {

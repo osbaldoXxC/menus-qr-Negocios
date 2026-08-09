@@ -18,8 +18,67 @@ async function runMigrations() {
   try {
     await pool.query('BEGIN');
 
-    // Add columns that might be missing from old instances
-    // These are idempotent (IF NOT EXISTS guards prevent errors)
+    // 1. All Table Creations (Idempotent)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS historial_suscripciones (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        restaurante_id UUID NOT NULL REFERENCES restaurantes(id) ON DELETE CASCADE,
+        plan_anterior VARCHAR(50),
+        plan_nuevo VARCHAR(50) NOT NULL,
+        fecha_cambio TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        razon VARCHAR(255),
+        accion VARCHAR(100),
+        admin_id UUID,
+        detalles TEXT,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS soporte_conversaciones (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        restaurante_id UUID NOT NULL REFERENCES restaurantes(id) ON DELETE CASCADE,
+        asunto VARCHAR(255) DEFAULT 'Asunto General',
+        comentario_calificacion TEXT,
+        admin_id UUID,
+        calificacion INTEGER,
+        fecha_creacion TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        fecha_cierre TIMESTAMP WITH TIME ZONE,
+        ultima_actividad TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        mensajes_restaurante_count INTEGER DEFAULT 0,
+        leido_admin BOOLEAN DEFAULT false,
+        leido_restaurante BOOLEAN DEFAULT true,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS soporte_mensajes (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        conversacion_id UUID NOT NULL REFERENCES soporte_conversaciones(id) ON DELETE CASCADE,
+        remitente_tipo VARCHAR(50) NOT NULL,
+        remitente_id UUID,
+        mensaje TEXT NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS soporte_auditoria (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        conversacion_id UUID NOT NULL REFERENCES soporte_conversaciones(id) ON DELETE CASCADE,
+        accion VARCHAR(255) NOT NULL,
+        usuario_id UUID,
+        usuario_tipo VARCHAR(50),
+        detalles TEXT,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS audit_logs (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        usuario_id UUID NOT NULL,
+        accion VARCHAR(100) NOT NULL,
+        detalles JSONB,
+        ip_address VARCHAR(45),
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // 2. All Defensive Column Alterations (Idempotent)
     await pool.query(`
       ALTER TABLE restaurantes ADD COLUMN IF NOT EXISTS email_verificado BOOLEAN DEFAULT false;
       ALTER TABLE restaurantes ADD COLUMN IF NOT EXISTS nombre_dueno VARCHAR(255) DEFAULT '';
@@ -50,10 +109,14 @@ async function runMigrations() {
       ALTER TABLE soporte_conversaciones ADD COLUMN IF NOT EXISTS mensajes_restaurante_count INTEGER DEFAULT 0;
       ALTER TABLE soporte_conversaciones ADD COLUMN IF NOT EXISTS leido_admin BOOLEAN DEFAULT false;
       ALTER TABLE soporte_conversaciones ADD COLUMN IF NOT EXISTS leido_restaurante BOOLEAN DEFAULT true;
+
+      ALTER TABLE historial_suscripciones ADD COLUMN IF NOT EXISTS accion VARCHAR(100);
+      ALTER TABLE historial_suscripciones ADD COLUMN IF NOT EXISTS admin_id UUID;
+      ALTER TABLE historial_suscripciones ADD COLUMN IF NOT EXISTS detalles TEXT;
     `);
 
     await pool.query('COMMIT');
-    console.log('[DB Migration] Runtime schema safety checks completed successfully.');
+    console.log('[DB Migration] Full schema auto-synchronization completed successfully.');
   } catch (err) {
     await pool.query('ROLLBACK');
     console.warn('[DB Migration Warning] Error during schema verification:', err.message);

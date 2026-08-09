@@ -23,7 +23,7 @@ export function Login() {
       const rol = (response.rol || '').toString().toUpperCase();
       sessionStorage.setItem('splash_shown', 'pending');
       if (rol.includes('SUPER_ADMIN')) {
-        window.location.href = 'http://localhost:3001';
+        window.location.href = import.meta.env.VITE_ADMIN_URL || 'http://localhost:3001';
       } else if (rol.includes('RESTAURANTE')) {
         navigate('/dashboard/restaurante');
       } else {

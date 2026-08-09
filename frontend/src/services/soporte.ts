@@ -10,6 +10,9 @@ export interface ConversacionSoporte {
   agente_nombre?: string;
   fecha_creacion: string;
   ultima_actividad: string;
+  asunto?: string;
+  created_at?: string;
+  updated_at?: string;
   mensajes?: MensajeSoporte[];
 }
 

@@ -1,7 +1,7 @@
 services:
   postgres:
     container_name: mexxicanmx_db_prod
-    image: postgres:16-alpine
+    image: pgvector/pgvector:pg16
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -32,7 +32,7 @@ services:
   backend:
     build: 
       context: ./backend
-      dockerfile: Dockerfile.prod
+      dockerfile: Dockerfile
     ports:
       - "${PORT:-4000}:4000"
     env_file:
@@ -42,6 +42,11 @@ services:
       - REDIS_URL=${REDIS_URL}
       - JWT_SECRET=${JWT_SECRET}
       - REFRESH_TOKEN_SECRET=${REFRESH_TOKEN_SECRET}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME:-oamdevsol-assets-825765395825}
+      - CLOUDFRONT_DOMAIN=${CLOUDFRONT_DOMAIN:-https://images.oamdevsol.site}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
     volumes:
       - uploads_data_prod:/app/uploads
     networks:

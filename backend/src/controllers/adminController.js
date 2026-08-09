@@ -29,8 +29,8 @@ const getAllRestaurants = async (req, res) => {
 
 const logAuditoria = async (client, restaurante_id, accion, plan_anterior, plan_nuevo, detalles, admin_id) => {
   await client.query(
-    'INSERT INTO historial_suscripciones (restaurante_id, accion, plan_anterior, plan_nuevo, detalles, admin_id) VALUES ($1, $2, $3, $4, $5, $6)',
-    [restaurante_id, accion, plan_anterior, plan_nuevo, detalles, admin_id]
+    'INSERT INTO historial_suscripciones (restaurante_id, plan_anterior, plan_nuevo, razon) VALUES ($1, $2, $3, $4)',
+    [restaurante_id, plan_anterior, plan_nuevo, detalles]
   );
 };
 

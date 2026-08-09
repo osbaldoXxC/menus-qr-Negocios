@@ -347,9 +347,15 @@ const uploadBrandingImage = async (req, res) => {
 
     let url_imagen = req.file.location;
 
-    if (process.env.CLOUDFRONT_DOMAIN) {
-      const s3Url = new URL(req.file.location);
-      url_imagen = `${process.env.CLOUDFRONT_DOMAIN}${s3Url.pathname}`;
+    if (!req.file.isLocal && process.env.CLOUDFRONT_DOMAIN && req.file.location) {
+      try {
+        const s3Url = new URL(req.file.location);
+        url_imagen = `${process.env.CLOUDFRONT_DOMAIN}${s3Url.pathname}`;
+      } catch (e) {
+        if (req.file.key) {
+          url_imagen = `${process.env.CLOUDFRONT_DOMAIN}/${req.file.key}`;
+        }
+      }
     }
 
     res.json({

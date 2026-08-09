@@ -170,8 +170,14 @@ CREATE TABLE IF NOT EXISTS historial_suscripciones (
     plan_nuevo VARCHAR(50) NOT NULL,
     fecha_cambio TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     razon VARCHAR(255),
+    accion VARCHAR(100),
+    admin_id UUID,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+ALTER TABLE historial_suscripciones ADD COLUMN IF NOT EXISTS accion VARCHAR(100);
+ALTER TABLE historial_suscripciones ADD COLUMN IF NOT EXISTS admin_id UUID;
+ALTER TABLE historial_suscripciones ADD COLUMN IF NOT EXISTS detalles TEXT;
 
 -- 13. Catálogos de Tamaños de Porción
 CREATE TABLE IF NOT EXISTS tamanos_porcion (

@@ -28,9 +28,15 @@ const createDish = async (req, res) => {
   // La URL de la imagen vendrá de multer-s3 si se subió un archivo
   let url_imagen = req.file ? req.file.location : req.body.url_imagen;
 
-  if (req.file && process.env.CLOUDFRONT_DOMAIN) {
-    const s3Url = new URL(req.file.location);
-    url_imagen = `${process.env.CLOUDFRONT_DOMAIN}${s3Url.pathname}`;
+  if (req.file && !req.file.isLocal && req.file.location && process.env.CLOUDFRONT_DOMAIN) {
+    try {
+      const s3Url = new URL(req.file.location);
+      url_imagen = `${process.env.CLOUDFRONT_DOMAIN}${s3Url.pathname}`;
+    } catch (e) {
+      if (req.file.key) {
+        url_imagen = `${process.env.CLOUDFRONT_DOMAIN}/${req.file.key}`;
+      }
+    }
   }
 
   if (!nombre || !precio) {
@@ -134,9 +140,15 @@ const updateDish = async (req, res) => {
   // URL de imagen (si se sube nueva)
   let url_imagen = req.file ? req.file.location : req.body.url_imagen;
 
-  if (req.file && process.env.CLOUDFRONT_DOMAIN) {
-    const s3Url = new URL(req.file.location);
-    url_imagen = `${process.env.CLOUDFRONT_DOMAIN}${s3Url.pathname}`;
+  if (req.file && !req.file.isLocal && req.file.location && process.env.CLOUDFRONT_DOMAIN) {
+    try {
+      const s3Url = new URL(req.file.location);
+      url_imagen = `${process.env.CLOUDFRONT_DOMAIN}${s3Url.pathname}`;
+    } catch (e) {
+      if (req.file.key) {
+        url_imagen = `${process.env.CLOUDFRONT_DOMAIN}/${req.file.key}`;
+      }
+    }
   }
 
   // Manejar categoría por nombre si se envía

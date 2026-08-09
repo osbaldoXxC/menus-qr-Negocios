@@ -25,7 +25,7 @@ app.use(helmet({
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:", process.env.CLOUDFRONT_DOMAIN || '*'],
+      imgSrc: ["'self'", "data:", process.env.CLOUDFRONT_DOMAIN || '*', process.env.BACKEND_URL || '*'],
       fontSrc: ["'self'", "https://fonts.googleapis.com", "https://fonts.gstatic.com"],
       connectSrc: ["'self'", process.env.BACKEND_URL || '*'],
       frameAncestors: ["'none'"],

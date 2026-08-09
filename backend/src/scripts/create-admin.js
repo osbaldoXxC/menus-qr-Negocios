@@ -14,9 +14,9 @@ const createAdmin = async () => {
         try {
           const hash = await bcrypt.hash(password, 12);
           await db.query(
-            `INSERT INTO restaurantes (id, nombre_negocio, email, password_hash, nombre_dueno, rol, plan, suscripcion_activa, email_verificado, estado)
-             VALUES (gen_random_uuid(), $1, $2, $3, $4, 'SUPER_ADMIN', 'premium', true, true, 'aprobado')`,
-            [nombre, email, hash, nombre]
+            `INSERT INTO restaurantes (id, nombre_negocio, email, password_hash, rol, plan, suscripcion_activa, email_verificado, estado)
+             VALUES (gen_random_uuid(), $1, $2, $3, 'SUPER_ADMIN', 'premium', true, true, 'aprobado')`,
+            [nombre, email, hash]
           );
           console.log('✅ SUPER_ADMIN creado correctamente');
         } catch (err) {

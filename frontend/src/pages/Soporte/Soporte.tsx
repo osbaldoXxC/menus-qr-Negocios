@@ -421,9 +421,9 @@ export function Soporte() {
                   onClick={() => verConversacionCerrada(conv)}
                   className={`w-full p-3 rounded-xl text-left border ${conversacionSeleccionada?.id === conv.id && vista === 'detalle_cerrada' ? 'border-apple-blue bg-blue-50 dark:bg-blue-900/20' : 'border-transparent hover:bg-apple-bg dark:hover:bg-apple-dark-bg'}`}
                 >
-                  <div className="font-medium text-sm truncate">{conv.asunto}</div>
+                  <div className="font-medium text-sm truncate">{conv.asunto || 'Consulta de Soporte'}</div>
                   <div className="text-xs text-apple-text-secondary mt-1 flex justify-between">
-                    <span>{new Date(conv.created_at).toLocaleDateString()}</span>
+                    <span>{new Date(conv.created_at || conv.fecha_creacion || Date.now()).toLocaleDateString()}</span>
                     {conv.calificacion && (
                       <span className="flex items-center text-yellow-500">
                         <Star size={10} className="fill-current mr-1" /> {conv.calificacion}
@@ -479,14 +479,14 @@ export function Soporte() {
           <>
             <div className="p-4 border-b border-apple-border dark:border-apple-dark-border flex justify-between items-center bg-apple-bg dark:bg-apple-dark-bg">
               <div>
-                <h3 className="font-bold text-lg">{conversacionActiva.asunto}</h3>
+                <h3 className="font-bold text-lg">{conversacionActiva.asunto || 'Consulta de Soporte'}</h3>
                 <span className={`text-xs px-2 py-1 rounded-full mt-1 inline-block ${
                   conversacionActiva.estado === 'abierta' ? 'bg-green-100 text-green-700' : 
                   conversacionActiva.estado === 'cerrada' ? 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300' :
                   'bg-yellow-100 text-yellow-700'
                 }`}>
                   {conversacionActiva.estado === 'abierta' ? 'Abierta - Agente respondiendo' : 
-                   conversacionActiva.estado === 'cerrada' ? `Cerrada el ${new Date(conversacionActiva.updated_at || conversacionActiva.created_at).toLocaleDateString()}` :
+                   conversacionActiva.estado === 'cerrada' ? `Cerrada el ${new Date(conversacionActiva.updated_at || conversacionActiva.created_at || conversacionActiva.fecha_creacion || Date.now()).toLocaleDateString()}` :
                    'Pendiente - Esperando agente'}
                 </span>
               </div>
@@ -530,9 +530,9 @@ export function Soporte() {
           <>
             <div className="p-4 border-b border-apple-border dark:border-apple-dark-border bg-apple-bg dark:bg-apple-dark-bg flex justify-between items-center">
               <div>
-                <h3 className="font-bold text-lg">{conversacionSeleccionada.asunto}</h3>
+                <h3 className="font-bold text-lg">{conversacionSeleccionada.asunto || 'Consulta de Soporte'}</h3>
                 <span className="text-xs px-2 py-1 rounded-full mt-1 inline-block bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-                  Cerrada el {new Date(conversacionSeleccionada.updated_at || conversacionSeleccionada.created_at).toLocaleDateString()}
+                  Cerrada el {new Date(conversacionSeleccionada.updated_at || conversacionSeleccionada.created_at || conversacionSeleccionada.fecha_creacion || Date.now()).toLocaleDateString()}
                 </span>
               </div>
             </div>

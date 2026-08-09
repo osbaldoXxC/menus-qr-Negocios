@@ -62,21 +62,50 @@ const optimizeImage = async (req, res, next) => {
       .webp({ quality: 60, effort: 6 })
       .toBuffer();
 
-    // 2. Subir a S3
-    const parallelUploadS3 = new Upload({
-      client: s3Client,
-      params: {
-        Bucket: process.env.S3_BUCKET_NAME,
-        Key: s3Key,
-        Body: optimizedBuffer,
-        ContentType: 'image/webp',
-        ACL: 'public-read'
-      },
-    });
-    const result = await parallelUploadS3.done();
-    req.file.location = result.Location;
+    // 2. Intentar subir a S3 si S3_BUCKET_NAME está configurado y no es 'dummy'
+    if (process.env.S3_BUCKET_NAME && process.env.S3_BUCKET_NAME !== 'dummy') {
+      try {
+        const s3Params = {
+          Bucket: process.env.S3_BUCKET_NAME,
+          Key: s3Key,
+          Body: optimizedBuffer,
+          ContentType: 'image/webp'
+        };
+
+        // Solo se agrega ACL si se define explícitamente en el entorno S3_USE_ACL=true,
+        // ya que los buckets de AWS S3 nuevos vienen con ACLs deshabilitadas por defecto (Bucket Owner Enforced).
+        if (process.env.S3_USE_ACL === 'true') {
+          s3Params.ACL = 'public-read';
+        }
+
+        const parallelUploadS3 = new Upload({
+          client: s3Client,
+          params: s3Params,
+        });
+        const result = await parallelUploadS3.done();
+        req.file.location = result.Location || `https://${process.env.S3_BUCKET_NAME}.s3.amazonaws.com/${s3Key}`;
+        req.file.key = s3Key;
+        req.file.isLocal = false;
+        return next();
+      } catch (s3Error) {
+        console.error('Error al subir a AWS S3 (revisa ACL/permisos de bucket o credentials):', s3Error);
+        // Continuar al almacenamiento local si falla S3
+      }
+    }
+
+    // Fallback: Almacenamiento local en uploads/dishes si S3 no está configurado o falló
+    const uploadDir = path.join(__dirname, '../../uploads/dishes');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    const localFilePath = path.join(uploadDir, fileName);
+    await fs.promises.writeFile(localFilePath, optimizedBuffer);
+
+    const backendUrl = process.env.BACKEND_URL || `${req.protocol}://${req.get('host')}`;
+    req.file.location = `${backendUrl}/uploads/dishes/${fileName}`;
     req.file.key = s3Key;
-    
+    req.file.isLocal = true;
+
     next();
   } catch (error) {
     console.error('Error optimizando imagen:', error);
