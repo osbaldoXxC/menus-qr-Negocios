@@ -1,96 +1,105 @@
-import os
-import shutil
 from diagrams import Diagram, Cluster, Edge
-from diagrams.aws.network import CloudFront, Route53
-from diagrams.aws.security import CertificateManager as ACM
-from diagrams.aws.storage import S3, ElasticBlockStoreEBS as EBS
+from diagrams.aws.network import CloudFront
+from diagrams.aws.security import CertificateManager as ACM, SecretsManager
+from diagrams.aws.storage import S3, ElasticBlockStoreEBS as ElasticBlockStore
 from diagrams.aws.compute import EC2
-from diagrams.aws.database import ElastiCache, RDS
-from diagrams.aws.management import Cloudwatch
-from diagrams.aws.general import Users
+from diagrams.aws.general import Users, InternetAlt1
 from diagrams.aws.integration import SimpleNotificationServiceSnsEmailNotification as EmailService
+from diagrams.onprem.database import Postgresql
+from diagrams.onprem.inmemory import Redis
 from diagrams.onprem.network import Nginx
-from diagrams.programming.language import Nodejs, Python
+from diagrams.programming.language import Nodejs
+from diagrams.programming.framework import FastAPI
 
 graph_attr = {
-    "fontsize": "16",
-    "pad": "0.6",
+    "fontsize": "20",
+    "pad": "1.2",
     "splines": "ortho",
-    "nodesep": "0.8",
-    "ranksep": "1.2",
-    "bgcolor": "#FFFFFF"
+    "nodesep": "1.8",
+    "ranksep": "2.0",
+    "compound": "true",
 }
 
-
 with Diagram(
-    "Arquitectura Completa MexxicanMX - AWS Cloud & Docker Stack",
+    "Arquitectura Estricta AWS + Docker Compose + Secrets Manager & Resend - oamdevsol.site",
     filename="aws_architecture",
     show=False,
     direction="TB",
     graph_attr=graph_attr,
 ):
-    users = Users("Comensales & Restaurantes\n(Dispositivos Web / QR)")
+    users = Users("Usuarios / Clientes\n& Administradores")
 
-    with Cluster("DNS Zone (Hostinger & Route53)"):
-        dns = Route53("Hostinger DNS Zone\noamdevsol.site\nRegistros CNAME / A")
-
-    with Cluster("Seguridad SSL / TLS"):
+    with Cluster("1. DNS Externo & Seguridad SSL"):
+        hostinger_dns = InternetAlt1("Hostinger DNS Zone\n(oamdevsol.site)\nRegistros CNAME / A")
         acm = ACM("AWS Certificate Manager\nCertificado SSL Wildcard\n(*.oamdevsol.site)")
 
-    with Cluster("Red de Distribución de Contenido (AWS CloudFront CDN)"):
-        cloudfront = CloudFront("AWS CloudFront CDN\n(Terminación HTTPS Global)")
+    with Cluster("2. Distribución CDN & Frontends"):
+        with Cluster("AWS CloudFront CDN"):
+            cloudfront = CloudFront("AWS CloudFront CDN\n(Terminación HTTPS SSL ACM)\npanel, app, backend")
 
-    with Cluster("Almacenamiento de Archivos Estáticos (AWS S3 Buckets)"):
-        mexxicanmx_app = S3("mexxicanmx.oamdevsol.site\n(App Cliente / Menú QR)")
-        admin_app = S3("admin.oamdevsol.site\n(Panel Admin Restaurante)")
-        s3_images = S3("images.oamdevsol.site\n(Fotos HD de Platillos)")
+        with Cluster("Almacenamiento S3 (Exactamente 3 Buckets)"):
+            admin_app = S3("oamdevsol-admin-256663926988\nPanel Administración SPA\n(HTML / JS / CSS / Vite)")
+            client_app = S3("oamdevsol-restaurant-256663926988\nBucket Menú / Clientes QR\n(HTML / JS / CSS / Vite)")
+            assets_bucket = S3("oamdevsol-assets-256663926988\nFotos Platillos HD,\nLogos y Banners")
 
-    with Cluster("Servidor de Cómputo AWS EC2 (Docker Microservices Stack)"):
-        ec2_server = EC2("AWS EC2 Instance\n(Ubuntu 24.04 LTS)")
-        nginx = Nginx("Nginx Reverse Proxy\n(Enrutamiento HTTPS / Headers)")
+    with Cluster("3. VPC: 10.0.0.0/16 | Subnet Pública: 10.0.1.0/24 | Elastic IP: 32.192.61.156"):
+        with Cluster("INSTANCIA AWS EC2 (t3.micro - Ubuntu 24.04 LTS)"):
+            ec2_node = EC2("Servidor AWS EC2\nt3.micro (Ubuntu 24.04 LTS)\nElastic IP: 32.192.61.156")
+            nginx = Nginx("NGINX REVERSE PROXY (Puerto 80)\n• Tráfico HTTP texto plano\n• Reenvía Host, Auth, X-Real-IP, Cookies")
 
-        with Cluster("Contenedores Docker de Microservicios"):
-            api_backend = Nodejs("api.oamdevsol.site\n(API REST Node.js Express)")
-            ml_service = Python("ml-service:8000\n(Motor IA / FastAPI Python)")
-            monitor_backend = Cloudwatch("monitor.oamdevsol.site\n(Dashboard Uptime)")
+            with Cluster("STACK DE MICROSERVICIOS DOCKER (Docker Compose)"):
+                api_backend = Nodejs("app-backend-1 (Puerto 4000)\n• REST API Node.js / Express\n• JWT Auth, Rutas Menú, Mesas")
+                ml_service = FastAPI("app-ml-service-1 (Puerto 8000)\n• FastAPI Python\n• Motor IA Recomendaciones")
 
-        with Cluster("Base de Datos & Caching"):
-            postgres = RDS("PostgreSQL 16 + pgvector\n(Persistencia & Embeddings)")
-            redis = ElastiCache("Redis Cache 7\n(Caché Consultas IA & SSE)")
+            with Cluster("Bases de Datos & Cache (Docker Containers)"):
+                postgres = Postgresql("mexxicanmx_db_prod\n• PostgreSQL 16 + pgvector\n• Catálogos + 20 Tablas limpias")
+                redis = Redis("app-redis-1\n• Redis Cache 7 (Alpine)\n• Caché de sesiones y tokens")
 
-        ebs = EBS("EBS 20 GB gp3\n(Volumen Persistente DB)")
+        ebs = ElasticBlockStore("VOLUMEN EBS GP3 INDEPENDIENTE (20 GB)\n• /mnt/ebs/postgres (Datos BD persistentes)\n• /mnt/ebs/redis (Caché persistida)")
 
-    with Cluster("Notificaciones Transactional"):
-        resend_email = EmailService("Resend API\n(Envío de Correos OTP / Alertas)")
+    with Cluster("4. Servicios de Seguridad y Notificaciones"):
+        secrets_mgr = SecretsManager("AWS SECRETS MANAGER\nSecreto: mexxicanmx/production/api\n(DATABASE_URL, JWT_SECRET, REDIS_URL...)")
+        resend_email = EmailService("Resend API (re_8ATF72...)\n• Envío de verificación y soporte\n• Transaccionales y OTP a Gmails")
 
-    # Conexiones principales del flujo
-    users >> Edge(label="1. Tráfico HTTPS / QR Scan", color="#E1A339", style="bold") >> dns
-    dns >> Edge(label="2a. CNAME Frontend / CDN", color="#C0421F") >> cloudfront
-    dns >> Edge(label="2b. CNAME API / Backend", color="#2997FF") >> nginx
+    # 1. Validación de Certificado ACM desde Hostinger
+    hostinger_dns >> Edge(label="1. CNAME Validación ACM", color="darkgreen", style="dashed") >> acm
 
-    acm - Edge(color="#6E8B4C", style="dotted", label="SSL Cert") - cloudfront
-    acm - Edge(color="#6E8B4C", style="dotted", label="SSL Cert") - nginx
+    # 2. Consultas de usuarios al DNS de Hostinger
+    users >> Edge(label="2. Consulta DNS", color="blue") >> hostinger_dns
 
-    cloudfront >> Edge(label="Sirve PWA Cliente", color="#C0421F") >> mexxicanmx_app
-    cloudfront >> Edge(label="Sirve Dashboard Admin", color="#E1A339") >> admin_app
+    # 3. Hostinger DNS apunta CNAMEs a CloudFront y EC2
+    hostinger_dns >> Edge(label="3a. CNAMEs (panel, app, backend)", color="purple") >> cloudfront
+    hostinger_dns >> Edge(label="3b. Registro A (32.192.61.156)", color="darkorange") >> ec2_node
 
-    nginx >> Edge(label="Proxy /api/*", color="#2997FF") >> api_backend
-    nginx >> Edge(label="Proxy /monitor", color="#6E8B4C") >> monitor_backend
+    # SSL ACM adjunto a CloudFront
+    acm - Edge(color="darkgreen", style="dotted") - cloudfront
 
-    api_backend >> Edge(label="HTTP JSON Recommend", color="#C0421F", style="bold") >> ml_service
-    api_backend >> Edge(label="SQL Read/Write", color="#2997FF") >> postgres
-    api_backend >> Edge(label="Cache & PubSub", color="#E1A339") >> redis
+    # 4. CloudFront entrega contenido desde S3 para los Frontends SPA
+    cloudfront >> Edge(label="HTTPS", color="purple") >> admin_app
+    cloudfront >> Edge(label="HTTPS", color="purple") >> client_app
 
-    ml_service >> Edge(label="Vector Search (pgvector)", color="#9C27B0", style="bold") >> postgres
-    ml_service >> Edge(label="Cache Check", color="#E1A339") >> redis
+    # CloudFront backend pasa HTTP a EC2 / Nginx
+    cloudfront >> Edge(label="HTTP Plano (backend)", color="darkorange") >> ec2_node
+    ec2_node >> Edge(label="Puerto 80", color="darkorange") >> nginx
 
-    postgres >> Edge(label="Persistencia", color="#666666") >> ebs
-    api_backend >> Edge(label="Upload Imágenes Directo", color="#E1A339") >> s3_images
-    api_backend >> Edge(label="Envío de Emails OTP", color="#C0421F") >> resend_email
+    # 5. Nginx en EC2 dirige peticiones HTTP al Backend en puerto 4000
+    nginx >> Edge(label="4. Proxy local (127.0.0.1:4000)", color="darkorange") >> api_backend
 
-# Generar y copiar imágenes
-os.makedirs("presentacion/diagramas", exist_ok=True)
-if os.path.exists("aws_architecture.png"):
-    shutil.copy("aws_architecture.png", "arquitectura.png")
-    shutil.copy("aws_architecture.png", "presentacion/diagramas/aws_architecture.png")
-    print("[OK] aws_architecture.png generado y actualizado exitosamente en todas las rutas.")
+    # Conexiones internas Docker Compose
+    api_backend >> Edge(label="(HTTP)", color="blue") >> ml_service
+    api_backend >> Edge(label="(SQL / Embeddings)", color="darkgreen") >> postgres
+    ml_service >> Edge(label="(pgvector)", color="darkgreen") >> postgres
+    api_backend >> Edge(label="Sesiones & Tokens", color="darkred", style="dashed") >> redis
+
+    # Mounts persistentes en EBS
+    postgres >> Edge(label="Mount /mnt/ebs/postgres", color="slategray") >> ebs
+    redis >> Edge(label="Mount /mnt/ebs/redis", color="slategray") >> ebs
+
+    # Inyección de credenciales desde Secrets Manager
+    secrets_mgr >> Edge(label="Inyección Env Vars", color="magenta", style="dashed") >> api_backend
+
+    # 5. Carga directa de fotos desde el backend a S3 (sin CDN de imágenes)
+    api_backend >> Edge(label="5. Carga de fotos directa", color="brown") >> assets_bucket
+
+    # Backend dispara envíos de correo a Resend API
+    api_backend >> Edge(label="Envío Emails / OTP", color="red") >> resend_email

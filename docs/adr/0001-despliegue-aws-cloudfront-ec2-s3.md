@@ -48,19 +48,20 @@ Se adopta formalmente la **Opción 3: Arquitectura Híbrida CloudFront + S3 + EC
 ### Mapeo de Subdominios y Servicios
 | Subdominio | Servicio Origen | Capa CDN / Caché | Propósito |
 | :--- | :--- | :--- | :--- |
-| `https://app.oamdevsol.site` | Bucket S3 (`menus-qr-frontend`) | AWS CloudFront | Menú comensales y dashboard restaurantes |
-| `https://panel.oamdevsol.site` | Bucket S3 (`menus-qr-admin`) | AWS CloudFront | Panel de control Super Admin |
-| `https://cdn.oamdevsol.site` | Bucket S3 (`menus-qr-images`) | AWS CloudFront | Catálogo de imágenes de menú |
-| `https://backend.oamdevsol.site` | Instancia EC2 (`Nginx` -> `Node.js :4000`) | AWS CloudFront | API REST y autenticación JWT |
+| `https://app.oamdevsol.site` | Bucket S3 (`oamdevsol-restaurant-256663926988`) | AWS CloudFront | Menú comensales y dashboard restaurantes |
+| `https://panel.oamdevsol.site` | Bucket S3 (`oamdevsol-admin-256663926988`) | AWS CloudFront | Panel de control Super Admin |
+| `https://cdn.oamdevsol.site` | Bucket S3 (`oamdevsol-assets-256663926988`) | AWS CloudFront | Catálogo de imágenes de menú en HD |
+| `https://backend.oamdevsol.site` | Instancia EC2 (`32.192.61.156`, Nginx :80 -> Node :4000) | AWS CloudFront | API REST, Auth JWT y microservicio ML |
 
 ### Decisiones Específicas de Implementación
-1. **Terminación SSL en CloudFront:** El tráfico del cliente viaja 100% cifrado por HTTPS. CloudFront se conecta internamente a EC2 por HTTP estándar en el puerto 80, simplificando la configuración de Nginx y evitando la gestión manual de certificados SSL en el servidor Linux.
-2. **Persistencia con EBS:** La carpeta `/var/lib/postgresql/data` del contenedor de base de datos se mapea al volumen externo EBS de 20 GB montado en `/mnt/ebs/postgres`.
-3. **Gestión de Secretos:** Cero credenciales en código fuente. Las claves JWT, credenciales de base de datos y llaves de acceso residen en variables de entorno inyectadas de forma segura desde AWS Secrets Manager.
+1. **Terminación SSL en CloudFront:** El tráfico del cliente viaja 100% cifrado por HTTPS. CloudFront se conecta internamente a la Elastic IP de EC2 (`32.192.61.156`) por HTTP estándar en el puerto 80, simplificando la configuración de Nginx y evitando la gestión manual de certificados SSL en el servidor Linux.
+2. **Persistencia con EBS:** La carpeta `/var/lib/postgresql/data` del contenedor de base de datos (`mexxicanmx_db_prod`) y la caché de Redis (`app-redis-1`) se mapean al volumen externo EBS de 20 GB montado en `/mnt/ebs/postgres` y `/mnt/ebs/redis`.
+3. **Gestión de Secretos:** Cero credenciales en código fuente. Las claves JWT, credenciales de base de datos y llaves de acceso residen en variables de entorno inyectadas de forma segura desde AWS Secrets Manager (`mexxicanmx/production/api`).
 4. **Defensa en Profundidad (Hardening):**
    - **Helmet:** Cabeceras HTTP de seguridad estrictas (`HSTS`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `CSP`).
    - **CORS:** Restringido a orígenes explícitos basados en las variables de entorno de producción.
    - **Rate Limiting:** Límites diferenciados por sensibilidad de ruta (30 reqs/15m para login, 1000 reqs/m para restaurantes).
+   - **Notificaciones Transaccionales:** Integración con la API de Resend para correos de verificación y soporte.
 
 ---
 
