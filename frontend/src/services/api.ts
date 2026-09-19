@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:4000/api',
+  baseURL: import.meta.env.VITE_API_URL,
   timeout: 15000,
   withCredentials: true,
 });
@@ -53,13 +53,31 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Only attempt refresh on 401 and if we haven't already retried
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      // Don't try to refresh if the failing call IS the refresh call itself
-      if (originalRequest.url === '/auth/refresh') {
+    if (error.response?.status === 403) {
+      const msg = error.response?.data?.mensaje || '';
+      if (msg.includes('suspendida') || msg.includes('cancelada')) {
         localStorage.removeItem('access_token');
         localStorage.removeItem('rol');
+        localStorage.removeItem('restaurante_id');
         window.location.href = '/login';
+        return Promise.reject(error);
+      }
+    }
+
+    // Only attempt refresh on 401 and if we haven't already retried
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      const token = localStorage.getItem('access_token');
+      if (token === 'mock-token') {
+        console.warn('⚠️ 401 detectado con mock-token. Continuando con fallbacks.');
+        return Promise.reject(error);
+      }
+      // Don't try to refresh if the failing call IS the refresh call or the login call itself
+      if (originalRequest.url?.endsWith('/auth/refresh') || originalRequest.url?.endsWith('/auth/login')) {
+        if (originalRequest.url?.endsWith('/auth/refresh')) {
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('rol');
+          window.location.href = '/login';
+        }
         return Promise.reject(error);
       }
 

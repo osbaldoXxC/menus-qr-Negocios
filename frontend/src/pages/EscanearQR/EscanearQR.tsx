@@ -108,222 +108,97 @@ function LayoutRenderer({
 export function EscanearQR() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const [menuData, setMenuData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [scanning, setScanning] = useState(false);
 
   useEffect(() => {
     if (id) {
-      cargarMenu();
+      // Si ya hay un ID en la URL, redirigimos al menú público real
+      navigate(`/menu/${id}`, { replace: true });
     }
-  }, [id]);
-
-  const cargarMenu = async () => {
-    try {
-      const data = await comensalService.getMenuByQR(id!);
-      setMenuData(data);
-    } catch (err: any) {
-      setError(err.response?.data?.mensaje || 'Error al cargar el menú');
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [id, navigate]);
 
   const handleSimularEscaneo = () => {
-    navigate('/escanear/restaurante-123');
+    setScanning(true);
+    setTimeout(() => {
+      // Simulamos que encontró un ID de restaurante real
+      navigate('/menu/1');
+    }, 1500);
   };
 
-  if (loading) {
-    return (
-      <div className="bg-[#000000] text-[#F5F5F7] min-h-screen flex items-center justify-center">
-        <motion.div
-          className="text-center"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+  return (
+    <div className="bg-[#000000] text-[#F5F5F7] min-h-screen flex flex-col items-center justify-center px-4">
+      <Header />
+      
+      <div className="text-center max-w-sm w-full pt-20">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="relative glass rounded-[2.5rem] overflow-hidden border border-white/[0.06] mb-10 mx-auto group shadow-2xl"
         >
-          <motion.div
-            className="text-5xl"
-            animate={{ scale: [1, 1.1, 1] }}
-            transition={{ repeat: Infinity, duration: 1.5 }}
-          >
-            📷
-          </motion.div>
-          <p className="text-[#6E6E73] mt-3">Cargando menú digital...</p>
-        </motion.div>
-      </div>
-    );
-  }
+          <div className="aspect-square flex flex-col items-center justify-center bg-gradient-to-br from-[#1D1D1F] to-[#050505]">
+            <div className="relative w-48 h-48">
+              {/* Esquinas del scanner */}
+              <div className="absolute top-0 left-0 w-12 h-12 border-t-4 border-l-4 border-[#FF4A00] rounded-tl-2xl" />
+              <div className="absolute top-0 right-0 w-12 h-12 border-t-4 border-r-4 border-[#FF4A00] rounded-tr-2xl" />
+              <div className="absolute bottom-0 left-0 w-12 h-12 border-b-4 border-l-4 border-[#FF4A00] rounded-bl-2xl" />
+              <div className="absolute bottom-0 right-0 w-12 h-12 border-b-4 border-r-4 border-[#FF4A00] rounded-br-2xl" />
+              
+              {/* Animación de escaneo */}
+              <motion.div 
+                className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#FF4A00] to-transparent shadow-[0_0_15px_#FF4A00]"
+                animate={{ top: ['10%', '90%', '10%'] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+              />
 
-  if (error) {
-    return (
-      <div className="bg-[#000000] text-[#F5F5F7] min-h-screen">
-        <Header />
-        <div className="flex items-center justify-center min-h-[calc(100vh-120px)] pt-20 px-4">
-          <div className="text-center">
-            <motion.div className="text-5xl mb-4" initial={{ scale: 0 }} animate={{ scale: 1 }}>
-              ⚠️
-            </motion.div>
-            <h2 className="text-xl font-bold mb-2">Error</h2>
-            <p className="text-[#A1A1A6] text-sm mb-6">{error}</p>
-            <button
-              onClick={() => navigate('/')}
-              className="btn-apple btn-apple-primary text-sm py-2.5 px-5"
-            >
-              Volver al inicio
-            </button>
-          </div>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
-
-  if (!menuData) {
-    return (
-      <div className="bg-[#000000] text-[#F5F5F7] min-h-screen">
-        <Header />
-        <div className="flex items-center justify-center min-h-[calc(100vh-120px)] pt-20 px-4">
-          <div className="text-center">
-            <div className="relative glass rounded-apple-lg overflow-hidden border border-white/[0.06] mb-6 max-w-sm mx-auto">
-              <div className="aspect-square flex flex-col items-center justify-center bg-gradient-to-br from-[#1D1D1F] to-[#000000]">
-                <div className="relative w-40 h-40">
-                  <div className="absolute top-0 left-0 w-10 h-10 border-t-3 border-l-3 border-[#2997FF]" />
-                  <div className="absolute top-0 right-0 w-10 h-10 border-t-3 border-r-3 border-[#2997FF]" />
-                  <div className="absolute bottom-0 left-0 w-10 h-10 border-b-3 border-l-3 border-[#2997FF]" />
-                  <div className="absolute bottom-0 right-0 w-10 h-10 border-b-3 border-r-3 border-[#2997FF]" />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <motion.span className="text-5xl" animate={{ scale: [1, 1.05, 1] }} transition={{ repeat: Infinity, duration: 2 }}>
-                      📷
-                    </motion.span>
-                  </div>
-                </div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <motion.span 
+                  className="text-6xl" 
+                  animate={scanning ? { scale: [1, 1.2, 0], opacity: [1, 1, 0] } : { scale: [1, 1.05, 1] }}
+                  transition={{ duration: 0.5 }}
+                >
+                  {scanning ? '✨' : '📷'}
+                </motion.span>
               </div>
             </div>
-
-            <button
-              onClick={handleSimularEscaneo}
-              className="w-full py-3 bg-[#2997FF] hover:bg-[#40A9FF] rounded-apple-full font-semibold text-sm max-w-sm mx-auto transition-all duration-200"
-            >
-              Simular escaneo 📷
-            </button>
-
-            <p className="text-center text-[#6E6E73] text-xs mt-3">
-              Ingresa un ID de restaurante para ver el menú
-            </p>
           </div>
-        </div>
-        <Footer />
-
-        <style>{`
-          .border-t-3 { border-top-width: 3px; }
-          .border-l-3 { border-left-width: 3px; }
-          .border-r-3 { border-right-width: 3px; }
-          .border-b-3 { border-bottom-width: 3px; }
-        `}</style>
-      </div>
-    );
-  }
-
-  const tema = menuData.restaurante?.tema || {};
-  const colorPrimario = tema.color_primario || '#2997FF';
-  const colorFondo = tema.color_fondo || '#000000';
-  const fuente = tema.fuente_familia || 'sans-serif';
-  const layout = tema.layout_type || 'TARJETAS_DETALLADAS';
-
-  return (
-    <div
-      className="bg-[#000000] text-[#F5F5F7] min-h-screen"
-      style={{ fontFamily: fuente }}
-    >
-      {/* Banner promocional */}
-      {tema.banner_promocional_activo && (
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center py-3 px-4 font-semibold text-sm text-white"
-          style={{ backgroundColor: colorPrimario }}
-        >
-          {tema.banner_promocional_texto || '¡Promoción especial!'}
         </motion.div>
-      )}
 
-      <Header />
+        <motion.h1 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-3xl font-black mb-4"
+        >
+          Escanea para comer
+        </motion.h1>
+        
+        <motion.p 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="text-[#A1A1A6] mb-10 leading-relaxed px-4"
+        >
+          Apunta con tu cámara al código QR de la mesa para ver el menú digital al instante.
+        </motion.p>
 
-      <div className="pt-16 pb-24 px-4 min-h-screen">
-        <div className="w-full max-w-2xl mx-auto">
-          {/* Portada + Logo + Nombre restaurante */}
-          <div className="mb-8">
-            {tema.banner_url && (
-              <img
-                src={tema.banner_url}
-                alt="Portada"
-                className="w-full h-40 object-cover rounded-t-apple-lg"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
-            )}
-            {tema.logo_url && (
-              <img
-                src={tema.logo_url}
-                alt="Logo"
-                className="w-20 h-20 rounded-full mx-auto -mt-10 border-4 object-cover bg-white"
-                style={{ borderColor: colorFondo }}
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
-            )}
+        <motion.button
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          onClick={handleSimularEscaneo}
+          disabled={scanning}
+          className="w-full py-5 bg-white text-black rounded-full font-black text-lg hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 shadow-xl"
+        >
+          {scanning ? 'Validando QR...' : 'Simular Escaneo 📷'}
+        </motion.button>
 
-            <div
-              className="rounded-apple-lg p-6 text-center mt-4 glass border border-white/[0.06]"
-            >
-              <div className="text-5xl mb-3">🌮</div>
-              <h1 className="text-2xl font-bold">{menuData.restaurante?.nombre}</h1>
-              {menuData.restaurante?.direccion && (
-                <p className="text-sm text-[#A1A1A6] mt-1">{menuData.restaurante.direccion}</p>
-              )}
-            </div>
-          </div>
-
-          {/* Categorías con layout dinámico */}
-          <div className="space-y-10">
-            {menuData.categorias?.map((categoria: any, idx: number) => (
-              <motion.div
-                key={categoria.nombre}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.1 }}
-              >
-                <div className="flex items-center gap-3 mb-4">
-                  <div
-                    className="w-1 h-6 rounded-apple-full"
-                    style={{ backgroundColor: colorPrimario }}
-                  />
-                  <h2 className="text-lg font-bold">{categoria.nombre}</h2>
-                </div>
-                <LayoutRenderer
-                  type={layout}
-                  platillos={categoria.platillos || []}
-                  colorPrimario={colorPrimario}
-                />
-              </motion.div>
-            ))}
-          </div>
-
-          {/* Footer note */}
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
-            className="text-center text-[#6E6E73] text-xs mt-12"
-          >
-            Menú digital por{' '}
-            <span className="text-gradient-apple font-bold">
-              MexxicanMX
-            </span>
-          </motion.p>
-        </div>
+        <motion.p 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="text-[#6E6E73] text-[10px] uppercase tracking-[0.2em] mt-8"
+        >
+          Seguro • Rápido • Sin Contacto
+        </motion.p>
       </div>
 
       <Footer />

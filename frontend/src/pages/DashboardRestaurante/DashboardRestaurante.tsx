@@ -1,133 +1,234 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Header } from '../components/Header';
-import { Footer } from '../components/Footer';
-import { authService } from '../../services/auth';
 import { restauranteService } from '../../services/restaurante';
+import { useRestaurant } from '../../context/RestaurantContext';
+import { LayoutDashboard, QrCode, Utensils, Zap, ExternalLink, Copy, Download, PlusCircle, ChevronRight } from 'lucide-react';
+import { getPublicMenuUrl } from '../../utils/menuUtils';
 
 export function DashboardRestaurante() {
   const navigate = useNavigate();
-  const [restauranteInfo, setRestauranteInfo] = useState<any>(null);
+  const { restaurant, limits, isPremium, loading: contextLoading } = useRestaurant();
   const [platillos, setPlatillos] = useState<any[]>([]);
+  const [qrData, setQrData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [info, platillosData] = await Promise.all([
-          restauranteService.getRestauranteInfo(),
+        const [platillosData, qrRes] = await Promise.all([
           restauranteService.getPlatillos(),
+          restauranteService.getQR().catch(() => null),
         ]);
-        setRestauranteInfo(info);
         setPlatillos(platillosData);
+        setQrData(qrRes);
       } catch (error) {
-        console.error('Error cargando datos:', error);
+        console.error('Error cargando dashboard:', error);
       } finally {
         setLoading(false);
       }
     };
-    fetchData();
-  }, []);
+    
+    if (!contextLoading) {
+      fetchData();
+    }
+  }, [contextLoading]);
 
-  if (loading) {
+  const handleDescargarQR = () => {
+    if (!qrData?.qr_base64) return;
+    const a = document.createElement('a');
+    a.href = qrData.qr_base64;
+    a.download = `qr-${restaurant?.nombre_negocio || 'restaurante'}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  if (contextLoading || loading) {
     return (
-      <div className="bg-[#000000] text-[#F5F5F7] min-h-screen flex items-center justify-center">
+      <div className="min-h-[80vh] flex items-center justify-center">
         <div className="text-center">
-          <motion.div className="text-4xl" animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 1 }}>
+          <motion.div 
+            className="text-5xl" 
+            animate={{ scale: [1, 1.2, 1], rotate: [0, 10, -10, 0] }} 
+            transition={{ repeat: Infinity, duration: 1.5 }}
+          >
             🌮
           </motion.div>
-          <p className="text-[#6E6E73] mt-2">Cargando...</p>
+          <p className="text-apple-text-tertiary mt-4 font-medium animate-pulse">Preparando tu dashboard...</p>
         </div>
       </div>
     );
   }
 
+  const stats = [
+    { label: 'Platillos en menú', value: platillos.length, icon: Utensils, color: 'text-apple-blue', bg: 'bg-apple-blue/10' },
+    { label: `Suscripción ${restaurant?.plan || 'estándar'}`, value: `${restaurant?.dias_restantes || 0} restantes`, icon: Zap, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+  ];
+
   return (
-    <div className="bg-black text-[#F5F5F7] min-h-screen">
-      <Header />
+    <div className="py-12 px-6 lg:px-12 max-w-[1400px] mx-auto min-h-screen">
+      <motion.div
+        className="mb-12"
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-2">
+          Hola, {restaurant?.nombre_negocio || 'Chef'} 👋
+        </h1>
+        <p className="text-lg text-apple-text-secondary dark:text-apple-dark-text-secondary font-medium">
+          Todo listo para gestionar <span className="text-apple-text dark:text-apple-dark-text font-bold">{restaurant?.nombre_negocio || 'tu restaurante'}</span>
+        </p>
+      </motion.div>
 
-      <div className="pt-24 pb-20 px-5 md:px-8 min-h-screen">
-        <div className="max-w-[1400px] mx-auto">
-          <motion.div
-            className="mb-12"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <h1 className="text-[2rem] md:text-[2.5rem] font-bold tracking-[-0.02em] mb-1">
-              Bienvenido, {restauranteInfo?.nombre_dueño}
-            </h1>
-            <p className="text-[#A1A1A6] text-[15px] tracking-[-0.01em]">
-              Gestiona tu menú, estadísticas y configuración aquí
-            </p>
-          </motion.div>
-
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-            <motion.div
-              className="glass rounded-lg p-6 border border-white/[0.08]"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.05 }}
-            >
-              <div className="text-3xl mb-3">🍽️</div>
-              <div className="text-[13px] text-[#A1A1A6] mb-1 font-500 tracking-[-0.01em]">Platillos activos</div>
-              <div className="text-4xl font-bold text-[#2997FF] tracking-[-0.02em]">{platillos.length}</div>
-            </motion.div>
-            <motion.div
-              className="glass rounded-lg p-6 border border-white/[0.08]"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-            >
-              <div className="text-3xl mb-3">📊</div>
-              <div className="text-[13px] text-[#A1A1A6] mb-1 font-500 tracking-[-0.01em]">Visualizaciones</div>
-              <div className="text-4xl font-bold text-[#FF6B35] tracking-[-0.02em]">--</div>
-            </motion.div>
-            <motion.div
-              className="glass rounded-lg p-6 border border-white/[0.08]"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15 }}
-            >
-              <div className="text-3xl mb-3">📷</div>
-              <div className="text-[13px] text-[#A1A1A6] mb-1 font-500 tracking-[-0.01em]">Código QR</div>
-              <div className="text-4xl font-bold text-[#2997FF] tracking-[-0.02em]">1</div>
-            </motion.div>
-          </div>
-
-          {/* Quick Actions */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-          >
-            <h2 className="text-[17px] font-600 tracking-[-0.015em] mb-4">Acciones rápidas</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <button
-                onClick={() => navigate('/dashboard/platillos/nuevo')}
-                className="p-4 rounded-lg bg-[#2997FF] text-white font-500 text-[15px] tracking-[-0.01em] hover:bg-[#40A9FF] transition-all duration-200 hover:shadow-[0_4px_16px_rgba(41,151,255,0.2)] hover:translate-y-[-2px]"
-              >
-                ➕ Nuevo platillo
-              </button>
-              <button
-                onClick={() => navigate('/dashboard/qr')}
-                className="p-4 rounded-lg border border-white/[0.10] font-semibold text-sm text-[#A1A1A6] hover:border-[#2997FF]/40 hover:text-[#F5F5F7] transition-all duration-200"
-              >
-                📷 Ver mi QR
-              </button>
-              <button
-                onClick={() => navigate('/dashboard/platillos')}
-                className="p-4 rounded-lg border border-white/[0.10] font-semibold text-sm text-[#A1A1A6] hover:border-[#2997FF]/40 hover:text-[#F5F5F7] transition-all duration-200"
-              >
-                📋 Gestionar menú
-              </button>
+      <div className="grid lg:grid-cols-3 gap-8">
+        {/* QR Section - Priority 1 */}
+        <motion.div 
+          className="lg:col-span-2 group relative p-10 rounded-[2.5rem] bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border shadow-apple-sm hover:shadow-apple-xl transition-all duration-500 overflow-hidden"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <div className="absolute top-0 right-0 w-80 h-80 bg-apple-blue/5 blur-[100px] group-hover:bg-apple-blue/10 transition-all duration-500" />
+          
+          <div className="flex flex-col md:flex-row gap-10 items-center relative z-10">
+            <div className="w-56 h-56 bg-white p-4 rounded-[2.5rem] shadow-apple-xl flex-shrink-0 group-hover:scale-105 transition-transform duration-500 flex items-center justify-center">
+              {qrData?.qr_base64 ? (
+                <img src={qrData.qr_base64} alt="Código QR" className="w-full h-full object-contain rounded-2xl" />
+              ) : (
+                <div className="w-full h-full bg-apple-bg-secondary rounded-2xl flex items-center justify-center border-2 border-dashed border-apple-border">
+                  <QrCode size={64} className="text-apple-text-tertiary" />
+                </div>
+              )}
             </div>
-          </motion.div>
+
+            <div className="flex-1 text-center md:text-left">
+              <h2 className="text-3xl font-bold mb-4 tracking-tight">Tu Puerta Digital</h2>
+              <p className="text-apple-text-secondary dark:text-apple-dark-text-secondary text-lg mb-8 leading-relaxed font-medium">
+                Tus clientes pueden ver tu menú escaneando este código. Colócalo en tus mesas para una experiencia premium.
+              </p>
+              
+              <div className="flex flex-wrap gap-3 justify-center md:justify-start">
+                <Link 
+                  to="/dashboard/qr"
+                  className="flex items-center gap-2 px-6 py-3 bg-apple-blue text-white font-bold rounded-2xl hover:bg-apple-blue-hover shadow-apple-glow transition-all active:scale-95"
+                >
+                  <ExternalLink size={18} />
+                  Ver QR
+                </Link>
+                <button 
+                  onClick={handleDescargarQR}
+                  className="flex items-center gap-2 px-6 py-3 bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border font-bold rounded-2xl hover:bg-apple-bg-tertiary transition-all active:scale-95 cursor-pointer"
+                >
+                  <Download size={18} />
+                  Descargar
+                </button>
+                <button 
+                  onClick={() => {
+                    const menuUrl = getPublicMenuUrl(restaurant?.id, qrData?.url_menu);
+                    navigator.clipboard.writeText(menuUrl);
+                    alert('URL copiada al portapapeles: ' + menuUrl);
+                  }}
+                  className="flex items-center gap-2 px-6 py-3 bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border font-bold rounded-2xl hover:bg-apple-bg-tertiary transition-all active:scale-95 cursor-pointer"
+                >
+                  <Copy size={18} />
+                  Copiar URL
+                </button>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Stats & Actions */}
+        <div className="space-y-6">
+          {stats.map((stat, i) => (
+            <motion.div
+              key={stat.label}
+              className="p-8 rounded-[2rem] bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border flex items-center gap-6 shadow-apple-sm group hover:shadow-apple-md transition-all duration-300"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 + (i * 0.1) }}
+            >
+              <div className={`w-16 h-16 rounded-2xl ${stat.bg} flex items-center justify-center ${stat.color} group-hover:scale-110 transition-transform duration-500`}>
+                <stat.icon size={28} />
+              </div>
+              <div>
+                <p className="text-[11px] text-apple-text-tertiary mb-0.5 font-black uppercase tracking-widest">{stat.label}</p>
+                <p className="text-3xl font-bold tracking-tight">{stat.value}</p>
+              </div>
+            </motion.div>
+          ))}
+
+          <Link
+            to="/dashboard/platillos/nuevo"
+            className="block p-8 rounded-[2rem] bg-apple-blue text-white shadow-apple-glow group hover:scale-[1.02] transition-all active:scale-[0.98]"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-white/20 rounded-xl">
+                <PlusCircle size={24} />
+              </div>
+              <ChevronRight className="opacity-60" size={24} />
+            </div>
+            <h3 className="text-xl font-bold mb-1">Nuevo Platillo</h3>
+            <p className="text-white/80 font-medium">Agrega algo nuevo hoy</p>
+          </Link>
         </div>
       </div>
 
-      <Footer />
+      {/* Quick Menu Overview */}
+      <motion.div
+        className="mt-12"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.5 }}
+      >
+        <div className="flex items-center justify-between mb-8 px-4">
+          <h2 className="text-2xl font-bold tracking-tight">Actividad reciente</h2>
+          <Link 
+            to="/dashboard/platillos"
+            className="text-apple-blue font-bold text-sm hover:underline flex items-center gap-1"
+          >
+            Ver todo el menú
+            <ChevronRight size={16} />
+          </Link>
+        </div>
+        
+        <div className="grid md:grid-cols-3 gap-6">
+          {platillos.slice(0, 3).map((platillo, i) => (
+            <div key={platillo.id} className="p-6 rounded-[2.5rem] bg-apple-bg-secondary/50 dark:bg-apple-dark-bg-secondary/50 border border-apple-border dark:border-apple-dark-border backdrop-blur-sm group hover:bg-apple-bg-secondary dark:hover:bg-apple-dark-bg-secondary transition-all">
+              <div className="w-full aspect-square rounded-2xl bg-apple-bg-tertiary mb-4 overflow-hidden border border-apple-border dark:border-apple-dark-border">
+                {platillo.url_imagen ? (
+                  <img src={platillo.url_imagen} alt={platillo.nombre} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-apple-text-tertiary">
+                    <Utensils size={32} />
+                  </div>
+                )}
+              </div>
+              <div className="flex justify-between items-start">
+                <div>
+                  <h4 className="font-bold text-lg mb-0.5">{platillo.nombre}</h4>
+                  <p className="text-apple-text-tertiary text-xs font-bold uppercase tracking-wider">{platillo.categoria}</p>
+                </div>
+                <p className="text-apple-blue font-black">{platillo.precio.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}</p>
+              </div>
+            </div>
+          ))}
+          {platillos.length === 0 && (
+            <div className="col-span-3 py-20 text-center rounded-[3rem] border-2 border-dashed border-apple-border bg-apple-bg-secondary/20">
+               <Utensils size={48} className="mx-auto text-apple-text-tertiary mb-4" />
+               <p className="text-apple-text-secondary text-lg font-medium">Aún no tienes platillos registrados.</p>
+               <Link 
+                to="/dashboard/platillos/nuevo"
+                className="mt-4 text-apple-blue font-bold inline-block hover:underline"
+               >
+                 Empieza agregando uno aquí →
+               </Link>
+            </div>
+          )}
+        </div>
+      </motion.div>
     </div>
   );
 }

@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Header } from '../components/Header';
-import { Footer } from '../components/Footer';
+import { useNavigate, Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { restauranteService } from '../../services/restaurante';
+import { Plus, Search, Edit2, Trash2, Eye, EyeOff, Utensils } from 'lucide-react';
 
 export function MiMenu() {
   const navigate = useNavigate();
   const [platillos, setPlatillos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [deletingId, setDeletingId] = useState<string | number | null>(null);
 
   useEffect(() => {
     cargarPlatillos();
@@ -25,10 +26,51 @@ export function MiMenu() {
     }
   };
 
+  const handleEliminar = async (id: string | number) => {
+    if (!window.confirm('¿Estás seguro de que deseas eliminar este platillo?')) return;
+    
+    setDeletingId(id);
+    try {
+      await restauranteService.eliminarPlatillo(id);
+      setPlatillos(prev => prev.filter(p => p.id !== id));
+    } catch (error) {
+      console.error('Error eliminando platillo:', error);
+      alert('No se pudo eliminar el platillo');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleToggleStatus = async (platillo: any) => {
+    try {
+      const formData = new FormData();
+      formData.append('activo', (!platillo.activo).toString());
+      await restauranteService.actualizarPlatillo(platillo.id, formData);
+      
+      setPlatillos(prev => prev.map(p => 
+        p.id === platillo.id ? { ...p, activo: !platillo.activo } : p
+      ));
+    } catch (error) {
+      console.error('Error actualizando estado:', error);
+    }
+  };
+
+  const filteredPlatillos = platillos.filter(p => 
+    p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (p.categoria && p.categoria.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
   if (loading) {
     return (
-      <div className="bg-[#000000] text-[#F5F5F7] min-h-screen flex items-center justify-center">
-        <motion.div className="text-4xl" animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 1 }}>
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <motion.div 
+          className="text-4xl" 
+          animate={{ 
+            scale: [1, 1.2, 1],
+            rotate: [0, 10, -10, 0]
+          }} 
+          transition={{ repeat: Infinity, duration: 1.5 }}
+        >
           🌮
         </motion.div>
       </div>
@@ -36,105 +78,139 @@ export function MiMenu() {
   }
 
   return (
-    <div className="bg-[#000000] text-[#F5F5F7] min-h-screen">
-      <Header />
-      <div className="pt-16 pb-20 px-4">
-        <div className="max-w-6xl mx-auto">
-          {/* Header */}
-          <div className="glass rounded-apple-lg p-6 md:p-8 mb-10 border border-white/[0.06]">
-            <div className="flex flex-col md:flex-row gap-6 justify-between items-center">
-              <div className="space-y-2 text-center md:text-left">
-                <span className="inline-flex items-center rounded-apple-full bg-[#2997FF]/10 px-3 py-1 text-sm font-semibold text-[#2997FF]">
-                  🌮 Menú del restaurante
-                </span>
-                <h1 className="text-3xl font-bold sm:text-4xl">Mi Menú</h1>
-                <p className="text-[#A1A1A6] max-w-xl leading-7">
-                  Aquí aparecen tus platillos registrados. Mira las imágenes, descripciones y precios, y administra tu menú con estilo.
-                </p>
-              </div>
-              <button
-                onClick={() => navigate('/dashboard/platillos/nuevo')}
-                className="btn-apple btn-apple-primary text-sm py-3 px-6 whitespace-nowrap"
-              >
-                + Agregar platillo
-              </button>
-            </div>
-          </div>
+    <div className="py-12 px-6 lg:px-12 max-w-[1400px] mx-auto min-h-screen">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+        <div>
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-2">Mi Menú</h1>
+          <p className="text-lg text-apple-text-secondary dark:text-apple-dark-text-secondary font-medium">
+            Administra tus platillos, precios y disponibilidad.
+          </p>
+        </div>
+        <Link
+          to="/dashboard/platillos/nuevo"
+          className="flex items-center gap-2 px-6 py-4 bg-apple-blue text-white font-bold rounded-2xl shadow-apple-md hover:bg-apple-blue-hover transition-all active:scale-95 text-center justify-center"
+        >
+          <Plus size={20} />
+          Nuevo Platillo
+        </Link>
+      </div>
 
-          {platillos.length === 0 ? (
-            <motion.div
-              className="glass rounded-apple-lg p-14 text-center border border-white/[0.06]"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <div className="text-6xl mb-4">🍽️</div>
-              <h2 className="text-2xl font-semibold mb-2">No tienes platillos registrados</h2>
-              <p className="text-[#A1A1A6] mb-6">Agrega tu primer platillo para que los clientes puedan empezar a ver tu menú.</p>
-              <button
-                onClick={() => navigate('/dashboard/platillos/nuevo')}
-                className="btn-apple btn-apple-primary text-sm py-3 px-6"
-              >
-                Agregar primer platillo
-              </button>
-            </motion.div>
-          ) : (
-            <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-              {platillos.map((platillo) => (
-                <motion.div
-                  key={platillo.id}
-                  className="group flex flex-col overflow-hidden rounded-apple-lg bg-[#1D1D1F] border border-white/[0.06] shadow-2xl transition-all duration-300 hover:-translate-y-1 hover:border-[#2997FF]/20 hover:shadow-[#2997FF]/5"
-                  initial={{ opacity: 0, y: 12 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                >
-                  <div className="relative h-56 sm:h-64 bg-white/[0.02]">
-                    {platillo.url_imagen ? (
-                      <img
-                        src={platillo.url_imagen}
-                        alt={platillo.nombre}
-                        className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                        loading="lazy"
-                        onError={(event) => {
-                          event.currentTarget.onerror = null;
-                          event.currentTarget.src = 'https://via.placeholder.com/600x400?text=Imagen+no+disponible';
-                        }}
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center text-5xl text-[#6E6E73]">🌮</div>
-                    )}
-                  </div>
-                  <div className="p-5 flex-1 flex flex-col justify-between">
-                    <div>
-                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                        <div>
-                          <h3 className="text-xl font-semibold text-[#F5F5F7]">{platillo.nombre}</h3>
-                          <p className="mt-1 text-sm text-[#A1A1A6]">{platillo.categoria || 'Sin categoría'}</p>
-                        </div>
-                        <span className="inline-flex rounded-apple-full bg-[#2997FF]/10 px-3 py-1 text-sm font-semibold text-[#2997FF]">
-                          ${platillo.precio}
-                        </span>
-                      </div>
-                      <p className="mt-4 min-h-[4rem] text-sm leading-6 text-[#A1A1A6]">
-                        {platillo.descripcion || 'Sin descripción disponible aún.'}
-                      </p>
-                    </div>
-                    <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-                      <button className="w-full rounded-apple-full border border-white/[0.10] bg-white/[0.02] px-4 py-3 text-sm text-[#F5F5F7] hover:border-[#2997FF]/40 hover:text-[#2997FF] transition-all duration-200">
-                        Editar
-                      </button>
-                      <button className="w-full rounded-apple-full border border-white/[0.10] bg-white/[0.02] px-4 py-3 text-sm text-[#A1A1A6] hover:border-white/[0.20] hover:text-[#F5F5F7] transition-all duration-200">
-                        Duplicar
-                      </button>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          )}
+      {/* Toolbar */}
+      <div className="flex flex-col md:flex-row gap-4 mb-8">
+        <div className="relative flex-1">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-apple-text-tertiary" size={20} />
+          <input 
+            type="text" 
+            placeholder="Buscar platillo o categoría..." 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-12 pr-4 py-3.5 bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border rounded-2xl focus:ring-2 focus:ring-apple-blue outline-none transition-all font-medium"
+          />
         </div>
       </div>
 
-      <Footer />
+      {filteredPlatillos.length === 0 ? (
+        <motion.div
+          className="py-24 text-center rounded-[3rem] bg-apple-bg-secondary/50 dark:bg-apple-dark-bg-secondary/50 border-2 border-dashed border-apple-border"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+        >
+          <div className="w-20 h-20 bg-apple-bg-tertiary rounded-full flex items-center justify-center mx-auto mb-6">
+            <Search size={32} className="text-apple-text-tertiary" />
+          </div>
+          <h2 className="text-2xl font-bold mb-2">No se encontraron platillos</h2>
+          <p className="text-apple-text-secondary mb-8 font-medium">Prueba con otro término o agrega uno nuevo.</p>
+          <Link
+            to="/dashboard/platillos/nuevo"
+            className="text-apple-blue font-bold text-lg hover:underline"
+          >
+            Agregar platillo ahora →
+          </Link>
+        </motion.div>
+      ) : (
+        <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
+          <AnimatePresence mode='popLayout'>
+            {filteredPlatillos.map((platillo, i) => (
+              <motion.div
+                key={platillo.id}
+                layout
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ delay: i * 0.05 }}
+                className={`group flex flex-col overflow-hidden rounded-[2.5rem] bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border shadow-apple-sm transition-all duration-500 hover:shadow-apple-xl hover:border-apple-blue/30 ${!platillo.activo ? 'opacity-75 grayscale-[0.5]' : ''}`}
+              >
+                <div className="relative h-64 overflow-hidden bg-apple-bg-tertiary">
+                  {platillo.url_imagen ? (
+                    <img
+                      src={platillo.url_imagen}
+                      alt={platillo.nombre}
+                      className="h-full w-full object-cover transition duration-700 group-hover:scale-110"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-apple-text-tertiary bg-apple-bg-tertiary">
+                      <Utensils size={64} />
+                    </div>
+                  )}
+                  <div className="absolute top-4 right-4 flex gap-2">
+                    <button 
+                      onClick={() => navigate(`/dashboard/platillos/editar/${platillo.id}`)}
+                      className="p-2.5 rounded-xl bg-black/40 backdrop-blur-md text-white border border-white/20 hover:bg-apple-blue transition-colors"
+                      title="Editar"
+                    >
+                      <Edit2 size={18} />
+                    </button>
+                    <button 
+                      onClick={() => handleEliminar(platillo.id)}
+                      disabled={deletingId === platillo.id}
+                      className="p-2.5 rounded-xl bg-black/40 backdrop-blur-md text-white border border-white/20 hover:bg-red-500 transition-colors disabled:opacity-50"
+                      title="Eliminar"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                  <div className="absolute bottom-4 left-4">
+                    <span className="px-3 py-1.5 rounded-lg bg-apple-blue text-white text-[12px] font-bold tracking-wider uppercase shadow-apple-glow">
+                      {platillo.categoria || 'General'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-8 flex-1 flex flex-col">
+                  <div className="flex justify-between items-start mb-4 gap-4">
+                    <h3 className="text-2xl font-bold tracking-tight group-hover:text-apple-blue transition-colors">{platillo.nombre}</h3>
+                    <span className="text-xl font-black text-apple-blue whitespace-nowrap">
+                      {platillo.precio.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}
+                    </span>
+                  </div>
+                  
+                  <p className="text-apple-text-secondary dark:text-apple-dark-text-secondary font-medium leading-relaxed mb-8 flex-1 line-clamp-3">
+                    {platillo.descripcion || 'Sin descripción disponible.'}
+                  </p>
+
+                  <div className="flex items-center justify-between pt-6 border-t border-apple-border dark:border-apple-dark-border">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${platillo.activo !== false ? 'bg-green-500' : 'bg-red-500'}`} />
+                      <span className="text-[13px] font-bold uppercase tracking-wider text-apple-text-tertiary">
+                        {platillo.activo !== false ? 'Disponible' : 'Pausado'}
+                      </span>
+                    </div>
+                    <button 
+                      onClick={() => handleToggleStatus(platillo)}
+                      className={`flex items-center gap-2 font-bold text-sm transition-colors ${platillo.activo !== false ? 'text-apple-text-secondary hover:text-red-500' : 'text-apple-blue hover:text-apple-blue-hover'}`}
+                    >
+                      {platillo.activo !== false ? <EyeOff size={16} /> : <Eye size={16} />}
+                      {platillo.activo !== false ? 'Pausar' : 'Activar'}
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+      )}
     </div>
   );
 }

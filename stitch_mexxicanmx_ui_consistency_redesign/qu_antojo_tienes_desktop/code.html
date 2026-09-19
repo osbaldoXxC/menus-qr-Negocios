@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MexxicanMX - ¿Qué antojo tienes?</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-variant": "#dbe4ed",
+                      "background": "#fdf8f5",
+                      "on-error-container": "#93000a",
+                      "inverse-on-surface": "#e9f2fb",
+                      "on-background": "#141d23",
+                      "on-primary-fixed-variant": "#832600",
+                      "secondary": "#5e5e5e",
+                      "error-container": "#ffdad6",
+                      "on-error": "#ffffff",
+                      "outline": "#e5e7eb",
+                      "surface": "#ffffff",
+                      "surface-dim": "#d2dbe4",
+                      "surface-container-lowest": "#ffffff",
+                      "primary-fixed": "#ffdbd0",
+                      "inverse-surface": "#293138",
+                      "tertiary-fixed-dim": "#c5c7c8",
+                      "on-primary-fixed": "#390c00",
+                      "on-primary": "#ffffff",
+                      "tertiary-container": "#989a9b",
+                      "on-secondary-fixed-variant": "#474747",
+                      "on-primary-container": "#5f1900",
+                      "inverse-primary": "#ffb59d",
+                      "on-tertiary-fixed-variant": "#454748",
+                      "surface-container-low": "#ecf5fe",
+                      "on-tertiary-container": "#2f3233",
+                      "error": "#ba1a1a",
+                      "outline-variant": "#e5e7eb",
+                      "on-secondary-container": "#646464",
+                      "primary-container": "#ff6b35",
+                      "surface-container": "#fdf8f5",
+                      "surface-container-highest": "#dbe4ed",
+                      "surface-tint": "#ab3500",
+                      "on-surface-variant": "#6b7280",
+                      "on-secondary": "#ffffff",
+                      "on-surface": "#1a1a1a",
+                      "secondary-container": "#f3f4f6",
+                      "secondary-fixed": "#e2e2e2",
+                      "primary-fixed-dim": "#ffb59d",
+                      "tertiary-fixed": "#e1e3e4",
+                      "on-tertiary-fixed": "#191c1d",
+                      "secondary-fixed-dim": "#c6c6c6",
+                      "primary": "#ff6b35",
+                      "on-tertiary": "#ffffff",
+                      "on-secondary-fixed": "#1b1b1b",
+                      "surface-container-high": "#e0e9f2",
+                      "surface-bright": "#ffffff",
+                      "tertiary": "#5c5f60"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "stack-gap-md": "1.5rem",
+                      "pill-padding-y": "0.75rem",
+                      "pill-padding-x": "1.25rem",
+                      "grid-gutter": "1rem",
+                      "stack-gap-lg": "2.5rem",
+                      "container-padding": "2rem"
+              },
+              "fontFamily": {
+                      "headline-md": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "label-sm": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "display-lg": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "body-md": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "display-lg-mobile": [
+                              "Plus Jakarta Sans"
+                      ]
+              },
+              "fontSize": {
+                      "headline-md": [
+                              "20px",
+                              {
+                                      "lineHeight": "1.4",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "label-sm": [
+                              "14px",
+                              {
+                                      "lineHeight": "1.2",
+                                      "letterSpacing": "0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "display-lg": [
+                              "36px",
+                              {
+                                      "lineHeight": "1.2",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "900"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "1.6",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "display-lg-mobile": [
+                              "28px",
+                              {
+                                      "lineHeight": "1.2",
+                                      "fontWeight": "900"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+      </style>
+</head>
+<body class="bg-gradient-to-br from-[#fff6f0] to-[#fdeae1] min-h-screen flex flex-col items-center">
+<!-- Progress Bar -->
+<div class="fixed top-0 left-0 w-full h-1.5 bg-secondary-container z-50">
+<div class="h-full bg-primary transition-all duration-700 ease-in-out" style="width: 25%;"></div>
+</div>
+<!-- Main Container -->
+<main class="flex-1 w-full max-w-7xl mx-auto flex flex-col items-center justify-center p-container-padding mt-8">
+<!-- Logo -->
+<div class="font-display-lg text-display-lg text-on-surface mb-stack-gap-lg">
+            MexxicanMX
+        </div>
+<!-- Onboarding Card -->
+<div class="w-full max-w-[560px] bg-surface rounded-[24px] p-stack-gap-lg shadow-[0_20px_40px_rgba(0,0,0,0.08)]">
+<!-- Header -->
+<div class="text-center mb-stack-gap-lg">
+<h1 class="font-display-lg text-display-lg hidden md:block text-on-surface mb-4">
+                    ¿Qué antojo tienes?
+                </h1>
+<h1 class="font-display-lg-mobile text-display-lg-mobile md:hidden text-on-surface mb-4">
+                    ¿Qué antojo tienes?
+                </h1>
+<p class="font-body-md text-body-md text-on-surface-variant">
+                    Describe con tus propias palabras lo que se te antoja comer hoy
+                </p>
+</div>
+<!-- Input Area -->
+<div class="mb-stack-gap-lg">
+<textarea class="w-full h-32 bg-secondary-container border-none rounded-[16px] p-4 font-body-md text-body-md text-on-surface placeholder-on-surface-variant focus:ring-2 focus:ring-primary resize-none" placeholder="Ej: 'Quiero algo caldosito y muy picante para revivir el alma...'"></textarea>
+</div>
+<!-- Quick Tags Grid -->
+<div class="grid grid-cols-2 md:grid-cols-3 gap-grid-gutter mb-stack-gap-lg">
+<button class="flex items-center justify-center py-pill-padding-y px-pill-padding-x rounded-full bg-surface border border-outline font-label-sm text-label-sm text-on-surface hover:bg-secondary-container transition-colors" type="button">
+                    Picante
+                </button>
+<!-- Selected Tag -->
+<button class="flex items-center justify-center py-pill-padding-y px-pill-padding-x rounded-full bg-primary/10 border-2 border-primary font-label-sm text-label-sm text-on-surface shadow-[0_4px_12px_rgba(255,107,53,0.15)] transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px] mr-1.5 text-primary" style="font-variation-settings: 'wght' 600;">check</span>
+                    Caldosito
+                </button>
+<button class="flex items-center justify-center py-pill-padding-y px-pill-padding-x rounded-full bg-surface border border-outline font-label-sm text-label-sm text-on-surface hover:bg-secondary-container transition-colors" type="button">
+                    Italiana
+                </button>
+<button class="flex items-center justify-center py-pill-padding-y px-pill-padding-x rounded-full bg-surface border border-outline font-label-sm text-label-sm text-on-surface hover:bg-secondary-container transition-colors" type="button">
+                    Japonesa
+                </button>
+<button class="flex items-center justify-center py-pill-padding-y px-pill-padding-x rounded-full bg-surface border border-outline font-label-sm text-label-sm text-on-surface hover:bg-secondary-container transition-colors" type="button">
+                    Mexicana
+                </button>
+<button class="flex items-center justify-center py-pill-padding-y px-pill-padding-x rounded-full bg-surface border border-outline font-label-sm text-label-sm text-on-surface hover:bg-secondary-container transition-colors" type="button">
+                    Rápida
+                </button>
+</div>
+<!-- Actions -->
+<div class="flex flex-col-reverse sm:flex-row gap-4 mt-stack-gap-lg pt-4">
+<button class="flex-1 py-3 px-6 rounded-[10px] bg-transparent border border-outline font-label-sm text-label-sm text-on-surface text-center hover:bg-secondary-container transition-colors" type="button">
+                    Cancelar
+                </button>
+<button class="flex-1 py-3 px-6 rounded-[10px] bg-primary text-white font-label-sm text-label-sm text-center shadow-md shadow-primary/20 hover:opacity-90 transition-opacity" type="button">
+                    Continuar
+                </button>
+</div>
+</div>
+</main>
+</body></html>

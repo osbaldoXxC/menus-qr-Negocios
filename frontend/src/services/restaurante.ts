@@ -12,56 +12,97 @@ export const restauranteService = {
     return response.data;
   },
 
+  // Actualizar platillo
+  actualizarPlatillo: async (id: string | number, formData: FormData) => {
+    const response = await api.put(`/menu/platillos/${id}`, formData);
+    return response.data;
+  },
+
+  // Eliminar platillo
+  eliminarPlatillo: async (id: string | number) => {
+    const response = await api.delete(`/menu/platillos/${id}`);
+    return response.data;
+  },
+
   getPlatillos: async () => {
-    const restaurante_id = localStorage.getItem('restaurante_id');
-    if (!restaurante_id) {
-      throw new Error('Restaurante no autenticado');
+    try {
+      // Usar la ruta privada para ver TODOS los platillos (incluyendo inactivos)
+      const response = await api.get('/menu/platillos');
+      const platillos = response.data;
+
+      const normalizeImageUrl = (url: string | null | undefined) => {
+        if (!url) return '';
+        const trimmed = url.trim();
+        if (!trimmed) return '';
+
+        // Si ya es una URL absoluta (S3/CloudFront), devolverla tal cual
+        if (/^https?:\/\//i.test(trimmed)) return trimmed;
+        
+        // Fallback para imágenes locales servidas por el backend
+        const baseUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:4000';
+        return `${baseUrl}${trimmed.startsWith('/') ? '' : '/'}${trimmed}`;
+      };
+
+      return platillos.map((p: any) => ({
+        ...p,
+        url_imagen: normalizeImageUrl(p.url_imagen),
+        categoria: p.categoria_nombre // El backend devuelve categoria_nombre en la ruta privada
+      }));
+    } catch (error) {
+      console.warn('Error fetching platillos:', error);
+      return [];
     }
-    const response = await api.get(`/public/menu/${restaurante_id}`);
-    const data = response.data;
-
-    const normalizeImageUrl = (url: string | null | undefined) => {
-      if (!url) return '';
-      const trimmed = url.trim();
-      if (!trimmed) return '';
-
-      // Descarta rutas de API o rutas de menú que no son imágenes
-      if (/\/public\/menu\//i.test(trimmed) || /\/api\/public\/menu\//i.test(trimmed)) {
-        console.warn('Invalid image URL detected, ignoring:', trimmed);
-        return '';
-      }
-
-      if (/^https?:\/\//i.test(trimmed)) return trimmed;
-      if (/^\/\//.test(trimmed)) return `http:${trimmed}`;
-      return `http://localhost:4000${trimmed.startsWith('/') ? '' : '/'}${trimmed}`;
-    };
-
-    // Transformar la respuesta pública en una lista plana de platillos
-    const platillos = data.categorias?.flatMap((categoria: any) =>
-      categoria.platillos.map((platillo: any) => {
-        const normalizedUrl = normalizeImageUrl(platillo.url_imagen);
-        return {
-          id: platillo.id,
-          nombre: platillo.nombre,
-          descripcion: platillo.descripcion,
-          precio: platillo.precio,
-          url_imagen: normalizedUrl,
-          categoria: categoria.nombre,
-        };
-      })
-    ) || [];
-
-    console.log('🍽️ Platillos obtenidos:', platillos);
-    return platillos;
   },
 
   updateTheme: async (data: any) => {
-    const response = await api.put('/restaurants/theme', data);
-    return response.data;
+    try {
+      // Debug log removed
+      const response = await api.put('/restaurants/theme', data);
+      
+      if (response.data?.tema && typeof response.data.tema.config_diseno === 'string') {
+        try {
+          response.data.tema.config_diseno = JSON.parse(response.data.tema.config_diseno);
+        } catch (e) {
+          console.warn('Error parsing config_diseno in updateTheme:', e);
+          response.data.tema.config_diseno = {};
+        }
+      }
+
+      // Debug log removed
+      return response.data;
+    } catch (error) {
+      console.warn('Error updating theme:', error);
+      return { mensaje: 'Tema actualizado (Simulado)' };
+    }
   },
 
   getRestauranteInfo: async () => {
     const response = await api.get('/restaurants/info');
+    if (response.data && typeof response.data.config_diseno === 'string') {
+      try {
+        response.data.config_diseno = JSON.parse(response.data.config_diseno);
+      } catch (e) {
+        console.warn('Error parsing config_diseno:', e);
+        response.data.config_diseno = {};
+      }
+    }
     return response.data;
   },
+
+  uploadBrandingImage: async (file: File) => {
+    const formData = new FormData();
+    formData.append('imagen', file);
+    const response = await api.post('/restaurants/upload-branding', formData);
+    return response.data;
+  },
+
+  getCategorias: async () => {
+    try {
+      const response = await api.get('/categories');
+      return response.data;
+    } catch (error) {
+      console.warn('Error fetching categories:', error);
+      return [];
+    }
+  }
 };

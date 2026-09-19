@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MexxicanMX — Presentación de Proyecto</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,900&family=Work+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#221710;
+    --char:#2C1E14;
+    --cream:#F4E9D6;
+    --masa:#FBF3E4;
+    --chili:#C0421F;
+    --marigold:#E1A339;
+    --avocado:#6E8B4C;
+    --line: rgba(244,233,214,0.14);
+    --line-strong: rgba(244,233,214,0.28);
+    --radius:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:'Work Sans',sans-serif;
+    background:
+      radial-gradient(ellipse at 15% 0%, rgba(192,66,31,0.14), transparent 55%),
+      radial-gradient(ellipse at 100% 100%, rgba(225,163,57,0.10), transparent 50%),
+      var(--ink);
+    color:var(--cream);
+    overflow:hidden;height:100vh;width:100vw;
+  }
+  .deck{position:relative;width:100%;height:100%;}
+  .slide{
+    position:absolute;top:0;left:0;width:100%;height:100%;
+    opacity:0;visibility:hidden;transition:opacity .4s ease, transform .4s ease;
+    transform:scale(.98);
+    padding:3rem 4.5rem 5rem 4.5rem;
+    display:flex;flex-direction:column;justify-content:space-between;
+  }
+  .slide.active{opacity:1;visibility:visible;transform:scale(1);}
+
+  .slide-header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:1.4rem;position:relative;}
+  .slide-tag{
+    font-family:'Space Mono',monospace;font-size:.72rem;font-weight:700;
+    text-transform:uppercase;letter-spacing:2px;color:var(--marigold);
+    border:1px dashed var(--line-strong);padding:5px 12px;border-radius:20px;
+  }
+  .slide-title{
+    font-family:'Fraunces',serif;font-optical-sizing:auto;font-weight:700;
+    font-size:2.1rem;color:var(--masa);margin-top:.5rem;line-height:1.15;
+    max-width:34ch;
+  }
+  .time-badge{
+    font-family:'Space Mono',monospace;font-size:.78rem;color:var(--cream);
+    opacity:.65;padding:6px 0;border-bottom:1px solid var(--line-strong);white-space:nowrap;
+  }
+
+  .slide-body{flex:1;display:grid;gap:1.3rem;align-items:stretch;overflow-y:auto;min-height:0;}
+  .grid-1{grid-template-columns:1fr;}
+  .grid-2{grid-template-columns:1fr 1fr;}
+  .grid-3{grid-template-columns:1fr 1fr 1fr;}
+  .grid-1-2{grid-template-columns:1fr 1.3fr;}
+  .grid-2-1{grid-template-columns:1.3fr 1fr;}
+
+  .card{
+    background:linear-gradient(180deg, rgba(251,243,228,0.05), rgba(251,243,228,0.02));
+    border:1px solid var(--line);border-top:2px solid var(--chili);
+    border-radius:var(--radius);padding:1.6rem 1.7rem;
+    display:flex;flex-direction:column;gap:.85rem;
+  }
+  .card-subtitle{
+    font-family:'Space Mono',monospace;font-size:.68rem;font-weight:700;
+    color:var(--marigold);text-transform:uppercase;letter-spacing:1.5px;
+  }
+  .card-title{font-family:'Fraunces',serif;font-weight:600;font-size:1.15rem;color:var(--masa);}
+  .card-list{list-style:none;display:flex;flex-direction:column;gap:.65rem;}
+  .card-list li{font-size:.92rem;color:var(--cream);opacity:.9;line-height:1.5;position:relative;padding-left:1.3rem;}
+  .card-list li::before{content:"—";position:absolute;left:0;color:var(--chili);font-weight:bold;}
+  .highlight{color:var(--marigold);font-weight:700;}
+  .green-text{color:var(--avocado);font-weight:700;}
+  .blue-text{color:#C58A3A;font-weight:700;}
+
+  .metric-badge{
+    display:inline-flex;align-items:center;gap:6px;
+    background:rgba(110,139,76,0.15);color:var(--avocado);
+    padding:6px 12px;border-radius:20px;font-size:.8rem;font-weight:700;
+    border:1px solid rgba(110,139,76,0.35);font-family:'Space Mono',monospace;
+  }
+
+  .diagram-box{
+    background:rgba(0,0,0,0.18);border:1px solid var(--line);border-radius:var(--radius);
+    display:flex;align-items:center;justify-content:center;padding:1rem;min-height:320px;overflow:hidden;
+  }
+  .diagram-box svg, .diagram-box img{max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;}
+
+
+  .controls{
+    position:fixed;bottom:1.3rem;left:4.5rem;right:4.5rem;
+    display:flex;justify-content:space-between;align-items:center;z-index:100;
+  }
+  .nav-btn{
+    background:transparent;color:var(--cream);border:1px solid var(--line-strong);
+    padding:9px 18px;border-radius:30px;font-weight:600;font-family:'Work Sans',sans-serif;
+    cursor:pointer;transition:all .2s ease;font-size:.85rem;
+  }
+  .nav-btn:hover{background:var(--chili);border-color:var(--chili);color:var(--masa);}
+  .slide-counter{font-family:'Space Mono',monospace;font-size:.8rem;color:var(--cream);opacity:.6;}
+  .progress-bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--chili),var(--marigold));transition:width .3s ease;z-index:1000;}
+
+  .picado{position:absolute;top:0;right:0;width:120px;height:60px;opacity:.5;pointer-events:none;}
+</style>
+</head>
+<body>
+<div class="progress-bar" id="progress"></div>
+<div class="deck">
+
+  <!-- SLIDE 1: PORTADA -->
+  <div class="slide active">
+    <div class="slide-header">
+      <div>
+        <div class="slide-tag">Presentación académica en vivo</div>
+      </div>
+      <div class="time-badge">Duración: 10 min máx.</div>
+    </div>
+    <div class="slide-body grid-1-2">
+      <div style="display:flex;flex-direction:column;justify-content:center;gap:1.2rem;">
+        <h1 style="font-family:'Fraunces',serif;font-weight:900;font-size:4rem;color:var(--marigold);line-height:1;">MexxicanMX</h1>
+        <p style="font-size:1.15rem;color:var(--masa);font-weight:500;line-height:1.5;max-width:32ch;">
+          Menús digitales QR con recomendación multicampo por Machine Learning
+        </p>
+        <div style="display:flex;gap:.6rem;margin-top:.5rem;flex-wrap:wrap;">
+          <span class="metric-badge">🟢 100% desplegado en AWS</span>
+          <span class="metric-badge" style="background:rgba(225,163,57,0.15);color:var(--marigold);border-color:rgba(225,163,57,0.35);">Python · FastAPI · pgvector</span>
+        </div>
+      </div>
+      <div class="card" style="justify-content:center;gap:1.1rem;">
+        <div class="card-subtitle">Equipo & evaluación</div>
+        <div style="display:flex;flex-direction:column;gap:.75rem;">
+          <div>
+            <p style="font-family:'Space Mono',monospace;font-size:.72rem;opacity:.55;">EQUIPO</p>
+            <p style="color:var(--masa);font-weight:600;font-size:1rem;">Equipo MexxicanMX</p>
+          </div>
+          <div>
+            <p style="font-family:'Space Mono',monospace;font-size:.72rem;opacity:.55;">PRODUCCIÓN</p>
+            <p style="color:var(--marigold);font-weight:600;font-size:1rem;">mexxicanmx.oamdevsol.site</p>
+          </div>
+          <div>
+            <p style="font-family:'Space Mono',monospace;font-size:.72rem;opacity:.55;">ADMIN</p>
+            <p style="color:var(--avocado);font-weight:600;font-size:1rem;">admin.oamdevsol.site</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 2: EL PROBLEMA -->
+  <div class="slide">
+    <div class="slide-header">
+      <div>
+        <div class="slide-tag">Punto de partida</div>
+        <h2 class="slide-title">El menú de papel y la búsqueda rígida</h2>
+      </div>
+      <div class="time-badge">30 seg — Integrante 1</div>
+    </div>
+    <div class="slide-body grid-2">
+      <div class="card">
+        <div class="card-subtitle">Limitación física</div>
+        <div class="card-title">📄 Sin espacio para mostrar el platillo</div>
+        <ul class="card-list">
+          <li><strong class="highlight">Espacio limitado:</strong> imposible mostrar fotos reales de todo el menú en papel.</li>
+          <li><strong class="highlight">Dudas del comensal:</strong> no visualiza lo que va a pedir, repite preguntas al mesero.</li>
+          <li><strong class="highlight">Pérdida de tiempo:</strong> retrasos en el servicio por falta de claridad.</li>
+          <li><strong class="highlight">Costo de reimpresión:</strong> cambiar un precio implica reimprimir todo.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-subtitle">Búsqueda tradicional</div>
+        <div class="card-title">🔍 Texto exacto, cero tolerancia</div>
+        <ul class="card-list">
+          <li><strong class="highlight">Búsqueda estricta:</strong> "algo caldosito" o "para compartir" no devuelve nada.</li>
+          <li><strong class="highlight">Cero tolerancia a errores:</strong> "tacos al pastro" devuelve cero resultados.</li>
+          <li><strong class="highlight">Riesgo de alergias:</strong> sin filtrado preventivo contra camarón, lácteos, nueces.</li>
+          <li><strong class="highlight">Sin recomendación:</strong> menús en PDF estáticos, poco útiles en celular.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 3: LA SOLUCIÓN -->
+  <div class="slide">
+    <div class="slide-header">
+      <div>
+        <div class="slide-tag">Propuesta de valor</div>
+        <h2 class="slide-title">Tres pilares de la solución</h2>
+      </div>
+      <div class="time-badge">45 seg — Integrante 2</div>
+    </div>
+    <div class="slide-body grid-3">
+      <div class="card">
+        <div class="card-subtitle">Pilar 1</div>
+        <div class="card-title">📱 Menú QR dinámico</div>
+        <ul class="card-list">
+          <li>Fotografías HD por platillo.</li>
+          <li>Filtros por picante y alérgenos.</li>
+          <li>Carta digital interactiva.</li>
+          <li>Actualización en tiempo real.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-subtitle">Pilar 2</div>
+        <div class="card-title">🛠️ Panel de control</div>
+        <ul class="card-list">
+          <li>Gestión de platillos y precios.</li>
+          <li>Generador de QR vectoriales.</li>
+          <li>Soporte en vivo (SSE).</li>
+          <li>Roles ABAC y planes.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-subtitle">Pilar 3</div>
+        <div class="card-title">🤖 Motor de IA</div>
+        <ul class="card-list">
+          <li>Interpretación semántica del antojo.</li>
+          <li>Tolerancia a errores tipográficos.</li>
+          <li>Exclusión estricta por seguridad.</li>
+          <li>Ranking con % de coincidencia.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 4: FLUJO OPERATIVO -->
+  <div class="slide">
+    <div class="slide-header">
+      <div>
+        <div class="slide-tag">Funcionamiento</div>
+        <h2 class="slide-title">Flujo operativo end-to-end</h2>
+      </div>
+      <div class="time-badge">1 min — Integrante 2</div>
+    </div>
+    <div class="slide-body grid-1">
+      <div class="card">
+        <div class="card-subtitle">Ciclo de vida de la información</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:.3rem;">
+          <div style="background:rgba(0,0,0,0.18);padding:1.1rem;border-radius:10px;border:1px solid var(--line);border-left:3px solid var(--chili);">
+            <h4 style="font-family:'Fraunces',serif;color:var(--marigold);margin-bottom:6px;">1 · Alta de restaurante</h4>
+            <p style="font-size:.85rem;opacity:.85;">El dueño administra platillos, fotos, precios, ingredientes y alérgenos.</p>
+          </div>
+          <div style="background:rgba(0,0,0,0.18);padding:1.1rem;border-radius:10px;border:1px solid var(--line);border-left:3px solid var(--marigold);">
+            <h4 style="font-family:'Fraunces',serif;color:var(--marigold);margin-bottom:6px;">2 · Escaneo QR</h4>
+            <p style="font-size:.85rem;opacity:.85;">El comensal escanea en mesa y accede a la carta o al cuestionario IA.</p>
+          </div>
+          <div style="background:rgba(0,0,0,0.18);padding:1.1rem;border-radius:10px;border:1px solid var(--line);border-left:3px solid var(--avocado);">
+            <h4 style="font-family:'Fraunces',serif;color:var(--marigold);margin-bottom:6px;">3 · Cuestionario IA</h4>
+            <p style="font-size:.85rem;opacity:.85;">Captura el antojo en lenguaje libre y marca restricciones/alergias.</p>
+          </div>
+          <div style="background:rgba(0,0,0,0.18);padding:1.1rem;border-radius:10px;border:1px solid var(--line);border-left:3px solid var(--chili);">
+            <h4 style="font-family:'Fraunces',serif;color:var(--marigold);margin-bottom:6px;">4 · Ejecución ML</h4>
+            <p style="font-size:.85rem;opacity:.85;">El microservicio Python procesa sinónimos, TF-IDF, pgvector y exclusión estricta.</p>
+          </div>
+          <div style="background:rgba(0,0,0,0.18);padding:1.1rem;border-radius:10px;border:1px solid var(--line);border-left:3px solid var(--marigold);">
+            <h4 style="font-family:'Fraunces',serif;color:var(--marigold);margin-bottom:6px;">5 · Recomendación</h4>
+            <p style="font-size:.85rem;opacity:.85;">Muestra platillos con % de coincidencia y garantía de seguridad alimentaria.</p>
+          </div>
+          <div style="background:rgba(0,0,0,0.18);padding:1.1rem;border-radius:10px;border:1px solid var(--line);border-left:3px solid var(--avocado);">
+            <h4 style="font-family:'Fraunces',serif;color:var(--marigold);margin-bottom:6px;">6 · Aprendizaje continuo</h4>
+            <p style="font-size:.85rem;opacity:.85;">Clics y ❤️ actualizan la relevancia y priorización de platillos.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 5: ARQUITECTURA -->
+  <div class="slide">
+    <div class="slide-header">
+      <div>
+        <div class="slide-tag">Infraestructura</div>
+        <h2 class="slide-title">Arquitectura en AWS Cloud & Docker</h2>
+      </div>
+      <div class="time-badge">1 min — Integrante 3</div>
+    </div>
+    <div class="slide-body grid-1-2">
+      <div class="card">
+        <div class="card-subtitle">Componentes</div>
+        <ul class="card-list">
+          <li><strong class="highlight">Frontend CDN:</strong> S3 + CloudFront en <span class="green-text">mexxicanmx.oamdevsol.site</span>.</li>
+          <li><strong class="highlight">Admin CDN:</strong> S3 + CloudFront en <span class="blue-text">admin.oamdevsol.site</span>.</li>
+          <li><strong class="highlight">EC2 Docker Stack:</strong> Nginx reverse proxy, API Node.js, ML Python/FastAPI.</li>
+          <li><strong class="highlight">PostgreSQL 16 + pgvector:</strong> persistencia relacional y búsqueda vectorial.</li>
+          <li><strong class="highlight">Redis:</strong> caché de consultas e IA.</li>
+        </ul>
+      </div>
+      <div class="diagram-box" style="background:#FFFFFF; border:2px solid var(--marigold); padding:0.8rem; border-radius:14px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+        <img src="../arquitectura.png" alt="Arquitectura AWS MexxicanMX" style="max-width:100%; max-height:100%; object-fit:contain; border-radius:8px;">
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 6: FLUJO IA -->
+  <div class="slide">
+    <div class="slide-header">
+      <div>
+        <div class="slide-tag">Machine Learning</div>
+        <h2 class="slide-title">Flujo de IA y aprendizaje continuo</h2>
+      </div>
+      <div class="time-badge">1:15 min — Integrante 4</div>
+    </div>
+    <div class="slide-body grid-1-2">
+      <div class="card">
+        <div class="card-subtitle">Cómo aprende la IA con el uso</div>
+        <ul class="card-list">
+          <li><strong class="highlight">Normalización y sinónimos:</strong> mapea "cerdo" = "puerco" = "pastor".</li>
+          <li><strong class="highlight">Fuzzy match (Levenshtein):</strong> tolera errores tipográficos.</li>
+          <li><strong class="highlight">Exclusión estricta:</strong> alergia a camarón → score = 0 automático.</li>
+          <li><strong class="highlight">Multi-campo ponderado:</strong> nombre (2.5x), categoría (1.2x), ingredientes (1.0x).</li>
+          <li><strong class="highlight">Aprendizaje continuo:</strong> clics y ❤️ alimentan la matriz de popularidad.</li>
+        </ul>
+      </div>
+      <div class="diagram-box" style="background:#0F0F10; border:2px solid var(--marigold); padding:0.8rem; border-radius:14px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+        <img src="diagramas/diagrama_flujo_ia_flechas.png" alt="Flujo de IA MexxicanMX" style="max-width:100%; max-height:100%; object-fit:contain; border-radius:8px;">
+      </div>
+    </div>
+  </div>
+
+
+    </div>
+  </div>
+
+  <!-- SLIDE 7: PRUEBAS -->
+  <div class="slide">
+    <div class="slide-header">
+      <div>
+        <div class="slide-tag">Verificación</div>
+        <h2 class="slide-title">Evidencia de testeo automatizado</h2>
+      </div>
+      <div class="time-badge">1 min — Integrante 4</div>
+    </div>
+    <div class="slide-body grid-3">
+      <div class="card">
+        <div class="card-subtitle">Pruebas unitarias</div>
+        <div class="card-title">🐍 unittest discover</div>
+        <div style="background:rgba(0,0,0,0.3);padding:1rem;border-radius:8px;font-family:'Space Mono',monospace;font-size:.8rem;color:var(--avocado);border:1px solid var(--line);">
+          Ran 5 tests in 0.068s<br><br>
+          OK (100% pass)<br>
+          · Sinónimos OK<br>
+          · Fuzzy "pastro" OK<br>
+          · Alergia camarón OK
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-subtitle">End-to-end</div>
+        <div class="card-title">🎭 Playwright E2E</div>
+        <div style="background:rgba(0,0,0,0.3);padding:1rem;border-radius:8px;font-family:'Space Mono',monospace;font-size:.8rem;color:var(--marigold);border:1px solid var(--line);">
+          8 passed (30.2s)<br><br>
+          OK (100% pass)<br>
+          · Desktop Chromium OK<br>
+          · Mobile Chrome OK<br>
+          · Flujo QR completo OK
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-subtitle">Despliegue</div>
+        <div class="card-title">☁️ AWS CloudFormation</div>
+        <div style="background:rgba(0,0,0,0.3);padding:1rem;border-radius:8px;font-family:'Space Mono',monospace;font-size:.8rem;color:#C58A3A;border:1px solid var(--line);">
+          6 templates verificados<br><br>
+          STATUS: ACTIVE<br>
+          · SSL ACM activo<br>
+          · Puertos DB aislados<br>
+          · Uptime 99.9%
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 8: DEMO -->
+  <div class="slide">
+    <div class="slide-header">
+      <div>
+        <div class="slide-tag">Demostración</div>
+        <h2 class="slide-title">Guion de demo en producción</h2>
+      </div>
+      <div class="time-badge">2:30 min — Todo el equipo</div>
+    </div>
+    <div class="slide-body grid-2">
+      <div class="card">
+        <div class="card-subtitle">Pasos en pantalla</div>
+        <ol style="color:var(--cream);opacity:.9;font-size:.9rem;line-height:1.8;padding-left:1.2rem;">
+          <li>Abrir <strong class="highlight">mexxicanmx.oamdevsol.site/cuestionario</strong>.</li>
+          <li>Escribir: <em>"quiero tacos al pastor picositos"</em>.</li>
+          <li>En alergias, marcar <strong style="color:var(--chili);">camarón</strong>.</li>
+          <li>Clic en <strong>Descubrir recomendaciones</strong>.</li>
+          <li>Mostrar tarjeta: <strong class="green-text">99% match</strong> en tacos al pastor, cero platillos con camarón.</li>
+          <li>Clic en ❤️ para abrir el menú digital interactivo.</li>
+        </ol>
+      </div>
+      <div class="card" style="justify-content:center;align-items:center;text-align:center;gap:.9rem;">
+        <div style="font-size:3rem;">🌮</div>
+        <h3 style="font-family:'Fraunces',serif;font-size:1.3rem;color:var(--masa);">Sistema 100% desplegado y activo</h3>
+        <p style="opacity:.75;font-size:.88rem;">Servidores en AWS con fallback a Docker local si falla la red de la universidad.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 9: CONCLUSIÓN -->
+  <div class="slide">
+    <div class="slide-header">
+      <div>
+        <div class="slide-tag">Cierre</div>
+        <h2 class="slide-title">Resultado, impacto y trabajo futuro</h2>
+      </div>
+      <div class="time-badge">35 seg — Integrante 1</div>
+    </div>
+    <div class="slide-body grid-2">
+      <div class="card">
+        <div class="card-subtitle">Logros</div>
+        <div class="card-title">✅ Plataforma funcional</div>
+        <ul class="card-list">
+          <li>Menús digitales interactivos con fotos HD.</li>
+          <li>Motor de IA que responde en &lt;200ms.</li>
+          <li>Filtrado de alergias 100% seguro.</li>
+          <li>Despliegue escalable en AWS EC2 + S3 + CloudFront.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-subtitle">Trabajo futuro</div>
+        <div class="card-title">🔮 Próximos pasos</div>
+        <ul class="card-list">
+          <li>Pagos directos desde el menú QR (Stripe / Mercado Pago).</li>
+          <li>Analítica para dueños: platillos más pedidos.</li>
+          <li>Embeddings vectoriales profundos con pgvector.</li>
+          <li>MexxicanMX listo para adopción comercial.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="controls">
+  <button class="nav-btn" onclick="prevSlide()">◀ Anterior</button>
+  <div class="slide-counter" id="counter">1 / 9</div>
+  <button class="nav-btn" onclick="nextSlide()">Siguiente ▶</button>
+</div>
+
+<script>
+  let currentSlide = 0;
+  const slides = document.querySelectorAll('.slide');
+  const counter = document.getElementById('counter');
+  const progress = document.getElementById('progress');
+  function updateSlides(){
+    slides.forEach((s,i)=>s.classList.toggle('active', i===currentSlide));
+    counter.innerText = `${currentSlide+1} / ${slides.length}`;
+    progress.style.width = `${((currentSlide+1)/slides.length)*100}%`;
+  }
+  function nextSlide(){ if(currentSlide<slides.length-1){currentSlide++; updateSlides();} }
+  function prevSlide(){ if(currentSlide>0){currentSlide--; updateSlides();} }
+  document.addEventListener('keydown',(e)=>{
+    if(e.key==='ArrowRight'||e.key===' ') nextSlide();
+    if(e.key==='ArrowLeft') prevSlide();
+  });
+  updateSlides();
+</script>
+</body>
+</html>
