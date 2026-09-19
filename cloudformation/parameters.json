@@ -21,19 +21,19 @@
   },
   {
     "ParameterKey": "AdminDomainName",
-    "ParameterValue": "admin.oamdevsol.site"
+    "ParameterValue": "panel.oamdevsol.site"
   },
   {
     "ParameterKey": "RestaurantDomainName",
-    "ParameterValue": "mexxicanmx.oamdevsol.site"
+    "ParameterValue": "app.oamdevsol.site"
   },
   {
     "ParameterKey": "ImagesDomainName",
-    "ParameterValue": "images.oamdevsol.site"
+    "ParameterValue": "cdn.oamdevsol.site"
   },
   {
     "ParameterKey": "AcmCertificateArn",
-    "ParameterValue": ""
+    "ParameterValue": "arn:aws:acm:us-east-1:256663926988:certificate/2e2ec23a-21e1-4c8b-bdbb-9c4a6f1d211b"
   },
   {
     "ParameterKey": "InstanceType",

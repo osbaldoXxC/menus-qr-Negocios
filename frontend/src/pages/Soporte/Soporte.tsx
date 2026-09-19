@@ -70,7 +70,7 @@ export function Soporte() {
     const token = localStorage.getItem('access_token');
     if (!token) return;
 
-    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
     let eventSource = new EventSource(`${API_BASE_URL}/support/stream?token=${token}`);
 
     const connectSSE = () => {

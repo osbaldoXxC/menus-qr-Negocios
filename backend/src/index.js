@@ -12,6 +12,13 @@ const PORT = process.env.PORT || 4000;
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   process.env.ADMIN_URL,
+  'https://app.oamdevsol.site',
+  'https://panel.oamdevsol.site',
+  'https://backend.oamdevsol.site',
+  'https://cdn.oamdevsol.site',
+  'https://mexxicanmx.oamdevsol.site',
+  'https://admin.oamdevsol.site',
+  'https://oamdevsol.site',
   'http://localhost:3000',
   'http://127.0.0.1:3000',
   'http://localhost:3001',
@@ -118,11 +125,26 @@ app.use('/api/categories', restaurantLimiter, require('./routes/categoryRoutes')
 app.use('/api/restaurants', restaurantLimiter, require('./routes/restaurantRoutes'));
 app.use('/api/admin', restaurantLimiter, require('./routes/adminRoutes'));
 app.use('/api/public/menu', publicMenuLimiter, require('./routes/publicRoutes'));
+app.use('/api/public', publicMenuLimiter, require('./routes/publicRoutes'));
 app.use('/api/search', restaurantLimiter, require('./routes/searchRoutes'));
 app.use('/api/support', supportLimiter, require('./routes/supportRoutes'));
 
 app.get('/', (req, res) => {
   res.json({ message: 'MexxicanMX Backend API is running' });
+});
+
+app.get('/health', async (req, res) => {
+  try {
+    const dbRes = await dbConfig.query('SELECT 1 as healthy');
+    res.json({
+      status: 'UP',
+      service: 'MexxicanMX API',
+      database: dbRes.rows[0].healthy === 1 ? 'connected' : 'unknown',
+      timestamp: new Date().toISOString()
+    });
+  } catch (err) {
+    res.status(500).json({ status: 'DOWN', error: err.message });
+  }
 });
 
 // Start Server

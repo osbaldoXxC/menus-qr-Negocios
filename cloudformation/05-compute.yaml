@@ -102,7 +102,7 @@ Resources:
 
           # 1. Actualización e instalación de herramientas base
           apt-get update -y
-          apt-get install -y curl ca-certificates gnupg lsb-release git nginx jq
+          apt-get install -y curl ca-certificates gnupg lsb-release git nginx jq unzip awscli
 
           # 2. Instalación de Docker y Docker Compose (Plugin V2)
           mkdir -p /etc/apt/keyrings

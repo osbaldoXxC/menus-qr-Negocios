@@ -284,7 +284,7 @@ const getPublicMenu = async (req, res) => {
                 t.config_diseno
          FROM restaurantes r
          LEFT JOIN configuracion_tema t ON r.id = t.restaurante_id
-         WHERE LOWER(r.nombre_negocio) LIKE LOWER('%' || $1 || '%') OR r.id::text = $1`,
+         WHERE r.slug = $1 OR LOWER(r.nombre_negocio) LIKE LOWER('%' || $1 || '%') OR r.id::text = $1`,
         [restaurant_id]
       );
     }
@@ -445,7 +445,7 @@ const getPublicRecommendations = async (req, res) => {
       );
     } else {
       restRes = await db.query(
-        `SELECT id, nombre_negocio, suscripcion_activa, slug FROM restaurantes WHERE LOWER(nombre_negocio) LIKE LOWER('%' || $1 || '%') OR id::text = $1`,
+        `SELECT id, nombre_negocio, suscripcion_activa, slug FROM restaurantes WHERE slug = $1 OR LOWER(nombre_negocio) LIKE LOWER('%' || $1 || '%') OR id::text = $1`,
         [restaurant_id]
       );
     }
@@ -474,7 +474,7 @@ const getPublicRecommendations = async (req, res) => {
     );
 
     const candidateDishes = dishesRes.rows;
-    const frontendBaseUrl = process.env.FRONTEND_URL || 'https://mexxicanmx.oamdevsol.site';
+    const frontendBaseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
     const menuSlug = restInfo.slug || realRestaurantId;
     const menuUrl = `${frontendBaseUrl}/menu/${menuSlug}`;
 
@@ -495,7 +495,7 @@ const getPublicRecommendations = async (req, res) => {
     };
 
     const mlServiceUrl = process.env.ML_SERVICE_URL || 'http://ml-service:8000';
-    const timeoutMs = parseInt(process.env.ML_SERVICE_TIMEOUT) || 4000;
+    const timeoutMs = parseInt(process.env.ML_SERVICE_TIMEOUT) || 12000;
 
     try {
       const mlResponse = await axios.post(`${mlServiceUrl}/recommendations`, mlPayload, { timeout: timeoutMs });
@@ -557,11 +557,116 @@ const getPublicRecommendations = async (req, res) => {
   }
 };
 
+const getGlobalRecommendations = async (req, res) => {
+  try {
+    const { craving = {}, diet = 'none', allergies = [], socialContext = 'solo', limit = 6 } = req.body || {};
+
+    // Obtener platillos activos de TODOS los restaurantes con suscripción activa
+    const dishesRes = await db.query(
+      `SELECT p.id, p.nombre, p.descripcion, p.precio, p.url_imagen, p.activo,
+              p.ingredientes_principales, p.complementos, p.nivel_picante, p.porcion, p.etiquetas_dieteticas,
+              c.nombre as categoria_nombre,
+              r.id as restaurante_id, r.nombre_negocio as restaurante_nombre, r.slug as restaurante_slug
+       FROM platillos p
+       JOIN restaurantes r ON p.restaurante_id = r.id
+       LEFT JOIN categorias_restaurante c ON p.categoria_id = c.id
+       WHERE p.activo = true AND r.suscripcion_activa = true
+       ORDER BY p.created_at DESC`
+    );
+
+    const candidateDishes = dishesRes.rows;
+    const frontendBaseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+
+    const dishesWithRestInfo = candidateDishes.map(d => {
+      const slug = d.restaurante_slug || d.restaurante_id;
+      return {
+        ...d,
+        restaurante_id: d.restaurante_id,
+        restaurante_nombre: d.restaurante_nombre,
+        restaurante_slug: slug,
+        menuUrl: `${frontendBaseUrl}/menu/${slug}`
+      };
+    });
+
+    const mlPayload = {
+      restaurant_id: 'global',
+      craving: craving || {},
+      diet: diet || 'none',
+      allergies: Array.isArray(allergies) ? allergies : [],
+      socialContext: socialContext || 'solo',
+      limit: parseInt(limit) || 6,
+      dishes: dishesWithRestInfo
+    };
+
+    const mlServiceUrl = process.env.ML_SERVICE_URL || 'http://ml-service:8000';
+    const timeoutMs = parseInt(process.env.ML_SERVICE_TIMEOUT) || 12000;
+
+    try {
+      const mlResponse = await axios.post(`${mlServiceUrl}/recommendations`, mlPayload, { timeout: timeoutMs });
+      if (mlResponse.data && Array.isArray(mlResponse.data.recommendations)) {
+        return res.json(mlResponse.data);
+      }
+    } catch (mlErr) {
+      console.warn(`[ML Service Fallback Global] Error llamando a Python ML (${mlServiceUrl}):`, mlErr.message);
+    }
+
+    // Fallback heurístico global si el microservicio Python no responde
+    const safeDishes = dishesWithRestInfo.filter(d => {
+      const text = `${d.nombre} ${d.descripcion} ${(d.ingredientes_principales||[]).join(' ')}`.toLowerCase();
+      if (allergies.some(a => text.includes(a.toLowerCase()))) return false;
+      return true;
+    });
+
+    const recommendations = safeDishes.slice(0, parseInt(limit) || 6).map((d, index) => {
+      const score = Math.max(0.70, Number((0.99 - (index * 0.03)).toFixed(2)));
+      return {
+        dish: {
+          id: d.id,
+          nombre: d.nombre,
+          descripcion: d.descripcion || '',
+          precio: parseFloat(d.precio) || 0,
+          url_imagen: d.url_imagen || '',
+          nivel_picante: d.nivel_picante || 0,
+          porcion: d.porcion || '',
+          categoria_nombre: d.categoria_nombre || '',
+          etiquetas_dieteticas: d.etiquetas_dieteticas || [],
+          ingredientes_principales: d.ingredientes_principales || []
+        },
+        restaurant: {
+          id: d.restaurante_id,
+          name: d.restaurante_nombre,
+          slug: d.restaurante_slug,
+          menuUrl: d.menuUrl
+        },
+        matchScore: score,
+        matchPercentage: Math.round(score * 100),
+        reasons: ["⭐ Platillo recomendado para tu antojo", "✅ Compatible con tus restricciones alimenticias"],
+        tags: d.etiquetas_dieteticas || (d.ingredientes_principales ? d.ingredientes_principales.slice(0, 3) : [])
+      };
+    });
+
+    return res.json({
+      recommendations,
+      meta: {
+        restaurant_id: 'global',
+        totalCandidates: candidateDishes.length,
+        recommendedCount: recommendations.length,
+        fallback: true
+      }
+    });
+
+  } catch (error) {
+    console.error('Error en getGlobalRecommendations:', error);
+    res.status(500).json({ mensaje: 'Error procesando recomendaciones globales' });
+  }
+};
+
 module.exports = {
   createDish,
   updateDish,
   deleteDish,
   getPublicMenu,
   getDishes,
-  getPublicRecommendations
+  getPublicRecommendations,
+  getGlobalRecommendations
 };

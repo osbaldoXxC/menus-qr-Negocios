@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Alergias e Intolerancias - Onboarding</title>
+<!-- Google Fonts: Plus Jakarta Sans & Material Symbols -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-variant": "#dbe4ed",
+                    "background": "#f6faff",
+                    "on-error-container": "#93000a",
+                    "inverse-on-surface": "#e9f2fb",
+                    "on-background": "#141d23",
+                    "on-primary-fixed-variant": "#832600",
+                    "secondary": "#5e5e5e",
+                    "error-container": "#ffdad6",
+                    "on-error": "#ffffff",
+                    "outline": "#8d7168",
+                    "surface": "#f6faff",
+                    "surface-dim": "#d2dbe4",
+                    "surface-container-lowest": "#ffffff",
+                    "primary-fixed": "#ffdbd0",
+                    "inverse-surface": "#293138",
+                    "tertiary-fixed-dim": "#c5c7c8",
+                    "on-primary-fixed": "#390c00",
+                    "on-primary": "#ffffff",
+                    "tertiary-container": "#989a9b",
+                    "on-secondary-fixed-variant": "#474747",
+                    "on-primary-container": "#5f1900",
+                    "inverse-primary": "#ffb59d",
+                    "on-tertiary-fixed-variant": "#454748",
+                    "surface-container-low": "#ecf5fe",
+                    "on-tertiary-container": "#2f3233",
+                    "error": "#ba1a1a",
+                    "outline-variant": "#e1bfb5",
+                    "on-secondary-container": "#646464",
+                    "primary-container": "#ff6b35",
+                    "surface-container": "#e6eff8",
+                    "surface-container-highest": "#dbe4ed",
+                    "surface-tint": "#ab3500",
+                    "on-surface-variant": "#594139",
+                    "on-secondary": "#ffffff",
+                    "on-surface": "#141d23",
+                    "secondary-container": "#e2e2e2",
+                    "secondary-fixed": "#e2e2e2",
+                    "primary-fixed-dim": "#ffb59d",
+                    "tertiary-fixed": "#e1e3e4",
+                    "on-tertiary-fixed": "#191c1d",
+                    "secondary-fixed-dim": "#c6c6c6",
+                    "primary": "#ab3500",
+                    "on-tertiary": "#ffffff",
+                    "on-secondary-fixed": "#1b1b1b",
+                    "surface-container-high": "#e0e9f2",
+                    "surface-bright": "#f6faff",
+                    "tertiary": "#5c5f60"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "2xl": "1rem",
+                    "3xl": "1.5rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-gap-md": "1.5rem",
+                    "pill-padding-y": "0.75rem",
+                    "pill-padding-x": "1.25rem",
+                    "grid-gutter": "1rem",
+                    "stack-gap-lg": "2.5rem",
+                    "container-padding": "2rem"
+            },
+            "fontFamily": {
+                    "headline-md": ["Plus Jakarta Sans"],
+                    "label-sm": ["Plus Jakarta Sans"],
+                    "display-lg": ["Plus Jakarta Sans"],
+                    "body-md": ["Plus Jakarta Sans"],
+                    "display-lg-mobile": ["Plus Jakarta Sans"]
+            },
+            "fontSize": {
+                    "headline-md": ["20px", { "lineHeight": "1.4", "fontWeight": "700" }],
+                    "label-sm": ["14px", { "lineHeight": "1.2", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                    "display-lg": ["32px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                    "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "500" }],
+                    "display-lg-mobile": ["28px", { "lineHeight": "1.2", "fontWeight": "800" }]
+            }
+          }
+        }
+      }
+    </script>
+</head>
+<body class="bg-gradient-to-br from-[#fff7f5] to-[#ffece6] min-h-screen flex items-center justify-center p-6 md:p-12 font-body-md text-body-md text-on-background selection:bg-primary-container selection:text-white">
+<!-- Main Modal Card Container -->
+<main class="w-full max-w-[560px] bg-white rounded-3xl overflow-hidden relative shadow-[0_20px_40px_rgba(0,0,0,0.08)] flex flex-col mx-auto border border-[#f0f0f0]">
+<!-- Persistent Top Progress Bar -->
+<div class="h-2 w-full bg-[#f0f0f0] relative z-10">
+<div class="h-full bg-[#ff6b35] w-[75%] rounded-r-full transition-all duration-700 ease-out shadow-[0_2px_10px_rgba(255,107,53,0.2)]"></div>
+</div>
+<div class="p-8 flex flex-col gap-10 mt-2">
+<!-- Header Section -->
+<header class="flex flex-col gap-3 items-center text-center px-2">
+<h1 class="font-display-lg text-[32px] md:text-[40px] font-[900] text-[#1a1a1a] tracking-tight">
+                    Alergias e intolerancias
+                </h1>
+<p class="font-body-md text-[16px] text-[#5e5e5e] max-w-[400px]">
+                    Selecciona si tienes alguna. La IA adaptará las recomendaciones para tu seguridad.
+                </p>
+</header>
+<!-- Interactive Selection Grid -->
+<section class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+<!-- Option: Cacahuate (Selected State) -->
+<button aria-pressed="true" class="border-2 border-[#ff6b35] bg-[#ff6b35]/10 text-[#1a1a1a] rounded-full py-3 px-5 flex items-center justify-center gap-3 cursor-pointer transition-all duration-200 shadow-[0_4px_12px_rgba(255,107,53,0.1)] transform hover:scale-[1.02] active:scale-[0.98]" type="button">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'wght' 400, 'FILL' 0;">nutrition</span>
+<span class="font-label-sm text-label-sm font-bold">Cacahuate</span>
+</button>
+<!-- Option: Camarón (Normal State) -->
+<button aria-pressed="false" class="border border-[#e2e2e2] bg-white text-[#5e5e5e] rounded-full py-3 px-5 flex items-center justify-center gap-3 cursor-pointer transition-all duration-200 hover:border-[#c5c7c8] hover:bg-[#f9f9f9] hover:text-[#1a1a1a]" type="button">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'wght' 400, 'FILL' 0;">set_meal</span>
+<span class="font-label-sm text-label-sm">Camarón</span>
+</button>
+<!-- Option: Lácteos (Normal State) -->
+<button aria-pressed="false" class="border border-[#e2e2e2] bg-white text-[#5e5e5e] rounded-full py-3 px-5 flex items-center justify-center gap-3 cursor-pointer transition-all duration-200 hover:border-[#c5c7c8] hover:bg-[#f9f9f9] hover:text-[#1a1a1a]" type="button">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'wght' 400, 'FILL' 0;">water_drop</span>
+<span class="font-label-sm text-label-sm">Lácteos</span>
+</button>
+<!-- Option: Gluten (Normal State) -->
+<button aria-pressed="false" class="border border-[#e2e2e2] bg-white text-[#5e5e5e] rounded-full py-3 px-5 flex items-center justify-center gap-3 cursor-pointer transition-all duration-200 hover:border-[#c5c7c8] hover:bg-[#f9f9f9] hover:text-[#1a1a1a]" type="button">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'wght' 400, 'FILL' 0;">grass</span>
+<span class="font-label-sm text-label-sm">Gluten</span>
+</button>
+<!-- Option: Huevo (Selected State) -->
+<button aria-pressed="true" class="border-2 border-[#ff6b35] bg-[#ff6b35]/10 text-[#1a1a1a] rounded-full py-3 px-5 flex items-center justify-center gap-3 cursor-pointer transition-all duration-200 shadow-[0_4px_12px_rgba(255,107,53,0.1)] transform hover:scale-[1.02] active:scale-[0.98]" type="button">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'wght' 400, 'FILL' 0;">egg</span>
+<span class="font-label-sm text-label-sm font-bold">Huevo</span>
+</button>
+<!-- Option: Pescado (Normal State) -->
+<button aria-pressed="false" class="border border-[#e2e2e2] bg-white text-[#5e5e5e] rounded-full py-3 px-5 flex items-center justify-center gap-3 cursor-pointer transition-all duration-200 hover:border-[#c5c7c8] hover:bg-[#f9f9f9] hover:text-[#1a1a1a]" type="button">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'wght' 400, 'FILL' 0;">phishing</span>
+<span class="font-label-sm text-label-sm">Pescado</span>
+</button>
+<!-- Option: Nueces (Normal State) -->
+<button aria-pressed="false" class="border border-[#e2e2e2] bg-white text-[#5e5e5e] rounded-full py-3 px-5 flex items-center justify-center gap-3 cursor-pointer transition-all duration-200 hover:border-[#c5c7c8] hover:bg-[#f9f9f9] hover:text-[#1a1a1a]" type="button">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'wght' 400, 'FILL' 0;">forest</span>
+<span class="font-label-sm text-label-sm">Nueces</span>
+</button>
+<!-- Option: Mariscos (Normal State) -->
+<button aria-pressed="false" class="border border-[#e2e2e2] bg-white text-[#5e5e5e] rounded-full py-3 px-5 flex items-center justify-center gap-3 cursor-pointer transition-all duration-200 hover:border-[#c5c7c8] hover:bg-[#f9f9f9] hover:text-[#1a1a1a]" type="button">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'wght' 400, 'FILL' 0;">waves</span>
+<span class="font-label-sm text-label-sm">Mariscos</span>
+</button>
+</section>
+<!-- Information Box -->
+<aside class="bg-[#f9f9f9] rounded-[16px] p-5 flex items-start gap-4 border border-[#e2e2e2] mt-2">
+<span class="material-symbols-outlined text-[#5e5e5e] shrink-0 mt-0.5" style="font-variation-settings: 'FILL' 1, 'wght' 400;">info</span>
+<p class="font-label-sm text-label-sm text-[#5e5e5e] leading-snug">
+                    La IA usará esta información para recomendarte platillos seguros y deliciosos.
+                </p>
+</aside>
+<!-- Navigation Actions -->
+<nav class="flex gap-4 pt-8 border-t border-[#f0f0f0] mt-2">
+<button class="flex-1 bg-transparent border border-[#e2e2e2] text-[#2d2d2d] rounded-[10px] py-3 px-6 font-label-sm text-label-sm text-center cursor-pointer hover:bg-[#f9f9f9] transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#e2e2e2] focus:ring-offset-2" type="button">
+                    Atrás
+                </button>
+<button class="flex-1 bg-[#ff6b35] text-white rounded-[10px] py-3 px-6 font-label-sm text-label-sm text-center cursor-pointer hover:bg-[#eb5a25] transition-all duration-200 shadow-md shadow-[#ff6b35]/20 focus:outline-none focus:ring-2 focus:ring-[#ff6b35] focus:ring-offset-2 transform hover:-translate-y-0.5" type="button">
+                    Continuar
+                </button>
+</nav>
+</div>
+</main>
+</body></html>

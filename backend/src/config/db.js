@@ -52,10 +52,10 @@ async function runMigrations() {
       CREATE TABLE IF NOT EXISTS soporte_mensajes (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         conversacion_id UUID NOT NULL REFERENCES soporte_conversaciones(id) ON DELETE CASCADE,
-        remitente_tipo VARCHAR(50) NOT NULL,
         remitente_id UUID,
-        mensaje TEXT NOT NULL,
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        tipo_remitente VARCHAR(50),
+        contenido TEXT NOT NULL,
+        fecha_envio TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
 
       CREATE TABLE IF NOT EXISTS soporte_auditoria (

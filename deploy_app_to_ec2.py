@@ -55,7 +55,7 @@ def deploy_backend_to_ec2():
                     for f in files:
                         full_path = os.path.join(base, f)
                         zipf.write(full_path, full_path)
-        for single_file in ['compose.prod.yml', '.env']:
+        for single_file in ['compose.prod.yml', '.env', os.path.join('scripts', 'init_prod_database.sql')]:
             if os.path.exists(single_file):
                 zipf.write(single_file, single_file)
 
@@ -70,7 +70,7 @@ def deploy_backend_to_ec2():
 
     # 5. Enviar comando SSM a EC2 para descargar y ejecutar deploy_remote.sh
     safe_print("[SSM EXECUTE] Desplegando e iniciando contenedores Docker en EC2 via SSM...")
-    remote_cmd = f'export PATH=$PATH:/usr/local/bin && aws s3 cp {s3_script_path} /tmp/deploy_remote.sh --region {REGION} && bash /tmp/deploy_remote.sh'
+    remote_cmd = f'export PATH=$PATH:/usr/local/bin:/snap/bin && aws s3 cp {s3_script_path} /tmp/deploy_remote.sh --region {REGION} && bash /tmp/deploy_remote.sh'
     send_cmd = f'aws ssm send-command --instance-ids "{instance_id}" --document-name "AWS-RunShellScript" --parameters commands="{remote_cmd}" --region {REGION}'
     
     ok, stdout = run_cmd(send_cmd)

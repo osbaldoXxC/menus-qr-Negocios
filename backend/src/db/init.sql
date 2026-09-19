@@ -103,12 +103,10 @@ CREATE TABLE IF NOT EXISTS platillos (
     nivel_picante INTEGER DEFAULT 0, -- Escala de 0 a 4
     porcion VARCHAR(100) DEFAULT '', -- Ej: "350g", "3 piezas", "500 ml"
     etiquetas_dieteticas JSONB DEFAULT '[]'::jsonb, -- Ej: ["sin_gluten", "vegano"]
-    vector_ia vector, -- Reserved for AI embeddings (pgvector extension installed but not actively used)
     estado_ia VARCHAR(50) DEFAULT 'pendiente', -- 'pendiente', 'procesando', 'completado'
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-COMMENT ON COLUMN platillos.vector_ia IS 'Reserved for future AI embedding features; pgvector extension installed but feature not actively used';
 COMMENT ON COLUMN platillos.tamano_porcion_id IS 'Foreign key to tamanos_porcion catalog; reserved for portion size normalization';
 
 -- 6. Ingredientes_Catalogo
