@@ -38,7 +38,9 @@ resource "aws_iam_policy" "github_actions_deploy" {
           "arn:aws:s3:::oamdevsol-restaurant-256663926988",
           "arn:aws:s3:::oamdevsol-restaurant-256663926988/*",
           "arn:aws:s3:::oamdevsol-admin-256663926988",
-          "arn:aws:s3:::oamdevsol-admin-256663926988/*"
+          "arn:aws:s3:::oamdevsol-admin-256663926988/*",
+          "arn:aws:s3:::oamdevsol-cfn-templates-256663926988",
+          "arn:aws:s3:::oamdevsol-cfn-templates-256663926988/*"
         ]
       },
       {
