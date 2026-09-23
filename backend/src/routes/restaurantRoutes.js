@@ -13,10 +13,6 @@ router.get('/info', authMiddleware, roleMiddleware(['RESTAURANTE', 'SUPER_ADMIN'
 // Solo accesible por Restaurantes autenticados
 router.get('/qr', authMiddleware, roleMiddleware(['RESTAURANTE', 'SUPER_ADMIN']), subscriptionMiddleware, generateQR);
 
-// GET /api/restaurants/info
-// Info del restaurante autenticado
-router.get('/info', authMiddleware, roleMiddleware(['RESTAURANTE', 'SUPER_ADMIN']), getInfo);
-
 // PUT /api/restaurants/theme
 // Solo accesible por Restaurantes autenticados (Premium)
 router.put('/theme', authMiddleware, roleMiddleware(['RESTAURANTE', 'SUPER_ADMIN']), subscriptionMiddleware, updateTheme);
