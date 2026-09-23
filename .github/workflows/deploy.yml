@@ -39,7 +39,7 @@ jobs:
           npm run build
           aws s3 sync ./dist s3://oamdevsol-restaurant-256663926988 --delete
         env:
-          VITE_API_URL: https://backend.oamdevsol.site
+          VITE_API_URL: ${{ vars.VITE_API_URL || 'https://backend.oamdevsol.site/api' }}
 
       - name: Build & Sync Admin Frontend
         working-directory: ./admin
@@ -48,7 +48,7 @@ jobs:
           npm run build
           aws s3 sync ./dist s3://oamdevsol-admin-256663926988 --delete
         env:
-          VITE_API_URL: https://backend.oamdevsol.site
+          VITE_API_URL: ${{ vars.VITE_API_URL || 'https://backend.oamdevsol.site/api' }}
 
       - name: Invalidate CloudFront Caches
         run: |
