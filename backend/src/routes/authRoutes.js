@@ -45,13 +45,4 @@ router.post('/refresh', authLimiter, refresh);
 // POST /api/auth/logout
 router.post('/logout', logout); // Logout no requiere rate limit agresivo, pero limpia tokens
 
-// POST /api/auth/refresh
-router.post('/refresh', refreshToken);
-
-// PUT /api/auth/perfil
-router.put('/perfil', authMiddleware, updateProfile);
-
-// PUT /api/auth/password
-router.put('/password', authMiddleware, changePassword);
-
 module.exports = router;
