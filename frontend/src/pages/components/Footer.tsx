@@ -2,8 +2,6 @@ import { Link } from 'react-router-dom';
 import { Logo } from './Logo';
 
 export function Footer() {
-  const navigate = useNavigate();
-
   return (
     <footer className="bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border-t border-apple-border dark:border-apple-dark-border backdrop-blur-xl transition-colors duration-500">
       <div className="mx-auto max-w-[1400px] px-5 md:px-6 lg:px-8">

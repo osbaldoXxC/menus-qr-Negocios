@@ -34,15 +34,6 @@ const fadeUpVariant = {
   }),
 };
 
-const beneficios = [
-  { icon: '📊', title: 'Panel administrativo', desc: 'Gestiona todo tu menú desde un dashboard intuitivo.' },
-  { icon: '📱', title: 'Códigos QR', desc: 'Menús digitales para cada mesa, sin contacto.' },
-  { icon: '🤖', title: 'IA de recomendación', desc: 'Tus platillos llegan a los comensales ideales.' },
-  { icon: '📈', title: 'Analytics en tiempo real', desc: 'Ventas, platillos populares y más.' },
-  { icon: '💬', title: 'Soporte 24/7', desc: 'Ayuda cuando la necesites, siempre.' },
-  { icon: '💰', title: 'Sin comisiones', desc: 'Paga solo tu suscripción, sin sorpresas.' },
-];
-
 export function ParaRestaurantes() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -87,7 +78,7 @@ export function ParaRestaurantes() {
             >
               Empezar gratis
             </button>
-          </motion.div>
+          </div>
         </div>
       </header>
 

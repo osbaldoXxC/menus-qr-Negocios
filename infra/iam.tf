@@ -52,19 +52,19 @@ resource "aws_iam_policy" "github_actions_deploy" {
       {
         Sid    = "SSMDeployToBackendEC2"
         Effect = "Allow"
-        Action = [
-          "ssm:SendCommand",
-          "ssm:GetCommandInvocation"
-        ]
+        Action = "ssm:SendCommand"
         Resource = [
           "arn:aws:ec2:us-east-1:256663926988:instance/i-000928567783f36af",
           "arn:aws:ssm:us-east-1::document/AWS-RunShellScript"
         ]
       },
       {
-        Sid      = "SSMDescribeInstances"
-        Effect   = "Allow"
-        Action   = "ssm:DescribeInstanceInformation"
+        Sid    = "SSMCommandStatusAndInfo"
+        Effect = "Allow"
+        Action = [
+          "ssm:GetCommandInvocation",
+          "ssm:DescribeInstanceInformation"
+        ]
         Resource = "*"
       }
     ]
