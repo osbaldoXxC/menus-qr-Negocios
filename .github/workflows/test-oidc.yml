@@ -1,0 +1,33 @@
+name: Test AWS OIDC Authentication
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  test-aws-connection:
+    name: Verify AWS Connection via OIDC
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+          audience: sts.amazonaws.com
+
+      - name: Verify Identity with AWS STS
+        run: |
+          echo "========================================="
+          echo " Probando conexión OIDC con AWS STS..."
+          echo "========================================="
+          aws sts get-caller-identity
