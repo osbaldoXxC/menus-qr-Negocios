@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "main": "download_images.js",
   "scripts": {
-    "prepare": "git config core.hooksPath .githooks || exit 0",
     "test": "echo \"Error: no test specified\" && exit 1",
     "test:cfn": "python test_cloudformation.py",
     "deploy": "python deploy.py"
