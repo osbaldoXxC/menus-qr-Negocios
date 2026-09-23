@@ -1,0 +1,38 @@
+name: Main Branch Security Guard
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  verify-main-push-authorization:
+    name: Verify Push Authorization on Main
+    runs-on: ubuntu-latest
+    steps:
+      - name: Security Check - Validate Actor
+        run: |
+          echo "=========================================================================="
+          echo " 🛡️ [AUDITORÍA DE SEGURIDAD] VERIFICANDO AUTORIZACIÓN EN RAMA MAIN"
+          echo "=========================================================================="
+          echo " Actor detectado en GitHub: ${{ github.actor }}"
+          echo " Evento: ${{ github.event_name }}"
+          echo " Commit SHA: ${{ github.sha }}"
+          echo "=========================================================================="
+
+          AUTHORIZED_OWNER="osbaldoXxC"
+
+          if [ "${{ github.actor }}" != "$AUTHORIZED_OWNER" ]; then
+            echo ""
+            echo "❌ [ACCESO DENEGADO - VIOLACIÓN DE POLÍTICA]"
+            echo "El usuario '${{ github.actor }}' NO tiene autorización para realizar push o merge directo a la rama 'main'."
+            echo "Únicamente el propietario '$AUTHORIZED_OWNER' está autorizado."
+            echo "Cualquier contribución debe enviarse mediante Pull Request hacia 'develop'."
+            echo ""
+            exit 1
+          fi
+
+          echo "✅ [ACCESO AUTORIZADO] Cambio verificado por el propietario ($AUTHORIZED_OWNER)."
