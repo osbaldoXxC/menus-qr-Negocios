@@ -2,18 +2,32 @@ const db = require('../config/db');
 const redisClient = require('../config/redis');
 const QRCode = require('qrcode');
 const SubscriptionService = require('../services/subscriptionService');
+const { obtenerSlugUnico } = require('../services/slugService');
+const { invalidateMenuCache } = require('../services/cacheService');
 
 const generateQR = async (req, res) => {
   try {
     // 1. Obtener restaurante_id del token (inyectado por authMiddleware)
     const restaurante_id = req.user.id;
 
-    // 2. Construir URL pública del menú
+    // 2. Obtener o generar slug amigable del restaurante
+    const restRes = await db.query('SELECT id, nombre_negocio, slug FROM restaurantes WHERE id = $1', [restaurante_id]);
+    if (restRes.rows.length === 0) {
+      return res.status(404).json({ mensaje: 'Restaurante no encontrado' });
+    }
+
+    let slug = restRes.rows[0].slug;
+    if (!slug) {
+      slug = await obtenerSlugUnico(restRes.rows[0].nombre_negocio, restaurante_id);
+      await db.query('UPDATE restaurantes SET slug = $1 WHERE id = $2', [slug, restaurante_id]);
+    }
+
+    // 3. Construir URL pública del menú usando el slug amigable
     const rawBaseUrl = process.env.PUBLIC_MENU_URL || 'https://mexxican.mx/menu/';
     const baseUrl = rawBaseUrl.endsWith('/') ? rawBaseUrl : `${rawBaseUrl}/`;
-    const url_menu = `${baseUrl}${restaurante_id}`;
+    const url_menu = `${baseUrl}${slug}`;
 
-    // 3. Generar imagen QR en Base64
+    // 4. Generar imagen QR en Base64
     const qr_base64 = await QRCode.toDataURL(url_menu, {
       color: {
         dark: '#000000',
@@ -23,10 +37,11 @@ const generateQR = async (req, res) => {
       margin: 2
     });
 
-    // 4. Responder
+    // 5. Responder
     res.json({
       url_menu,
-      qr_base64
+      qr_base64,
+      slug
     });
 
   } catch (error) {
@@ -52,10 +67,11 @@ const sanitizarConfigDiseno = (config) => {
     apariencia: {},
     layout: {},
     elementos_visuales: {},
-    informacion: {}
+    informacion: {},
+    moneda: {}
   };
 
-  const { apariencia, layout, elementos_visuales, informacion } = config;
+  const { apariencia, layout, elementos_visuales, informacion, moneda } = config;
 
   // 1. Sanitizar Apariencia
   if (apariencia && typeof apariencia === 'object') {
@@ -95,9 +111,23 @@ const sanitizarConfigDiseno = (config) => {
       result.apariencia.border_radius_tarjetas = apariencia.border_radius_tarjetas;
     }
 
-    // Nuevos campos de imagen de fondo
-    if (typeof apariencia.fondo_imagen_url === 'string') {
-      result.apariencia.fondo_imagen_url = apariencia.fondo_imagen_url.substring(0, 2000);
+    // Campos de imagen de fondo (con soporte dual horizontal/vertical y limpieza estricta de residuos)
+    const horizUrl = typeof apariencia.fondo_imagen_horizontal_url === 'string' ? apariencia.fondo_imagen_horizontal_url.trim() : '';
+    const vertUrl = typeof apariencia.fondo_imagen_vertical_url === 'string' ? apariencia.fondo_imagen_vertical_url.trim() : '';
+    const legacyUrl = typeof apariencia.fondo_imagen_url === 'string' ? apariencia.fondo_imagen_url.trim() : '';
+
+    result.apariencia.fondo_imagen_horizontal_url = horizUrl.substring(0, 2000);
+    result.apariencia.fondo_imagen_vertical_url = vertUrl.substring(0, 2000);
+
+    // Si el fondo no es de tipo imagen, o ambas imágenes horizontal y vertical fueron eliminadas (vacías),
+    // limpiar forzosamente fondo_imagen_url para evitar fallbacks fantasma hacia URLs residuales
+    if (result.apariencia.fondo_tipo !== 'imagen' || (!horizUrl && !vertUrl)) {
+      result.apariencia.fondo_imagen_url = '';
+      if (!horizUrl && !vertUrl && result.apariencia.fondo_tipo === 'imagen') {
+        result.apariencia.fondo_tipo = 'solido';
+      }
+    } else {
+      result.apariencia.fondo_imagen_url = horizUrl || vertUrl || legacyUrl.substring(0, 2000);
     }
     
     result.apariencia.fondo_imagen_zoom = Number(apariencia.fondo_imagen_zoom) || 1;
@@ -152,6 +182,8 @@ const sanitizarConfigDiseno = (config) => {
   // 2. Sanitizar Layout
   if (layout && typeof layout === 'object') {
     const layoutWhitelist = ['LISTA_SIMPLE', 'CUADRICULA_FOTOS', 'TARJETAS_DETALLADAS'];
+    const encabezadoWhitelist = ['banner_hero', 'fondo_completo'];
+
     if (layoutWhitelist.includes(layout.layout_type)) {
       result.layout.layout_type = layout.layout_type;
     }
@@ -164,16 +196,39 @@ const sanitizarConfigDiseno = (config) => {
     if (typeof layout.categorias_sticky === 'boolean') {
       result.layout.categorias_sticky = layout.categorias_sticky;
     }
+    if (encabezadoWhitelist.includes(layout.estilo_encabezado)) {
+      result.layout.estilo_encabezado = layout.estilo_encabezado;
+    }
+    if (typeof layout.mostrar_horario === 'boolean') {
+      result.layout.mostrar_horario = layout.mostrar_horario;
+    }
+    if (typeof layout.mostrar_estado_abierto === 'boolean') {
+      result.layout.mostrar_estado_abierto = layout.mostrar_estado_abierto;
+    }
   }
 
   // 3. Sanitizar Elementos Visuales
   if (elementos_visuales && typeof elementos_visuales === 'object') {
     const hexRegex = /^#[0-9a-fA-F]{3,8}$/;
+    const estiloTarjetaWhitelist = ['solida', 'frosted', 'minimalista'];
+
     if (typeof elementos_visuales.glassmorphism === 'boolean') {
       result.elementos_visuales.glassmorphism = elementos_visuales.glassmorphism;
     }
     if (typeof elementos_visuales.sombras_habilitadas === 'boolean') {
       result.elementos_visuales.sombras_habilitadas = elementos_visuales.sombras_habilitadas;
+    }
+    if (estiloTarjetaWhitelist.includes(elementos_visuales.tarjeta_estilo)) {
+      result.elementos_visuales.tarjeta_estilo = elementos_visuales.tarjeta_estilo;
+    }
+    if (typeof elementos_visuales.tarjeta_opacidad === 'number') {
+      result.elementos_visuales.tarjeta_opacidad = Math.min(Math.max(Number(elementos_visuales.tarjeta_opacidad) || 90, 10), 100);
+    }
+    if (typeof elementos_visuales.tarjeta_borde === 'boolean') {
+      result.elementos_visuales.tarjeta_borde = elementos_visuales.tarjeta_borde;
+    }
+    if (typeof elementos_visuales.tarjeta_color_fondo === 'string' && hexRegex.test(elementos_visuales.tarjeta_color_fondo)) {
+      result.elementos_visuales.tarjeta_color_fondo = elementos_visuales.tarjeta_color_fondo;
     }
   }
 
@@ -185,6 +240,26 @@ const sanitizarConfigDiseno = (config) => {
     if (typeof informacion.ambiente === 'string') {
       result.informacion.ambiente = informacion.ambiente.substring(0, 100);
     }
+  }
+
+  // 5. Sanitizar Moneda
+  if (moneda && typeof moneda === 'object') {
+    const simbolosWhitelist = ['$', 'USD', 'MXN', '€', 'S/', 'Q', '₡', 'Bs', '£'];
+    const posicionesWhitelist = ['prefijo', 'sufijo'];
+
+    if (typeof moneda.simbolo === 'string' && (simbolosWhitelist.includes(moneda.simbolo) || moneda.simbolo.length <= 6)) {
+      result.moneda.simbolo = moneda.simbolo.trim();
+    } else {
+      result.moneda.simbolo = '$';
+    }
+
+    if (posicionesWhitelist.includes(moneda.posicion)) {
+      result.moneda.posicion = moneda.posicion;
+    } else {
+      result.moneda.posicion = 'prefijo';
+    }
+  } else {
+    result.moneda = { simbolo: '$', posicion: 'prefijo' };
   }
 
   return result;
@@ -220,6 +295,8 @@ const updateTheme = async (req, res) => {
     if (!hasFondo) {
       if (configSanitizada.apariencia) {
         configSanitizada.apariencia.fondo_imagen_url = null;
+        configSanitizada.apariencia.fondo_imagen_horizontal_url = null;
+        configSanitizada.apariencia.fondo_imagen_vertical_url = null;
         if (configSanitizada.apariencia.fondo_tipo === 'imagen') {
           configSanitizada.apariencia.fondo_tipo = 'solido';
         }
@@ -265,8 +342,8 @@ const updateTheme = async (req, res) => {
 
     const result = await db.query(query, values);
 
-    // 3. Invalidar caché del menú para que los cambios se vean reflejados instantáneamente
-    await redisClient.del(`cache:menu:${restaurante_id}`);
+    // 3. Invalidar caché del menú sincrónicamente (UUID y slug amigable)
+    await invalidateMenuCache(restaurante_id);
 
     res.json({
       mensaje: 'Configuración de marca actualizada correctamente',
@@ -284,7 +361,7 @@ const getRestaurantInfo = async (req, res) => {
 
   try {
     const result = await db.query(
-      `SELECT r.id, r.nombre_negocio, r.email, r.plan, r.suscripcion_activa, r.nombre_dueno as "nombre_dueño",
+      `SELECT r.id, r.nombre_negocio, r.slug, r.email, r.plan, r.suscripcion_activa, r.nombre_dueno as "nombre_dueño",
               t.logo_url, t.banner_url, t.color_primario, t.color_fondo, 
               t.fuente_familia, t.layout_type, t.banner_promocional_activo, t.banner_promocional_texto,
               t.config_diseno
@@ -299,6 +376,13 @@ const getRestaurantInfo = async (req, res) => {
     }
 
     const restInfo = result.rows[0];
+
+    // Asegurar que el restaurante tenga un slug amigable asignado
+    if (!restInfo.slug && restInfo.nombre_negocio) {
+      restInfo.slug = await obtenerSlugUnico(restInfo.nombre_negocio, restaurante_id);
+      await db.query('UPDATE restaurantes SET slug = $1 WHERE id = $2', [restInfo.slug, restaurante_id]);
+    }
+
     restInfo.stats = await SubscriptionService.getUsageStats(restaurante_id);
 
     // Sanitizar config_diseno en base al plan para el admin panel
@@ -314,6 +398,8 @@ const getRestaurantInfo = async (req, res) => {
       if (configDisenoObj.apariencia) {
         if (!features.imagen_fondo) {
           delete configDisenoObj.apariencia.fondo_imagen_url;
+          delete configDisenoObj.apariencia.fondo_imagen_horizontal_url;
+          delete configDisenoObj.apariencia.fondo_imagen_vertical_url;
           if (configDisenoObj.apariencia.fondo_tipo === 'imagen') {
             configDisenoObj.apariencia.fondo_tipo = 'solido';
           }

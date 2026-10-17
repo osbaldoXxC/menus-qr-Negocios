@@ -44,26 +44,11 @@ export function DashboardRestaurante() {
     document.body.removeChild(a);
   };
 
-  if (contextLoading || loading) {
-    return (
-      <div className="min-h-[80vh] flex items-center justify-center">
-        <div className="text-center">
-          <motion.div 
-            className="text-5xl" 
-            animate={{ scale: [1, 1.2, 1], rotate: [0, 10, -10, 0] }} 
-            transition={{ repeat: Infinity, duration: 1.5 }}
-          >
-            🌮
-          </motion.div>
-          <p className="text-apple-text-tertiary mt-4 font-medium animate-pulse">Preparando tu dashboard...</p>
-        </div>
-      </div>
-    );
-  }
+  const isWaitingData = contextLoading || loading;
 
   const stats = [
-    { label: 'Platillos en menú', value: platillos.length, icon: Utensils, color: 'text-apple-blue', bg: 'bg-apple-blue/10' },
-    { label: `Suscripción ${restaurant?.plan || 'estándar'}`, value: `${restaurant?.dias_restantes || 0} restantes`, icon: Zap, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+    { label: 'Platillos en menú', value: isWaitingData ? '...' : platillos.length, icon: Utensils, color: 'text-apple-blue', bg: 'bg-apple-blue/10' },
+    { label: `Suscripción ${restaurant?.plan || 'estándar'}`, value: isWaitingData ? '...' : `${restaurant?.dias_restantes || 0} restantes`, icon: Zap, color: 'text-amber-500', bg: 'bg-amber-500/10' },
   ];
 
   return (
@@ -97,8 +82,8 @@ export function DashboardRestaurante() {
               {qrData?.qr_base64 ? (
                 <img src={qrData.qr_base64} alt="Código QR" className="w-full h-full object-contain rounded-2xl" />
               ) : (
-                <div className="w-full h-full bg-apple-bg-secondary rounded-2xl flex items-center justify-center border-2 border-dashed border-apple-border">
-                  <QrCode size={64} className="text-apple-text-tertiary" />
+                <div className="w-full h-full bg-apple-bg-secondary rounded-2xl flex items-center justify-center border-2 border-dashed border-apple-border animate-pulse">
+                  <QrCode size={64} className="text-apple-text-tertiary blur-[1px]" />
                 </div>
               )}
             </div>
@@ -126,7 +111,8 @@ export function DashboardRestaurante() {
                 </button>
                 <button 
                   onClick={() => {
-                    const menuUrl = getPublicMenuUrl(restaurant?.id, qrData?.url_menu);
+                    const identifier = qrData?.slug || restaurant?.slug || restaurant?.id;
+                    const menuUrl = getPublicMenuUrl(identifier, qrData?.url_menu);
                     navigator.clipboard.writeText(menuUrl);
                     alert('URL copiada al portapapeles: ' + menuUrl);
                   }}

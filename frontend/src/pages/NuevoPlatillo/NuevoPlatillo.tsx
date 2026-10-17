@@ -21,6 +21,7 @@ export function NuevoPlatillo() {
     nombre: '',
     descripcion: '',
     precio: '',
+    precio_original: '',
     categoria: '',
     porcion: '',
     nivel_picante: 0,
@@ -46,6 +47,7 @@ export function NuevoPlatillo() {
               nombre: platillo.nombre || '',
               descripcion: platillo.descripcion || '',
               precio: platillo.precio ? platillo.precio.toString() : '',
+              precio_original: platillo.precio_original ? platillo.precio_original.toString() : '',
               categoria: platillo.categoria || platillo.categoria_nombre || '',
               porcion: platillo.porcion || '',
               nivel_picante: Number(platillo.nivel_picante) || 0,
@@ -126,6 +128,7 @@ export function NuevoPlatillo() {
       submitData.append('nombre', formData.nombre);
       submitData.append('descripcion', formData.descripcion);
       submitData.append('precio', formData.precio);
+      submitData.append('precio_original', formData.precio_original);
       submitData.append('categoria', formData.categoria);
       submitData.append('porcion', formData.porcion);
       submitData.append('nivel_picante', formData.nivel_picante.toString());
@@ -155,7 +158,9 @@ export function NuevoPlatillo() {
   if (fetching) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin text-4xl">🌮</div>
+        <div className="w-14 h-14 p-2 rounded-2xl bg-white/5 border border-white/10 shadow-[0_0_25px_rgba(210,35,35,0.3)] animate-pulse flex items-center justify-center">
+          <img src="/favicon.svg" alt="MexxicanMX" className="w-10 h-10 object-contain" />
+        </div>
       </div>
     );
   }
@@ -260,49 +265,97 @@ export function NuevoPlatillo() {
             />
           </div>
 
-          {/* Porción y Categoría */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <label className="block text-sm font-bold text-apple-text-secondary dark:text-apple-dark-text-secondary mb-2">Precio</label>
-              <div className="relative">
-                <span className="absolute left-5 top-1/2 -translate-y-1/2 text-apple-text-secondary font-medium">$</span>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={formData.precio}
-                  onChange={(e) => setFormData({ ...formData, precio: e.target.value })}
-                  className="w-full pl-9 pr-5 py-4 bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border rounded-2xl text-[15px] focus:border-apple-blue/40 focus:ring-4 focus:ring-apple-blue/10 focus:outline-none transition-all duration-200"
-                  placeholder="0.00"
-                  required
-                />
+          {/* Precios, Oferta, Porción y Categoría */}
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-bold text-apple-text-secondary dark:text-apple-dark-text-secondary mb-2">
+                  Precio de Venta <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <span className="absolute left-5 top-1/2 -translate-y-1/2 text-apple-text-secondary font-medium">$</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.precio}
+                    onChange={(e) => setFormData({ ...formData, precio: e.target.value })}
+                    className="w-full pl-9 pr-5 py-4 bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border rounded-2xl text-[15px] focus:border-apple-blue/40 focus:ring-4 focus:ring-apple-blue/10 focus:outline-none transition-all duration-200"
+                    placeholder="0.00"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-bold text-apple-text-secondary dark:text-apple-dark-text-secondary">
+                    Precio Original / Regular <span className="text-xs font-normal text-apple-text-tertiary">(Opcional)</span>
+                  </label>
+                </div>
+                <div className="relative">
+                  <span className="absolute left-5 top-1/2 -translate-y-1/2 text-apple-text-secondary font-medium">$</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.precio_original}
+                    onChange={(e) => setFormData({ ...formData, precio_original: e.target.value })}
+                    className="w-full pl-9 pr-5 py-4 bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border rounded-2xl text-[15px] focus:border-apple-blue/40 focus:ring-4 focus:ring-apple-blue/10 focus:outline-none transition-all duration-200"
+                    placeholder="Ej: 180.00 (para mostrar oferta)"
+                  />
+                </div>
               </div>
             </div>
-            <div>
-              <label className="block text-sm font-bold text-apple-text-secondary dark:text-apple-dark-text-secondary mb-2">Porción / Cantidad</label>
-              <input
-                type="text"
-                value={formData.porcion}
-                onChange={(e) => setFormData({ ...formData, porcion: e.target.value })}
-                className="w-full px-5 py-4 bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border rounded-2xl text-[15px] focus:border-apple-blue/40 focus:ring-4 focus:ring-apple-blue/10 focus:outline-none transition-all duration-200"
-                placeholder='Ej: "350g", "3 piezas", "1 persona"'
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-apple-text-secondary dark:text-apple-dark-text-secondary mb-2">Categoría</label>
-              <input
-                type="text"
-                list="categorias-existentes"
-                value={formData.categoria}
-                onChange={(e) => setFormData({ ...formData, categoria: e.target.value })}
-                className="w-full px-5 py-4 bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border rounded-2xl text-[15px] focus:border-apple-blue/40 focus:ring-4 focus:ring-apple-blue/10 focus:outline-none transition-all duration-200"
-                placeholder="Escribe o selecciona..."
-                required
-              />
-              <datalist id="categorias-existentes">
-                {categorias.map((cat, i) => (
-                  <option key={i} value={cat.nombre} />
-                ))}
-              </datalist>
+
+            {/* Banner de previsualización de oferta en vivo si aplica */}
+            {Number(formData.precio_original) > Number(formData.precio) && Number(formData.precio) > 0 && (
+              <motion.div 
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="px-4 py-3 rounded-2xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-orange-500/20 flex items-center justify-between text-xs text-orange-600 dark:text-orange-400 font-bold"
+              >
+                <div className="flex items-center gap-2">
+                  <span>🔥 ¡Oferta activada!</span>
+                  <span className="font-normal text-apple-text-secondary">Se mostrará el precio regular tachado en el menú:</span>
+                  <span className="line-through opacity-75">${formData.precio_original}</span>
+                  <span className="text-orange-600 dark:text-orange-400 font-black">${formData.precio}</span>
+                </div>
+                <span className="px-2.5 py-1 rounded-full bg-orange-500 text-white text-[11px] font-black uppercase tracking-wider">
+                  -{Math.round((1 - Number(formData.precio) / Number(formData.precio_original)) * 100)}% OFF
+                </span>
+              </motion.div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+              <div>
+                <label className="block text-sm font-bold text-apple-text-secondary dark:text-apple-dark-text-secondary mb-2">Porción / Cantidad</label>
+                <input
+                  type="text"
+                  value={formData.porcion}
+                  onChange={(e) => setFormData({ ...formData, porcion: e.target.value })}
+                  className="w-full px-5 py-4 bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border rounded-2xl text-[15px] focus:border-apple-blue/40 focus:ring-4 focus:ring-apple-blue/10 focus:outline-none transition-all duration-200"
+                  placeholder='Ej: "350g", "3 piezas", "1 persona"'
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-apple-text-secondary dark:text-apple-dark-text-secondary mb-2">Categoría</label>
+                <input
+                  type="text"
+                  list="categorias-existentes"
+                  value={formData.categoria}
+                  onChange={(e) => setFormData({ ...formData, categoria: e.target.value })}
+                  className="w-full px-5 py-4 bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border rounded-2xl text-[15px] focus:border-apple-blue/40 focus:ring-4 focus:ring-apple-blue/10 focus:outline-none transition-all duration-200"
+                  placeholder="Escribe o selecciona..."
+                  required
+                />
+                <datalist id="categorias-existentes">
+                  {categorias.map((cat, i) => (
+                    <option key={i} value={cat.nombre} />
+                  ))}
+                </datalist>
+              </div>
             </div>
           </div>
 

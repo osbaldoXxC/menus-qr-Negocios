@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const redisClient = require('../config/redis');
+const { invalidateMenuCache } = require('../services/cacheService');
 
 const getAllRestaurants = async (req, res) => {
   try {
@@ -75,7 +76,7 @@ const approveRestaurant = async (req, res) => {
     await logAuditoria(client, id, 'RENOVAR_O_ACTIVAR', plan_anterior, plan_nuevo, `Modo: ${modo}, Días: ${dias}`, admin_id);
 
     await client.query('COMMIT');
-    await redisClient.del(`cache:menu:${id}`);
+    await invalidateMenuCache(id);
 
     res.json({
       mensaje: 'Tiempo de suscripción actualizado correctamente',
@@ -133,7 +134,7 @@ const cancelRestaurantAccess = async (req, res) => {
     await client.query('COMMIT');
 
     // 4. Purgar caché de Redis
-    await redisClient.del(`cache:menu:${id}`);
+    await invalidateMenuCache(id);
     await redisClient.del('cache:busquedas_globales');
 
     res.json({
@@ -207,7 +208,7 @@ const updateRestaurantStatus = async (req, res) => {
     await logAuditoria(client, id, 'ACTUALIZAR_ESTADO', plan_anterior, plan_nuevo, `Estado: ${finalEstado}, Días: ${dias}`, admin_id);
 
     await client.query('COMMIT');
-    await redisClient.del(`cache:menu:${id}`);
+    await invalidateMenuCache(id);
 
     res.json({
       mensaje: 'Estado del restaurante actualizado y caché purgado',

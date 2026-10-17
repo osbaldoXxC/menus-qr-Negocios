@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { HexColorPicker } from 'react-colorful';
 import { restauranteService } from '../../services/restaurante';
 import { useRestaurant } from '../../context/RestaurantContext';
-import { Palette, Layout, Type, Globe, CheckCircle2, AlertCircle, Upload, Image as ImageIcon, Moon, Sun, Sliders, Sparkles, Eye, EyeOff, Megaphone, MapPin, Store, Trash2, Map, Navigation } from 'lucide-react';
+import { Palette, Layout, Type, Globe, CheckCircle2, AlertCircle, Upload, Image as ImageIcon, Moon, Sun, Sliders, Sparkles, Eye, EyeOff, Megaphone, Trash2, Info, X, Monitor, Smartphone, DollarSign } from 'lucide-react';
 import { ResponsiveImageEditor } from './ResponsiveImageEditor';
 
 const LAYOUTS = [
@@ -82,12 +82,17 @@ export function Configuracion(): JSX.Element {
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingBg, setUploadingBg] = useState(false);
+  const [uploadingBgHorizontal, setUploadingBgHorizontal] = useState(false);
+  const [uploadingBgVertical, setUploadingBgVertical] = useState(false);
   const [showPicker, setShowPicker] = useState<'primario' | 'fondo' | 'badge' | 'texto' | 'text_hover' | 'descripcion' | null>(null);
+  const [infoModal, setInfoModal] = useState<{ title: string; content: string; badge?: string } | null>(null);
   const [success, setSuccess] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [previewMode, setPreviewMode] = useState<'mobile' | 'desktop'>('mobile');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bgFileInputRef = useRef<HTMLInputElement>(null);
+  const bgFileInputHorizontalRef = useRef<HTMLInputElement>(null);
+  const bgFileInputVerticalRef = useRef<HTMLInputElement>(null);
   
   const [gradienteColor1, setGradienteColor1] = useState('#FF416C');
   const [gradienteColor2, setGradienteColor2] = useState('#FF4B2B');
@@ -98,209 +103,7 @@ export function Configuracion(): JSX.Element {
     updateDisenoApariencia('fondo_valor', nuevoGradiente);
   };
 
-  const [loadingLocation, setLoadingLocation] = useState(false);
-  const [showMap, setShowMap] = useState(false);
-  const [loadingMap, setLoadingMap] = useState(false);
   const [showFondoEditor, setShowFondoEditor] = useState(false);
-  const mapInstanceRef = useRef<any>(null);
-  const markerRef = useRef<any>(null);
-
-  const cargarLeaflet = (): Promise<any> => {
-    return new Promise((resolve, reject) => {
-      if ((window as any).L) {
-        resolve((window as any).L);
-        return;
-      }
-
-      if (!document.getElementById('leaflet-css')) {
-        const link = document.createElement('link');
-        link.id = 'leaflet-css';
-        link.rel = 'stylesheet';
-        link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-        document.head.appendChild(link);
-      }
-
-      const script = document.createElement('script');
-      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-      script.async = true;
-      script.onload = () => {
-        resolve((window as any).L);
-      };
-      script.onerror = (err) => {
-        reject(err);
-      };
-      document.body.appendChild(script);
-    });
-  };
-
-  const inicializarMapa = async (latDefault = 19.4326, lonDefault = -99.1332) => {
-    try {
-      setLoadingMap(true);
-      const L = await cargarLeaflet();
-      
-      setTimeout(() => {
-        const mapContainer = document.getElementById('map-establecimiento');
-        if (!mapContainer) return;
-
-        if (mapInstanceRef.current) {
-          mapInstanceRef.current.remove();
-          mapInstanceRef.current = null;
-        }
-
-        // Solución para iconos perdidos de Leaflet en compilaciones/Vite
-        delete (L.Icon.Default.prototype as any)._getIconUrl;
-        L.Icon.Default.mergeOptions({
-          iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-          iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-          shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-        });
-
-        const map = L.map('map-establecimiento').setView([latDefault, lonDefault], 15);
-        mapInstanceRef.current = map;
-
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        }).addTo(map);
-
-        const marker = L.marker([latDefault, lonDefault], {
-          draggable: true
-        }).addTo(map);
-        markerRef.current = marker;
-
-        const actualizarDireccionDesdeCoordenadas = async (lat: number, lng: number) => {
-          try {
-            const response = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
-              {
-                headers: {
-                  "Accept-Language": "es"
-                }
-              }
-            );
-            const data = await response.json();
-            if (data && data.display_name) {
-              updateInformacion('direccion', data.display_name);
-            }
-          } catch (error) {
-            console.error("Error en reverse geocoding al mover marcador:", error);
-          }
-        };
-
-        marker.on('dragend', function () {
-          const position = marker.getLatLng();
-          actualizarDireccionDesdeCoordenadas(position.lat, position.lng);
-        });
-
-        map.on('click', function (e: any) {
-          const { lat, lng } = e.latlng;
-          marker.setLatLng([lat, lng]);
-          actualizarDireccionDesdeCoordenadas(lat, lng);
-        });
-
-        setLoadingMap(false);
-      }, 100);
-
-    } catch (error) {
-      console.error("Error al inicializar Leaflet:", error);
-      alert("No se pudo cargar el mapa. Verifica tu conexión a internet.");
-      setLoadingMap(false);
-    }
-  };
-
-  const buscarDireccionYAbrirMapa = async () => {
-    if (showMap) {
-      setShowMap(false);
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
-        mapInstanceRef.current = null;
-      }
-      return;
-    }
-    
-    setShowMap(true);
-    const direccionActual = theme.config_diseno?.informacion?.direccion;
-    
-    if (direccionActual && direccionActual.trim() !== '') {
-      try {
-        setLoadingMap(true);
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(direccionActual)}&limit=1`
-        );
-        const data = await response.json();
-        if (data && data.length > 0) {
-          const lat = parseFloat(data[0].lat);
-          const lon = parseFloat(data[0].lon);
-          inicializarMapa(lat, lon);
-          return;
-        }
-      } catch (error) {
-        console.error("Error al buscar coordenadas de dirección existente:", error);
-      }
-    }
-    
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          inicializarMapa(position.coords.latitude, position.coords.longitude);
-        },
-        () => {
-          inicializarMapa();
-        }
-      );
-    } else {
-      inicializarMapa();
-    }
-  };
-
-  const obtenerUbicacionActual = () => {
-    if (!navigator.geolocation) {
-      alert("La geolocalización no está soportada por tu navegador.");
-      return;
-    }
-
-    setLoadingLocation(true);
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords;
-        try {
-          const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
-            {
-              headers: {
-                "Accept-Language": "es"
-              }
-            }
-          );
-          const data = await response.json();
-          if (data && data.display_name) {
-            updateInformacion('direccion', data.display_name);
-            if (mapInstanceRef.current && markerRef.current) {
-              const newLatLng = [latitude, longitude] as [number, number];
-              mapInstanceRef.current.setView(newLatLng, 16);
-              markerRef.current.setLatLng(newLatLng);
-            }
-          } else {
-            alert("No pudimos obtener la dirección exacta, pero puedes buscarla en el mapa.");
-          }
-        } catch (error) {
-          console.error("Error en reverse geocoding:", error);
-          alert("Error al obtener la dirección escrita. Por favor escríbela manualmente.");
-        } finally {
-          setLoadingLocation(false);
-        }
-      },
-      (error) => {
-        console.error("Error de geolocalización:", error);
-        setLoadingLocation(false);
-        if (error.code === error.PERMISSION_DENIED) {
-          alert("Permiso de ubicación denegado. Por favor, actívalo o escribe tu dirección manualmente.");
-        } else {
-          alert("No pudimos obtener tu ubicación actual.");
-        }
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
-  };
 
   const [theme, setTheme] = useState<any>({
     logo_url: '',
@@ -351,9 +154,6 @@ export function Configuracion(): JSX.Element {
     document.head.appendChild(link);
     return () => {
       document.head.removeChild(link);
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
-      }
     };
   }, []);
 
@@ -405,16 +205,27 @@ export function Configuracion(): JSX.Element {
           layout: {
             layout_type_horizontal: layout.layout_type_horizontal || layout.layout_type || layoutType,
             layout_type_vertical: layout.layout_type_vertical || layout.layout_type || layoutType,
-            categorias_sticky: layout.categorias_sticky !== undefined ? layout.categorias_sticky : true
+            categorias_sticky: layout.categorias_sticky !== undefined ? layout.categorias_sticky : true,
+            estilo_encabezado: layout.estilo_encabezado || 'fondo_completo',
+            mostrar_horario: layout.mostrar_horario !== undefined ? layout.mostrar_horario : true,
+            mostrar_estado_abierto: layout.mostrar_estado_abierto !== undefined ? layout.mostrar_estado_abierto : true
           },
           elementos_visuales: {
             glassmorphism: elementos.glassmorphism || false,
             sombras_habilitadas: elementos.sombras_habilitadas !== undefined ? elementos.sombras_habilitadas : true,
-            badge_color: elementos.badge_color || '#ffbe0b'
+            badge_color: elementos.badge_color || '#ffbe0b',
+            tarjeta_estilo: elementos.tarjeta_estilo || (elementos.glassmorphism ? 'frosted' : 'solida'),
+            tarjeta_opacidad: elementos.tarjeta_opacidad !== undefined ? elementos.tarjeta_opacidad : (elementos.glassmorphism ? 35 : 95),
+            tarjeta_borde: elementos.tarjeta_borde !== undefined ? elementos.tarjeta_borde : true,
+            tarjeta_color_fondo: elementos.tarjeta_color_fondo || ''
           },
           informacion: {
             direccion: config.informacion?.direccion || '',
             ambiente: config.informacion?.ambiente || 'Familiar'
+          },
+          moneda: {
+            simbolo: config.moneda?.simbolo || '$',
+            posicion: config.moneda?.posicion || 'prefijo'
           }
         }
       });
@@ -447,6 +258,19 @@ export function Configuracion(): JSX.Element {
       if (key === 'color_fondo') extra.color_fondo = value;
       if (key === 'fuente_familia') extra.fuente_familia = value;
       if (key === 'fondo_valor' && apariencia.fondo_tipo === 'solido') extra.color_fondo = value;
+
+      // Mantener sincronizado y limpio fondo_imagen_url para evitar residuos en BD y caché
+      if (key === 'fondo_imagen_horizontal_url' || key === 'fondo_imagen_vertical_url' || key === 'fondo_tipo') {
+        const horiz = key === 'fondo_imagen_horizontal_url' ? value : apariencia.fondo_imagen_horizontal_url;
+        const vert = key === 'fondo_imagen_vertical_url' ? value : apariencia.fondo_imagen_vertical_url;
+        const tipo = key === 'fondo_tipo' ? value : apariencia.fondo_tipo;
+
+        if (tipo !== 'imagen' || (!horiz && !vert)) {
+          apariencia.fondo_imagen_url = '';
+        } else {
+          apariencia.fondo_imagen_url = horiz || vert || '';
+        }
+      }
 
       return {
         ...prev,
@@ -511,6 +335,20 @@ export function Configuracion(): JSX.Element {
     });
   };
 
+  const updateMoneda = (key: string, value: any) => {
+    setTheme((prev: any) => {
+      const config = prev.config_diseno || { apariencia: {}, layout: {}, elementos_visuales: {}, moneda: {} };
+      const moneda = { ...(config.moneda || { simbolo: '$', posicion: 'prefijo' }), [key]: value };
+      return {
+        ...prev,
+        config_diseno: {
+          ...config,
+          moneda
+        }
+      };
+    });
+  };
+
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -547,6 +385,42 @@ export function Configuracion(): JSX.Element {
     }
   };
 
+  const handleBgUploadHorizontal = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingBgHorizontal(true);
+    try {
+      const res = await restauranteService.uploadBrandingImage(file);
+      if (res.url_imagen) {
+        updateDisenoApariencia('fondo_imagen_horizontal_url', res.url_imagen);
+      }
+    } catch (error) {
+      console.error('Error al subir imagen de fondo horizontal:', error);
+      alert('Hubo un error al subir la imagen horizontal. Intenta de nuevo.');
+    } finally {
+      setUploadingBgHorizontal(false);
+    }
+  };
+
+  const handleBgUploadVertical = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingBgVertical(true);
+    try {
+      const res = await restauranteService.uploadBrandingImage(file);
+      if (res.url_imagen) {
+        updateDisenoApariencia('fondo_imagen_vertical_url', res.url_imagen);
+      }
+    } catch (error) {
+      console.error('Error al subir imagen de fondo vertical:', error);
+      alert('Hubo un error al subir la imagen vertical. Intenta de nuevo.');
+    } finally {
+      setUploadingBgVertical(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -564,19 +438,7 @@ export function Configuracion(): JSX.Element {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <motion.div 
-          className="text-5xl" 
-          animate={{ rotate: 360, scale: [1, 1.2, 1] }} 
-          transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-        >
-          🎨
-        </motion.div>
-      </div>
-    );
-  }
+
 
   return (
     <div className="py-12 px-6 lg:px-12 max-w-[1400px] mx-auto min-h-screen">
@@ -621,6 +483,8 @@ export function Configuracion(): JSX.Element {
           isOpen={true}
           onClose={() => setShowFondoEditor(false)}
           imageUrl={theme.config_diseno?.apariencia?.fondo_imagen_url || ''}
+          horizontalImageUrl={theme.config_diseno?.apariencia?.fondo_imagen_horizontal_url || ''}
+          verticalImageUrl={theme.config_diseno?.apariencia?.fondo_imagen_vertical_url || ''}
           apariencia={theme.config_diseno?.apariencia || {}}
           onSave={async (updatedApariencia) => {
             setTheme((prev: any) => {
@@ -774,25 +638,40 @@ export function Configuracion(): JSX.Element {
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Color primario */}
-                <div className="space-y-3 relative">
-                  <label className="text-sm font-bold text-apple-text-secondary ml-1">Color de Acento (Botones/Picante)</label>
-                  <div className="flex items-center gap-4 p-4 rounded-2xl bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border shadow-apple-sm group hover:border-apple-blue/50 transition-colors">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {/* 1. Color de acento */}
+                <div className="relative flex flex-col justify-between p-4 rounded-2xl bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border shadow-apple-sm group hover:border-apple-blue/50 transition-colors">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs font-bold text-apple-text">Color de Acento</span>
+                    <button
+                      type="button"
+                      onClick={() => setInfoModal({
+                        title: 'Color de Acento',
+                        badge: 'Botones y Acciones',
+                        content: 'Define el color de los botones principales, badges destacados, llamadas a la acción e indicadores visuales de picante en tu menú.'
+                      })}
+                      className="p-1 rounded-full text-apple-text-tertiary hover:text-apple-blue hover:bg-apple-blue/10 transition-colors"
+                      aria-label="Información sobre Color de Acento"
+                    >
+                      <Info size={14} />
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-3">
                     <button
                       type="button"
                       onClick={() => setShowPicker(showPicker === 'primario' ? null : 'primario')}
-                      className="w-12 h-12 rounded-xl shadow-apple-md border border-white/20 transition-transform active:scale-95 flex-shrink-0"
+                      className="w-11 h-11 rounded-xl shadow-apple-sm border border-white/20 transition-transform active:scale-95 flex-shrink-0"
                       style={{ backgroundColor: theme.color_primario }}
+                      aria-label="Abrir selector de color de acento"
                     />
-                    <div className="flex flex-col">
-                      <span className="font-mono text-sm font-bold tracking-widest uppercase">{theme.color_primario}</span>
-                      <span className="text-[10px] text-apple-text-tertiary">Botones y acentos visuales</span>
+                    <div className="flex flex-col min-w-0">
+                      <span className="font-mono text-xs font-bold tracking-wider uppercase truncate">{theme.color_primario}</span>
+                      <span className="text-[10px] text-apple-text-tertiary truncate">Botones y destacados</span>
                     </div>
                   </div>
                   
                   {showPicker === 'primario' && (
-                    <div className="absolute z-50 left-1/2 -translate-x-1/2 mt-2 p-4 rounded-3xl bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border shadow-apple-2xl flex flex-col items-center gap-2">
+                    <div className="absolute z-50 left-1/2 -translate-x-1/2 top-full mt-2 p-4 rounded-3xl bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border shadow-apple-2xl flex flex-col items-center gap-2">
                       <HexColorPicker
                         color={theme.color_primario}
                         onChange={(color) => updateDisenoApariencia('color_primario', color)}
@@ -808,24 +687,39 @@ export function Configuracion(): JSX.Element {
                   )}
                 </div>
 
-                {/* Color del texto del menú */}
-                <div className="space-y-3 relative">
-                  <label className="text-sm font-bold text-apple-text-secondary ml-1">Color del Texto del Menú</label>
-                  <div className="flex items-center gap-4 p-4 rounded-2xl bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border shadow-apple-sm group hover:border-apple-blue/50 transition-colors">
+                {/* 2. Color del texto principal */}
+                <div className="relative flex flex-col justify-between p-4 rounded-2xl bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border shadow-apple-sm group hover:border-apple-blue/50 transition-colors">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs font-bold text-apple-text">Texto Principal</span>
+                    <button
+                      type="button"
+                      onClick={() => setInfoModal({
+                        title: 'Color del Texto Principal',
+                        badge: 'Títulos y Nombres',
+                        content: 'Aplica a los títulos de platillos, nombres de categorías y encabezados. Recomendado usar un color con alto contraste frente al fondo elegido.'
+                      })}
+                      className="p-1 rounded-full text-apple-text-tertiary hover:text-apple-blue hover:bg-apple-blue/10 transition-colors"
+                      aria-label="Información sobre Texto Principal"
+                    >
+                      <Info size={14} />
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-3">
                     <button
                       type="button"
                       onClick={() => setShowPicker(showPicker === 'texto' ? null : 'texto')}
-                      className="w-12 h-12 rounded-xl shadow-apple-md border border-white/20 transition-transform active:scale-95 flex-shrink-0"
+                      className="w-11 h-11 rounded-xl shadow-apple-sm border border-white/20 transition-transform active:scale-95 flex-shrink-0"
                       style={{ backgroundColor: theme.config_diseno?.apariencia?.color_normal || '#ffffff' }}
+                      aria-label="Abrir selector de color de texto principal"
                     />
-                    <div className="flex flex-col">
-                      <span className="font-mono text-sm font-bold tracking-widest uppercase">{theme.config_diseno?.apariencia?.color_normal || '#ffffff'}</span>
-                      <span className="text-[10px] text-apple-text-tertiary">Títulos y textos principales</span>
+                    <div className="flex flex-col min-w-0">
+                      <span className="font-mono text-xs font-bold tracking-wider uppercase truncate">{theme.config_diseno?.apariencia?.color_normal || '#ffffff'}</span>
+                      <span className="text-[10px] text-apple-text-tertiary truncate">Títulos y encabezados</span>
                     </div>
                   </div>
 
                   {showPicker === 'texto' && (
-                    <div className="absolute z-50 left-1/2 -translate-x-1/2 mt-2 p-4 rounded-3xl bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border shadow-apple-2xl flex flex-col items-center gap-2">
+                    <div className="absolute z-50 left-1/2 -translate-x-1/2 top-full mt-2 p-4 rounded-3xl bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border shadow-apple-2xl flex flex-col items-center gap-2">
                       <HexColorPicker
                         color={theme.config_diseno?.apariencia?.color_normal || '#ffffff'}
                         onChange={(color) => updateDisenoApariencia('color_normal', color)}
@@ -841,24 +735,39 @@ export function Configuracion(): JSX.Element {
                   )}
                 </div>
 
-                {/* Color de las descripciones */}
-                <div className="space-y-3 relative">
-                  <label className="text-sm font-bold text-apple-text-secondary ml-1">Color de Descripciones</label>
-                  <div className="flex items-center gap-4 p-4 rounded-2xl bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border shadow-apple-sm group hover:border-apple-blue/50 transition-colors">
+                {/* 3. Color de descripciones */}
+                <div className="relative flex flex-col justify-between p-4 rounded-2xl bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border shadow-apple-sm group hover:border-apple-blue/50 transition-colors">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs font-bold text-apple-text">Descripciones</span>
+                    <button
+                      type="button"
+                      onClick={() => setInfoModal({
+                        title: 'Color de Descripciones',
+                        badge: 'Textos Secundarios',
+                        content: 'Se utiliza para los ingredientes, notas y textos secundarios de los platillos. Conviene un tono atenuado pero legible para generar jerarquía visual.'
+                      })}
+                      className="p-1 rounded-full text-apple-text-tertiary hover:text-apple-blue hover:bg-apple-blue/10 transition-colors"
+                      aria-label="Información sobre Color de Descripciones"
+                    >
+                      <Info size={14} />
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-3">
                     <button
                       type="button"
                       onClick={() => setShowPicker(showPicker === 'descripcion' ? null : 'descripcion')}
-                      className="w-12 h-12 rounded-xl shadow-apple-md border border-white/20 transition-transform active:scale-95 flex-shrink-0"
+                      className="w-11 h-11 rounded-xl shadow-apple-sm border border-white/20 transition-transform active:scale-95 flex-shrink-0"
                       style={{ backgroundColor: theme.config_diseno?.apariencia?.color_descripcion || '#8e8e93' }}
+                      aria-label="Abrir selector de color de descripciones"
                     />
-                    <div className="flex flex-col">
-                      <span className="font-mono text-sm font-bold tracking-widest uppercase">{theme.config_diseno?.apariencia?.color_descripcion || '#8E8E93'}</span>
-                      <span className="text-[10px] text-apple-text-tertiary">Descripciones y textos secundarios</span>
+                    <div className="flex flex-col min-w-0">
+                      <span className="font-mono text-xs font-bold tracking-wider uppercase truncate">{theme.config_diseno?.apariencia?.color_descripcion || '#8E8E93'}</span>
+                      <span className="text-[10px] text-apple-text-tertiary truncate">Ingredientes y notas</span>
                     </div>
                   </div>
 
                   {showPicker === 'descripcion' && (
-                    <div className="absolute z-50 left-1/2 -translate-x-1/2 mt-2 p-4 rounded-3xl bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border shadow-apple-2xl flex flex-col items-center gap-2">
+                    <div className="absolute z-50 left-1/2 -translate-x-1/2 top-full mt-2 p-4 rounded-3xl bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border shadow-apple-2xl flex flex-col items-center gap-2">
                       <HexColorPicker
                         color={theme.config_diseno?.apariencia?.color_descripcion || '#8e8e93'}
                         onChange={(color) => updateDisenoApariencia('color_descripcion', color)}
@@ -1058,58 +967,184 @@ export function Configuracion(): JSX.Element {
               )}
 
               {theme.config_diseno?.apariencia?.fondo_tipo === 'imagen' && (
-                <div className="space-y-6 pt-2">
-                  <div className="space-y-3">
-                    <label className="text-sm font-bold text-apple-text-secondary ml-1">Imagen de Fondo Personalizada</label>
-                    <div className="flex flex-col sm:flex-row items-center gap-6 p-6 rounded-3xl bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border">
-                      <div className="relative w-28 h-28 rounded-2xl bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border flex items-center justify-center overflow-hidden group flex-shrink-0">
-                        {theme.config_diseno?.apariencia?.fondo_imagen_url ? (
-                          <img src={theme.config_diseno.apariencia.fondo_imagen_url} alt="Fondo" className="w-full h-full object-cover" />
-                        ) : (
-                          <span className="text-3xl opacity-40">🖼️</span>
-                        )}
-                        <div className={`absolute inset-0 bg-black/50 flex flex-col items-center justify-center transition-opacity ${theme.config_diseno?.apariencia?.fondo_imagen_url ? 'opacity-0 group-hover:opacity-100' : 'opacity-100'}`}>
-                          <input 
-                            type="file" 
-                            accept="image/*" 
-                            className="hidden" 
-                            ref={bgFileInputRef}
-                            onChange={handleBgUpload}
-                          />
-                          <button 
+                <div className="space-y-4 pt-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* 1. Imagen para Pantallas Anchas (Desktop / Laptop) */}
+                    <div className="p-5 rounded-2xl bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border flex flex-col justify-between gap-4 shadow-apple-sm">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Monitor size={15} className="text-apple-blue" />
+                          <span className="text-xs font-bold text-apple-text">Pantallas Anchas (Desktop)</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-apple-blue/10 text-apple-blue uppercase tracking-wider">
+                            16:9
+                          </span>
+                          <button
                             type="button"
-                            onClick={() => bgFileInputRef.current?.click()}
-                            className="p-2.5 bg-white/20 hover:bg-white/30 rounded-full text-white backdrop-blur-sm transition-colors"
-                            disabled={uploadingBg}
+                            onClick={() => setInfoModal({
+                              title: 'Fondo Pantallas Anchas',
+                              badge: 'Horizontal (16:9)',
+                              content: 'Resolución recomendada: 1920x1080px (16:9). Se mostrará en computadoras, laptops y pantallas en formato horizontal.'
+                            })}
+                            className="p-1 rounded-full text-apple-text-tertiary hover:text-apple-blue hover:bg-apple-blue/10 transition-colors"
+                            aria-label="Información sobre fondo horizontal"
                           >
-                            {uploadingBg ? (
-                              <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }}>
-                                <Upload size={16} />
-                              </motion.div>
-                            ) : (
-                              <Upload size={16} />
-                            )}
+                            <Info size={14} />
                           </button>
                         </div>
                       </div>
-                      <div className="flex-1 space-y-2 text-center sm:text-left">
-                        <h4 className="text-sm font-bold">Subir Imagen de Fondo</h4>
-                        <p className="text-xs text-apple-text-secondary">Recomendado: 1080x1920px (formato vertical) o patrón repetible. Solo se permite una imagen.</p>
-                        {theme.config_diseno?.apariencia?.fondo_imagen_url && (
-                          <button 
-                            type="button" 
-                            onClick={() => updateDisenoApariencia('fondo_imagen_url', '')}
-                            className="mt-2 inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 rounded-xl text-xs font-bold transition-colors"
+
+                      <div className="flex items-center gap-4">
+                        <div className="relative w-24 h-24 rounded-xl bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border flex items-center justify-center overflow-hidden group flex-shrink-0">
+                          {theme.config_diseno?.apariencia?.fondo_imagen_horizontal_url ? (
+                            <img 
+                              src={theme.config_diseno.apariencia.fondo_imagen_horizontal_url} 
+                              alt="" 
+                              className="w-full h-full object-cover" 
+                            />
+                          ) : (
+                            <ImageIcon size={26} className="text-apple-text-tertiary/40" />
+                          )}
+                          <div className={`absolute inset-0 bg-black/50 flex flex-col items-center justify-center transition-opacity ${theme.config_diseno?.apariencia?.fondo_imagen_horizontal_url ? 'opacity-0 group-hover:opacity-100' : 'opacity-100'}`}>
+                            <input 
+                              type="file" 
+                              accept="image/*" 
+                              className="hidden" 
+                              ref={bgFileInputHorizontalRef}
+                              onChange={handleBgUploadHorizontal}
+                            />
+                            <button 
+                              type="button" 
+                              onClick={() => bgFileInputHorizontalRef.current?.click()}
+                              className="p-2 bg-white/20 hover:bg-white/30 rounded-full text-white backdrop-blur-sm transition-colors"
+                              disabled={uploadingBgHorizontal}
+                              title="Subir imagen horizontal"
+                            >
+                              {uploadingBgHorizontal ? (
+                                <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }}>
+                                  <Upload size={14} />
+                                </motion.div>
+                              ) : (
+                                <Upload size={14} />
+                              )}
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="flex-1 space-y-2 min-w-0">
+                          <button
+                            type="button"
+                            onClick={() => bgFileInputHorizontalRef.current?.click()}
+                            disabled={uploadingBgHorizontal}
+                            className="w-full px-3 py-2 bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border hover:border-apple-blue/50 text-xs font-bold rounded-xl transition-colors inline-flex items-center justify-center gap-1.5"
                           >
-                            <Trash2 size={12} />
-                            Eliminar fondo
+                            <Upload size={12} />
+                            {theme.config_diseno?.apariencia?.fondo_imagen_horizontal_url ? 'Reemplazar' : 'Subir imagen'}
                           </button>
-                        )}
+
+                          {theme.config_diseno?.apariencia?.fondo_imagen_horizontal_url && (
+                            <button 
+                              type="button" 
+                              onClick={() => updateDisenoApariencia('fondo_imagen_horizontal_url', '')}
+                              className="w-full py-1.5 text-center text-red-500 hover:bg-red-500/10 rounded-xl text-xs font-bold transition-colors inline-flex items-center justify-center gap-1"
+                            >
+                              <Trash2 size={12} />
+                              Eliminar
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 2. Imagen para Pantallas Verticales (Móviles / Tablets) */}
+                    <div className="p-5 rounded-2xl bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border flex flex-col justify-between gap-4 shadow-apple-sm">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Smartphone size={15} className="text-emerald-500" />
+                          <span className="text-xs font-bold text-apple-text">Pantallas Verticales (Móviles)</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 uppercase tracking-wider">
+                            9:16
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setInfoModal({
+                              title: 'Fondo Pantallas Verticales',
+                              badge: 'Vertical (9:16)',
+                              content: 'Resolución recomendada: 1080x1920px (9:16). Se mostrará en teléfonos inteligentes y tablets en orientación vertical.'
+                            })}
+                            className="p-1 rounded-full text-apple-text-tertiary hover:text-apple-blue hover:bg-apple-blue/10 transition-colors"
+                            aria-label="Información sobre fondo vertical"
+                          >
+                            <Info size={14} />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-4">
+                        <div className="relative w-24 h-24 rounded-xl bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border flex items-center justify-center overflow-hidden group flex-shrink-0">
+                          {theme.config_diseno?.apariencia?.fondo_imagen_vertical_url ? (
+                            <img 
+                              src={theme.config_diseno.apariencia.fondo_imagen_vertical_url} 
+                              alt="" 
+                              className="w-full h-full object-cover" 
+                            />
+                          ) : (
+                            <ImageIcon size={26} className="text-apple-text-tertiary/40" />
+                          )}
+                          <div className={`absolute inset-0 bg-black/50 flex flex-col items-center justify-center transition-opacity ${theme.config_diseno?.apariencia?.fondo_imagen_vertical_url ? 'opacity-0 group-hover:opacity-100' : 'opacity-100'}`}>
+                            <input 
+                              type="file" 
+                              accept="image/*" 
+                              className="hidden" 
+                              ref={bgFileInputVerticalRef}
+                              onChange={handleBgUploadVertical}
+                            />
+                            <button 
+                              type="button" 
+                              onClick={() => bgFileInputVerticalRef.current?.click()}
+                              className="p-2 bg-white/20 hover:bg-white/30 rounded-full text-white backdrop-blur-sm transition-colors"
+                              disabled={uploadingBgVertical}
+                              title="Subir imagen vertical"
+                            >
+                              {uploadingBgVertical ? (
+                                <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }}>
+                                  <Upload size={14} />
+                                </motion.div>
+                              ) : (
+                                <Upload size={14} />
+                              )}
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="flex-1 space-y-2 min-w-0">
+                          <button
+                            type="button"
+                            onClick={() => bgFileInputVerticalRef.current?.click()}
+                            disabled={uploadingBgVertical}
+                            className="w-full px-3 py-2 bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border hover:border-apple-blue/50 text-xs font-bold rounded-xl transition-colors inline-flex items-center justify-center gap-1.5"
+                          >
+                            <Upload size={12} />
+                            {theme.config_diseno?.apariencia?.fondo_imagen_vertical_url ? 'Reemplazar' : 'Subir imagen'}
+                          </button>
+
+                          {theme.config_diseno?.apariencia?.fondo_imagen_vertical_url && (
+                            <button 
+                              type="button" 
+                              onClick={() => updateDisenoApariencia('fondo_imagen_vertical_url', '')}
+                              className="w-full py-1.5 text-center text-red-500 hover:bg-red-500/10 rounded-xl text-xs font-bold transition-colors inline-flex items-center justify-center gap-1"
+                            >
+                              <Trash2 size={12} />
+                              Eliminar
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
-
-
                 </div>
               )}
             </section>
@@ -1117,8 +1152,52 @@ export function Configuracion(): JSX.Element {
             {/* 2. Estructura y Comportamiento (Layout) */}
             <section className="p-8 rounded-[2.5rem] bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border shadow-apple-sm space-y-6">
               <h3 className="text-[11px] font-bold text-apple-blue tracking-[0.2em] uppercase flex items-center gap-2 border-b border-apple-border dark:border-apple-dark-border pb-4">
-                <Layout size={16} /> Estructura del Menú
+                <Layout size={16} /> Estructura y Portada del Menú
               </h3>
+
+              {/* Selector de Estilo de Portada / Encabezado */}
+              <div className="space-y-3">
+                <div className="flex justify-between items-center pl-2 border-l-2 border-apple-blue">
+                  <h4 className="text-xs font-bold text-apple-blue">Estilo de Encabezado / Portada</h4>
+                  <span className="text-[10px] text-apple-text-tertiary">Formato de bienvenida del comensal</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {[
+                    {
+                      id: 'fondo_completo',
+                      label: 'Fondo Inmersivo Completo',
+                      desc: 'Fondo completo en pantalla con cabecera flotante fija.',
+                      icon: '🌌'
+                    },
+                    {
+                      id: 'banner_hero',
+                      label: 'Portada Superior (Hero Banner)',
+                      desc: 'Banner panorámico arriba con logo en relieve, horarios y estado.',
+                      icon: '🖼️'
+                    }
+                  ].map((hero) => {
+                    const isSelected = (theme.config_diseno?.layout?.estilo_encabezado || 'fondo_completo') === hero.id;
+                    return (
+                      <button
+                        key={hero.id}
+                        type="button"
+                        onClick={() => updateDisenoLayout('estilo_encabezado', hero.id)}
+                        className={`p-5 rounded-3xl border-2 transition-all text-left flex items-start gap-3 active:scale-98 ${
+                          isSelected
+                            ? 'border-apple-blue bg-apple-blue/5 shadow-apple-glow'
+                            : 'border-apple-border dark:border-apple-dark-border bg-apple-bg dark:bg-apple-dark-bg text-apple-text-secondary hover:border-apple-blue/30'
+                        }`}
+                      >
+                        <span className="text-2xl flex-shrink-0">{hero.icon}</span>
+                        <div>
+                          <div className={`text-xs font-bold ${isSelected ? 'text-apple-blue' : 'text-apple-text'}`}>{hero.label}</div>
+                          <p className="text-[11px] text-apple-text-tertiary mt-1 leading-relaxed">{hero.desc}</p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
               
               {/* Selector Pantallas Anchas (Desktop) */}
               <div className="space-y-3">
@@ -1391,6 +1470,79 @@ export function Configuracion(): JSX.Element {
                   </div>
                 )}
               </div>
+
+              {/* Contenedor y Opacidad de Tarjetas de Platillos */}
+              <div className="space-y-4 pt-4 border-t border-apple-border dark:border-apple-dark-border">
+                <div className="flex justify-between items-center ml-1">
+                  <div>
+                    <h4 className="text-sm font-bold text-apple-text">Estilo del Contenedor de Tarjetas</h4>
+                    <p className="text-[11px] text-apple-text-secondary mt-0.5">Controla la solidez o transparencia de las tarjetas de comida</p>
+                  </div>
+                  <span className="text-xs font-mono font-bold bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border px-2.5 py-1 rounded-md">
+                    {theme.config_diseno?.elementos_visuales?.tarjeta_estilo === 'solida' ? 'Sólida' :
+                     theme.config_diseno?.elementos_visuales?.tarjeta_estilo === 'minimalista' ? 'Minimalista' : 'Frosted Glass'}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {[
+                    { id: 'solida', label: 'Tarjeta Sólida', icon: '🟦', desc: 'Fondo nítido con máxima legibilidad' },
+                    { id: 'frosted', label: 'Frosted Glass', icon: '🪟', desc: 'Translúcido esmerilado con desenfoque' },
+                    { id: 'minimalista', label: 'Minimalista', icon: '🔲', desc: 'Sin relleno, solo borde sutil' }
+                  ].map((style) => {
+                    const isSelected = (theme.config_diseno?.elementos_visuales?.tarjeta_estilo || 'frosted') === style.id;
+                    return (
+                      <button
+                        key={style.id}
+                        type="button"
+                        onClick={() => {
+                          updateDisenoElementos('tarjeta_estilo', style.id);
+                          if (style.id === 'solida') {
+                            updateDisenoElementos('tarjeta_opacidad', 95);
+                          } else if (style.id === 'frosted') {
+                            updateDisenoElementos('tarjeta_opacidad', 35);
+                            updateDisenoElementos('glassmorphism', true);
+                          } else if (style.id === 'minimalista') {
+                            updateDisenoElementos('tarjeta_opacidad', 15);
+                          }
+                        }}
+                        className={`p-4 rounded-2xl border-2 transition-all text-left flex flex-col gap-1.5 active:scale-95 ${
+                          isSelected
+                            ? 'border-apple-blue bg-apple-blue/5 shadow-apple-glow'
+                            : 'border-apple-border dark:border-apple-dark-border bg-apple-bg dark:bg-apple-dark-bg text-apple-text-secondary hover:border-apple-blue/30'
+                        }`}
+                      >
+                        <span className="text-xl">{style.icon}</span>
+                        <span className={`text-xs font-bold ${isSelected ? 'text-apple-blue' : 'text-apple-text'}`}>{style.label}</span>
+                        <span className="text-[10px] text-apple-text-tertiary leading-tight">{style.desc}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Slider de Opacidad de Fondo de Tarjeta */}
+                <div className="p-5 rounded-2xl bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border space-y-3">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="font-bold text-apple-text">Opacidad del Fondo de Tarjeta</span>
+                    <span className="font-mono font-bold text-apple-blue">
+                      {theme.config_diseno?.elementos_visuales?.tarjeta_opacidad ?? 90}%
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="10"
+                    max="100"
+                    step="5"
+                    value={theme.config_diseno?.elementos_visuales?.tarjeta_opacidad ?? 90}
+                    onChange={(e) => updateDisenoElementos('tarjeta_opacidad', Number(e.target.value))}
+                    className="w-full accent-apple-blue cursor-pointer"
+                  />
+                  <div className="flex justify-between text-[10px] text-apple-text-tertiary">
+                    <span>10% (Más transparente)</span>
+                    <span>100% (Completamente sólida)</span>
+                  </div>
+                </div>
+              </div>
             </section>
 
             {/* 4. Fuentes */}
@@ -1470,131 +1622,84 @@ export function Configuracion(): JSX.Element {
             </section>
             )}
 
-            {/* 6. Datos del Establecimiento */}
+            {/* 6. Moneda y Divisa del Menú */}
             <section className="p-8 rounded-[2.5rem] bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border shadow-apple-sm space-y-6">
               <h3 className="text-[11px] font-bold text-apple-blue tracking-[0.2em] uppercase flex items-center gap-2 border-b border-apple-border dark:border-apple-dark-border pb-4">
-                <Store size={16} /> Datos del Establecimiento
+                <DollarSign size={16} /> Moneda y Formato de Precios
               </h3>
 
-              {/* Dirección Física */}
               <div className="space-y-4">
-                <label className="text-sm font-bold text-apple-text-secondary ml-1 flex items-center gap-1.5">
-                  <MapPin size={16} className="text-apple-blue" /> Dirección física del restaurante
-                </label>
-                
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <input
-                    type="text"
-                    value={theme.config_diseno?.informacion?.direccion || ''}
-                    onChange={(e) => updateInformacion('direccion', e.target.value)}
-                    placeholder="Ej. Av. Reforma 123, Col. Centro, CDMX"
-                    className="flex-1 px-5 py-3.5 rounded-2xl bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border text-sm font-medium focus:border-apple-blue outline-none"
-                  />
-                  <div className="flex gap-2">
-                    <button
-                      type="submit"
-                      className="px-6 py-3.5 bg-apple-blue text-white rounded-2xl font-bold text-sm hover:bg-apple-blue-hover active:scale-95 transition-all shadow-apple-sm flex-shrink-0"
-                    >
-                      Guardar
-                    </button>
-                    {theme.config_diseno?.informacion?.direccion && (
-                      <a
-                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(theme.config_diseno.informacion.direccion)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-4 py-3.5 bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border text-apple-text-secondary rounded-2xl font-bold text-sm hover:bg-apple-border-hover dark:hover:bg-apple-dark-border-hover active:scale-95 transition-all shadow-apple-xs flex items-center justify-center gap-2"
-                        title="Probar en Google Maps"
-                      >
-                        <MapPin size={16} className="text-red-500 flex-shrink-0" />
-                        <span>Maps</span>
-                      </a>
-                    )}
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-apple-text">Símbolo de Divisa</label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    {[
+                      { simbolo: '$', label: '$ (MXN/USD/CLP)' },
+                      { simbolo: 'USD $', label: 'USD $' },
+                      { simbolo: '€', label: '€ (EUR)' },
+                      { simbolo: 'S/', label: 'S/ (PEN)' },
+                      { simbolo: 'Q', label: 'Q (GTQ)' },
+                      { simbolo: '₡', label: '₡ (CRC)' },
+                      { simbolo: 'Bs', label: 'Bs (BOB)' },
+                      { simbolo: '£', label: '£ (GBP)' }
+                    ].map((m) => {
+                      const isSelected = (theme.config_diseno?.moneda?.simbolo || '$') === m.simbolo;
+                      return (
+                        <button
+                          key={m.simbolo}
+                          type="button"
+                          onClick={() => updateMoneda('simbolo', m.simbolo)}
+                          className={`p-3 rounded-2xl border text-center transition-all active:scale-95 flex flex-col items-center justify-center gap-1 ${
+                            isSelected
+                              ? 'border-apple-blue bg-apple-blue/5 text-apple-blue font-black shadow-apple-glow'
+                              : 'border-apple-border dark:border-apple-dark-border bg-apple-bg dark:bg-apple-dark-bg text-apple-text-secondary hover:border-apple-blue/30'
+                          }`}
+                        >
+                          <span className="text-base font-black">{m.simbolo}</span>
+                          <span className="text-[10px] font-bold opacity-75">{m.label}</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
-                {/* Botones de ubicación */}
-                <div className="flex flex-wrap gap-2 pt-1">
-                  <button
-                    type="button"
-                    onClick={obtenerUbicacionActual}
-                    disabled={loadingLocation}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-apple-blue/10 hover:bg-apple-blue/20 text-apple-blue rounded-xl text-xs font-bold transition-all disabled:opacity-50 active:scale-95"
-                  >
-                    {loadingLocation ? (
-                      <span className="w-3.5 h-3.5 border-2 border-apple-blue border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <Navigation size={12} className="flex-shrink-0" />
-                    )}
-                    <span>Usar mi ubicación actual</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={buscarDireccionYAbrirMapa}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border text-apple-text-secondary hover:bg-apple-border-hover dark:hover:bg-apple-dark-border-hover rounded-xl text-xs font-bold transition-all active:scale-95"
-                  >
-                    <Map size={12} className="text-apple-blue flex-shrink-0" />
-                    <span>{showMap ? 'Ocultar Mapa' : 'Buscar en el Mapa'}</span>
-                  </button>
-                </div>
+                {/* Posición del Símbolo */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-apple-text">Ubicación del Símbolo</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { id: 'prefijo', label: 'Prefijo (Ej: $150)' },
+                        { id: 'sufijo', label: 'Sufijo (Ej: 150 €)' }
+                      ].map((pos) => {
+                        const isSelected = (theme.config_diseno?.moneda?.posicion || 'prefijo') === pos.id;
+                        return (
+                          <button
+                            key={pos.id}
+                            type="button"
+                            onClick={() => updateMoneda('posicion', pos.id)}
+                            className={`p-3 rounded-xl border text-xs font-bold transition-all ${
+                              isSelected
+                                ? 'bg-apple-blue border-apple-blue text-white shadow-apple-xs'
+                                : 'bg-apple-bg dark:bg-apple-dark-bg border-apple-border dark:border-apple-dark-border text-apple-text-secondary hover:border-apple-blue/30'
+                            }`}
+                          >
+                            {pos.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
 
-                {/* Contenedor del Mapa */}
-                <AnimatePresence>
-                  {showMap && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="space-y-2 overflow-hidden"
-                    >
-                      <div className="relative rounded-2xl overflow-hidden border border-apple-border dark:border-apple-dark-border shadow-inner bg-apple-bg dark:bg-apple-dark-bg">
-                        {loadingMap && (
-                          <div className="absolute inset-0 bg-black/10 dark:bg-black/35 backdrop-blur-xs flex items-center justify-center z-[1000] text-xs font-bold text-apple-text">
-                            Cargando mapa interactivo...
-                          </div>
-                        )}
-                        <div 
-                          id="map-establecimiento" 
-                          className="w-full h-64 z-10" 
-                        />
-                      </div>
-                      <p className="text-[10px] text-apple-text-tertiary ml-1">
-                        💡 Arrastra el marcador rojo o haz clic en cualquier punto del mapa para seleccionar tu ubicación exacta y rellenar tu dirección automáticamente.
-                      </p>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-                
-                <p className="text-[10px] text-apple-text-tertiary ml-1">Esta dirección se mostrará de forma destacada en el pie de página de tu menú digital.</p>
-              </div>
-
-              {/* Ambiente del Restaurante */}
-              <div className="space-y-4 pt-2">
-                <label className="text-sm font-bold text-apple-text-secondary ml-1">Ambiente / Concepto del Restaurante</label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {[
-                    { value: 'Familiar', icon: '👨‍👩‍👧‍👦', label: 'Familiar' },
-                    { value: 'Citas Románticas', icon: '💖', label: 'Romántico / Parejas' },
-                    { value: 'Negocios', icon: '💼', label: 'Negocios / Trabajo' },
-                    { value: 'Amigos y Grupos', icon: '🍻', label: 'Amigos / Grupos' },
-                    { value: 'Rápido', icon: '⚡', label: 'Rápido / Express' },
-                    { value: 'Premium', icon: '✨', label: 'Premium / Gourmet' }
-                  ].map((amb) => (
-                    <button
-                      key={amb.value}
-                      type="button"
-                      onClick={() => updateInformacion('ambiente', amb.value)}
-                      className={`p-4 rounded-2xl border transition-all text-center flex flex-col items-center gap-2 active:scale-95 ${
-                        theme.config_diseno?.informacion?.ambiente === amb.value
-                          ? 'border-apple-blue bg-apple-blue/5 text-apple-blue shadow-apple-glow'
-                          : 'border-apple-border dark:border-apple-dark-border bg-apple-bg dark:bg-apple-dark-bg text-apple-text-secondary hover:border-apple-blue/30'
-                      }`}
-                    >
-                      <span className="text-2xl">{amb.icon}</span>
-                      <span className="text-[11px] font-black uppercase tracking-wider">{amb.label}</span>
-                    </button>
-                  ))}
+                  {/* Ejemplo en vivo */}
+                  <div className="p-4 rounded-2xl bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border flex flex-col justify-center items-center text-center">
+                    <span className="text-[10px] text-apple-text-tertiary uppercase tracking-wider font-bold mb-1">Previsualización de Precio:</span>
+                    <span className="text-xl font-black text-apple-blue">
+                      {(theme.config_diseno?.moneda?.posicion || 'prefijo') === 'prefijo'
+                        ? `${theme.config_diseno?.moneda?.simbolo || '$'} 150.00`
+                        : `150.00 ${theme.config_diseno?.moneda?.simbolo || '$'}`}
+                    </span>
+                  </div>
                 </div>
-                <p className="text-[10px] text-apple-text-tertiary ml-1">Selecciona el ambiente que mejor represente tu establecimiento para que tus clientes lo identifiquen.</p>
               </div>
             </section>
 
@@ -1723,7 +1828,9 @@ export function Configuracion(): JSX.Element {
                      const cardRadius = theme.config_diseno?.apariencia?.border_radius_tarjetas || '24px';
                      const isGlass = theme.config_diseno?.elementos_visuales?.glassmorphism || false;
                      const isImageBg = theme.config_diseno?.apariencia?.fondo_tipo === 'imagen';
-                     const imageBgUrl = theme.config_diseno?.apariencia?.fondo_imagen_url;
+                     const imageBgUrl = previewMode === 'desktop'
+                       ? (theme.config_diseno?.apariencia?.fondo_imagen_horizontal_url || theme.config_diseno?.apariencia?.fondo_imagen_url)
+                       : (theme.config_diseno?.apariencia?.fondo_imagen_vertical_url || theme.config_diseno?.apariencia?.fondo_imagen_url);
                      const showShadow = theme.config_diseno?.elementos_visuales?.sombras_habilitadas !== undefined
                        ? theme.config_diseno.elementos_visuales.sombras_habilitadas
                        : true;
@@ -1733,223 +1840,382 @@ export function Configuracion(): JSX.Element {
                        ? (isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)')
                        : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)');
 
+                     // Tipografía y Letras reactivas en tiempo real
                      const fontFam = theme.fuente_familia || 'Sans-Serif';
                      const font = 
-                       fontFam === 'Serif' ? 'Georgia, serif' :
-                       fontFam === 'Mono' ? 'monospace' :
+                       fontFam === 'Serif' ? 'Georgia, "Times New Roman", serif' :
+                       fontFam === 'Mono' ? '"SF Mono", "JetBrains Mono", monospace' :
                        fontFam === 'Poppins' ? 'Poppins, sans-serif' :
                        fontFam === 'Outfit' ? 'Outfit, sans-serif' :
-                       'Inter, sans-serif';
+                       'Inter, -apple-system, BlinkMacSystemFont, sans-serif';
+
+                     // Estilos de tarjeta y slider de opacidad reactivos
+                     const tarjetaEstilo = theme.config_diseno?.elementos_visuales?.tarjeta_estilo || (isGlass ? 'frosted' : 'solida');
+                     const tarjetaOpacidadPct = Math.min(Math.max(Number(theme.config_diseno?.elementos_visuales?.tarjeta_opacidad ?? (tarjetaEstilo === 'solida' ? 95 : 35)), 10), 100);
+                     const tarjetaAlpha = (tarjetaOpacidadPct / 100).toFixed(2);
+
+                     let mockCardBg = surfaceOp;
+                     let mockCardBackdrop = 'none';
+                     let mockCardBorder = `1px solid ${borderOp}`;
+
+                     if (tarjetaEstilo === 'solida') {
+                       mockCardBg = isDark ? `rgba(26, 26, 30, ${tarjetaAlpha})` : `rgba(255, 255, 255, ${tarjetaAlpha})`;
+                       mockCardBackdrop = 'none';
+                     } else if (tarjetaEstilo === 'frosted') {
+                       mockCardBg = isDark ? `rgba(18, 18, 22, ${tarjetaAlpha})` : `rgba(255, 255, 255, ${tarjetaAlpha})`;
+                       mockCardBackdrop = 'blur(12px)';
+                     } else if (tarjetaEstilo === 'minimalista') {
+                       mockCardBg = 'transparent';
+                       mockCardBackdrop = 'none';
+                       mockCardBorder = `1px dashed ${borderOp}`;
+                     }
+
+                     // Moneda y formato de precios
+                     const simboloMoneda = theme.config_diseno?.moneda?.simbolo || '$';
+                     const posicionMoneda = theme.config_diseno?.moneda?.posicion || 'prefijo';
+                     const formatMockPrice = (val: number) => {
+                       const formatted = val.toFixed(2);
+                       return posicionMoneda === 'prefijo' ? `${simboloMoneda} ${formatted}` : `${formatted} ${simboloMoneda}`;
+                     };
+
+                     // Estilo de encabezado Hero Banner vs Fondo Completo
+                     const isHeroBanner = theme.config_diseno?.layout?.estilo_encabezado === 'banner_hero';
+                     const blurVal = Number(theme.config_diseno?.apariencia?.fondo_imagen_blur) || 0;
 
                      const currentLayoutType = previewMode === 'desktop'
-                        ? (theme.config_diseno?.layout?.layout_type_horizontal || theme.layout_type || 'TARJETAS_DETALLADAS')
-                        : (theme.config_diseno?.layout?.layout_type_vertical || theme.layout_type || 'TARJETAS_DETALLADAS');
+                         ? (theme.config_diseno?.layout?.layout_type_horizontal || theme.layout_type || 'TARJETAS_DETALLADAS')
+                         : (theme.config_diseno?.layout?.layout_type_vertical || theme.layout_type || 'TARJETAS_DETALLADAS');
 
-                     return (
-                   <div
-                     className="w-full h-full overflow-y-auto scrollbar-hide flex flex-col relative"
-                     style={{ fontFamily: font }}
-                   >
-                     {isImageBg && imageBgUrl && (
-                       <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden z-0">
-                         <div 
-                           className="relative flex items-center justify-center" 
-                           style={{
-                             width: `${imgConfig.width}px`,
-                             height: `${imgConfig.height}px`,
-                             transform: `translate3d(${imgConfig.position_x}px, ${imgConfig.position_y}px, 0px) scale(${imgConfig.scale}) rotate(${imgConfig.rotation}deg)`,
-                             opacity: imgConfig.opacity / 100,
-                             zIndex: imgConfig.z_index,
-                             borderRadius: `${imgConfig.border_radius}px`,
-                             transformOrigin: 'center center'
-                           }}
-                         >
-                           <img 
-                             src={imageBgUrl} 
-                             alt="fondo" 
-                             className="w-full h-full max-w-none"
-                             style={{ 
-                               objectFit: imgConfig.object_fit,
-                               borderRadius: `${imgConfig.border_radius}px`
-                             }} 
-                           />
-                         </div>
-                         <div 
-                           className="absolute inset-0 w-full h-full" 
-                           style={{ 
-                             backgroundColor: isDark ? 'rgba(10, 10, 10, 0.7)' : 'rgba(255, 255, 255, 0.75)', 
-                             backdropFilter: theme.config_diseno?.apariencia?.fondo_blur || '0px',
-                             WebkitBackdropFilter: theme.config_diseno?.apariencia?.fondo_blur || '0px'
-                           }} 
-                         />
-                       </div>
-                     )}
-                     <div className="relative z-10 flex flex-col w-full min-h-full">
-                     {/* Header mock */}
-                     <div 
-                       className="px-5 pt-12 pb-3.5 flex items-center gap-2.5 sticky top-0 z-10 backdrop-blur-xl transition-all" 
-                       style={{ 
-                         backgroundColor: 'transparent', 
-                         borderBottom: 'none' 
-                       }}
-                     >
-                        <div className="w-8 h-8 rounded-xl flex items-center justify-center text-sm flex-shrink-0" style={{ backgroundColor: `${theme.color_primario}25` }}>
-                          {theme.logo_url
-                            ? <img src={theme.logo_url} alt="" className="w-full h-full object-cover rounded-xl" />
-                            : <span style={{ color: theme.color_primario }}>🌮</span>}
+                      return (
+                    <div
+                      className="w-full h-full overflow-y-auto scrollbar-hide flex flex-col relative transition-all duration-300"
+                      style={{ fontFamily: font }}
+                    >
+                      {/* Fondo de imagen (Solo si no es banner_hero o como fondo del viewport) */}
+                      {isImageBg && imageBgUrl && !isHeroBanner && (
+                        <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden z-0">
+                          <div 
+                            className="relative flex items-center justify-center" 
+                            style={{
+                              width: `${imgConfig.width}px`,
+                              height: `${imgConfig.height}px`,
+                              transform: `translate3d(${imgConfig.position_x}px, ${imgConfig.position_y}px, 0px) scale(${imgConfig.scale}) rotate(${imgConfig.rotation}deg)`,
+                              opacity: imgConfig.opacity / 100,
+                              zIndex: imgConfig.z_index,
+                              borderRadius: `${imgConfig.border_radius}px`,
+                              transformOrigin: 'center center'
+                            }}
+                          >
+                            <img 
+                              src={imageBgUrl} 
+                              alt="fondo" 
+                              className="w-full h-full max-w-none"
+                              style={{ 
+                                objectFit: imgConfig.object_fit,
+                                borderRadius: `${imgConfig.border_radius}px`,
+                                filter: `blur(${blurVal}px)`
+                              }} 
+                            />
+                          </div>
+                          <div 
+                            className="absolute inset-0 w-full h-full" 
+                            style={{ 
+                              backgroundColor: isDark ? 'rgba(10, 10, 10, 0.7)' : 'rgba(255, 255, 255, 0.75)', 
+                              backdropFilter: `blur(${blurVal}px)`,
+                              WebkitBackdropFilter: `blur(${blurVal}px)`
+                            }} 
+                          />
                         </div>
-                        <div className="h-3.5 w-24 rounded-full" style={{ backgroundColor: textOpHigh }} />
-                     </div>
- 
-                     {/* Nav mock */}
-                     <div 
-                        className="px-4 py-2.5 flex gap-2 overflow-x-hidden backdrop-blur-xl" 
-                        style={{ 
-                          position: theme.config_diseno?.layout?.categorias_sticky ? 'sticky' : 'relative',
-                          top: theme.config_diseno?.layout?.categorias_sticky ? '47px' : '0px',
-                          zIndex: 9,
-                          backgroundColor: 'transparent',
-                          borderBottom: 'none' 
-                        }}
-                     >
-                       {['Entradas','Tacos','Postres'].map((n, idx) => (
-                         <div 
-                           key={n} 
-                           className="h-7 px-3 flex-shrink-0 flex items-center gap-1.5 transition-all" 
-                           style={{ 
-                             backgroundColor: idx === 0 ? `${theme.color_primario}20` : surfaceOp, 
-                             border: `1px solid ${idx === 0 ? theme.color_primario : borderOp}`,
-                             borderRadius: btnRadius
-                           }}
-                         >
-                           {idx === 0 && <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: theme.color_primario }} />}
-                           <div className="h-2 w-10 rounded-full" style={{ backgroundColor: idx === 0 ? theme.color_primario : textOpLow }} />
-                         </div>
-                       ))}
-                     </div>
- 
-                     {/* Tarjeta de Presentación en Mockup */}
-                     <div className="mx-4 mt-4 p-3.5 rounded-2xl border transition-all"
-                       style={{ 
-                         backgroundColor: surfaceOp, 
-                         borderColor: borderOp,
-                         borderRadius: cardRadius 
-                       }}
-                     >
-                       <div className="space-y-2">
-                         <div className="flex flex-wrap items-center gap-1.5">
-                           <div className="h-3 w-16 rounded-full" style={{ backgroundColor: textOpHigh }} />
-                           {theme.config_diseno?.informacion?.ambiente && (
-                             <span 
-                               className="px-1.5 py-0.5 rounded-full text-[6px] font-black uppercase tracking-wider"
-                               style={{ backgroundColor: `${theme.color_primario}1a`, color: theme.color_primario, border: `1px solid ${theme.color_primario}20` }}
-                             >
-                               {theme.config_diseno.informacion.ambiente}
-                             </span>
-                           )}
-                         </div>
-                         <div className="space-y-1">
-                           <div className="h-1.5 w-full rounded-full" style={{ backgroundColor: textOpLow }} />
-                           <div className="h-1.5 w-5/6 rounded-full" style={{ backgroundColor: textOpLow }} />
-                         </div>
-                         {theme.config_diseno?.informacion?.direccion && (
-                           <div className="flex items-center gap-1 text-[7px]" style={{ color: textOpLow }}>
-                             <span>📍</span>
-                             <span className="truncate max-w-[180px]">{theme.config_diseno.informacion.direccion}</span>
-                           </div>
-                         )}
-                       </div>
-                     </div>
+                      )}
 
-                     {/* Content */}
-                     <div className="p-4 space-y-6">
-                      <div className="h-4 w-28 pl-2 flex items-center" style={{ borderLeft: `3px solid ${theme.color_primario}` }}>
-                        <span className="text-[11px] font-black uppercase tracking-wider" style={{ color: textOpHigh }}>Entradas</span>
+                      <div className="relative z-10 flex flex-col w-full min-h-full">
+                      {/* Banner Promocional Activo en Mockup */}
+                      {theme.banner_promocional_activo && theme.banner_promocional_texto && (
+                        <div 
+                          className="px-3 py-1.5 text-center text-[10px] font-bold flex items-center justify-center gap-1.5 shadow-sm sticky top-0 z-30"
+                          style={{ backgroundColor: theme.color_primario, color: '#ffffff' }}
+                        >
+                          <span>📢</span>
+                          <span className="truncate">{theme.banner_promocional_texto}</span>
+                        </div>
+                      )}
+
+                      {/* HERO BANNER SUPERIOR (Si layout.estilo_encabezado === 'banner_hero') */}
+                      {isHeroBanner ? (
+                        <div className="relative w-full overflow-hidden mb-3">
+                          <div className="h-28 sm:h-36 w-full relative bg-zinc-900 overflow-hidden">
+                            {imageBgUrl ? (
+                              <img 
+                                src={imageBgUrl} 
+                                alt="" 
+                                className="w-full h-full object-cover" 
+                                style={{ filter: `blur(${blurVal}px)` }}
+                              />
+                            ) : (
+                              <div 
+                                className="w-full h-full"
+                                style={{ background: `linear-gradient(135deg, ${theme.color_primario}60 0%, ${theme.color_fondo} 100%)` }}
+                              />
+                            )}
+                            <div className="absolute inset-0 bg-gradient-to-t via-black/40 to-transparent" />
+                          </div>
+                          
+                          {/* Info de Hero en relieve */}
+                          <div className="px-4 -mt-7 relative z-20 flex items-end justify-between gap-2">
+                            <div className="flex items-end gap-2.5">
+                              <div 
+                                className="w-14 h-14 rounded-2xl flex items-center justify-center text-xl shadow-2xl border-2 flex-shrink-0"
+                                style={{ borderColor: theme.color_fondo, backgroundColor: `${theme.color_primario}25` }}
+                              >
+                                {theme.logo_url
+                                  ? <img src={theme.logo_url} alt="" className="w-full h-full object-cover rounded-2xl" />
+                                  : <span style={{ color: theme.color_primario }}>🌮</span>}
+                              </div>
+                              <div className="pb-1">
+                                <h4 className="text-[13px] font-black tracking-tight line-clamp-1" style={{ color: textOpHigh }}>
+                                  Mi Restaurante
+                                </h4>
+                                {theme.config_diseno?.informacion?.ambiente && (
+                                  <p className="text-[9px] font-semibold opacity-75" style={{ color: textOpLow }}>
+                                    ✨ {theme.config_diseno.informacion.ambiente}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <span className="px-2 py-0.5 rounded-full text-[8px] font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 mb-1 flex-shrink-0">
+                              🟢 Abierto
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        /* Header compacto estándar */
+                        <div 
+                          className="px-5 pt-10 pb-3 flex items-center justify-between gap-2.5 sticky top-0 z-10 backdrop-blur-xl transition-all" 
+                          style={{ backgroundColor: 'transparent' }}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-xl flex items-center justify-center text-sm flex-shrink-0" style={{ backgroundColor: `${theme.color_primario}25` }}>
+                              {theme.logo_url
+                                ? <img src={theme.logo_url} alt="" className="w-full h-full object-cover rounded-xl" />
+                                : <span style={{ color: theme.color_primario }}>🌮</span>}
+                            </div>
+                            <span className="text-[12px] font-black tracking-tight" style={{ color: textOpHigh }}>
+                              Mi Restaurante
+                            </span>
+                          </div>
+                          <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: theme.color_primario }} />
+                        </div>
+                      )}
+  
+                      {/* Nav Categorías mock */}
+                      <div 
+                         className="px-4 py-2 flex gap-2 overflow-x-hidden backdrop-blur-xl" 
+                         style={{ 
+                           position: theme.config_diseno?.layout?.categorias_sticky ? 'sticky' : 'relative',
+                           top: isHeroBanner ? '0px' : '45px',
+                           zIndex: 9,
+                           backgroundColor: 'transparent'
+                         }}
+                      >
+                        {['Tacos Especiales','Entradas','Bebidas'].map((n, idx) => (
+                          <div 
+                            key={n} 
+                            className="h-7 px-3 flex-shrink-0 flex items-center gap-1.5 transition-all" 
+                            style={{ 
+                              backgroundColor: idx === 0 ? `${theme.color_primario}20` : mockCardBg, 
+                              border: `1px solid ${idx === 0 ? theme.color_primario : borderOp}`,
+                              borderRadius: btnRadius
+                            }}
+                          >
+                            {idx === 0 && <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: theme.color_primario }} />}
+                            <span 
+                              className="text-[10px] font-bold" 
+                              style={{ color: idx === 0 ? theme.color_primario : textOpLow }}
+                            >
+                              {n}
+                            </span>
+                          </div>
+                        ))}
                       </div>
- 
-                      {currentLayoutType === 'LISTA_SIMPLE' && (
-                        <div className="space-y-4">
-                          {[1,2,3].map(i => (
-                            <div key={i} className="flex justify-between items-center py-2" style={{ borderBottom: `1px solid ${borderOp}` }}>
-                              <div className="space-y-1.5 flex-1 pr-4">
-                                <div className="h-3 w-28 rounded-full" style={{ backgroundColor: textOpHigh }} />
-                                <div className="h-2 w-44 rounded-full" style={{ backgroundColor: textOpLow }} />
-                              </div>
-                              <div className="h-6 px-2.5 rounded-lg font-bold text-[10px] flex items-center justify-center" style={{ color: theme.color_primario, border: `1px solid ${theme.color_primario}40`, borderRadius: btnRadius }}>
-                                $65
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
- 
-                      {currentLayoutType === 'CUADRICULA_FOTOS' && (
-                        <div className={`grid gap-3 ${previewMode === 'desktop' ? 'grid-cols-4' : 'grid-cols-2'}`}>
-                          {[1,2,3,4].map(i => (
-                            <div 
-                              key={i} 
-                              className="space-y-2 p-2 rounded-2xl transition-all"
-                              style={{ 
-                                backgroundColor: surfaceOp, 
-                                borderRadius: cardRadius,
-                                border: `1px solid ${borderOp}`,
-                                boxShadow: showShadow ? '0 4px 10px rgba(0,0,0,0.1)' : 'none'
-                              }}
-                            >
-                              <div className="aspect-square relative overflow-hidden bg-black/10" style={{ borderRadius: `calc(${cardRadius} - 8px)` }}>
-                                <div className="w-full h-full flex items-center justify-center text-xl">🌮</div>
-                                <div className="absolute bottom-1.5 right-1.5 px-2 py-0.5 rounded-full text-[8px] font-black shadow-sm" style={{ backgroundColor: theme.color_primario, color: '#fff' }}>$75</div>
-                              </div>
-                              <div className="h-2 w-14 rounded-full mx-auto" style={{ backgroundColor: textOpHigh }} />
-                            </div>
-                          ))}
-                        </div>
-                      )}
- 
-                      {currentLayoutType === 'TARJETAS_DETALLADAS' && (
-                        <div className="space-y-4">
-                          {[1,2].map(i => (
-                            <div 
-                              key={i} 
-                              className="p-3.5 space-y-3 transition-all relative overflow-hidden" 
-                              style={{ 
-                                backgroundColor: surfaceOp, 
-                                border: `1px solid ${borderOp}`,
-                                borderRadius: cardRadius,
-                                boxShadow: showShadow ? '0 8px 20px rgba(0,0,0,0.12)' : 'none',
-                                backdropFilter: isGlass ? 'blur(10px)' : 'none',
-                                WebkitBackdropFilter: isGlass ? 'blur(10px)' : 'none'
-                              }}
-                            >
-                              {/* Badge de Oferta (Fase 2) */}
-                              {i === 1 && (
-                                <div 
-                                  className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full text-[8px] font-black text-white uppercase tracking-wider shadow-sm animate-pulse" 
-                                  style={{ backgroundColor: badgeColor }}
-                                >
-                                  Oferta
-                                </div>
-                              )}
-                              <div className="h-24 rounded-xl flex items-center justify-center text-3xl bg-black/10" style={{ borderRadius: `calc(${cardRadius} - 8px)` }}>
-                                🥗
-                              </div>
-                              <div className="flex justify-between items-center">
-                                <div className="h-3 w-28 rounded-full" style={{ backgroundColor: textOpHigh }} />
-                                <div className="h-5 w-12 rounded-full font-black text-[10px] flex items-center justify-center text-white" style={{ backgroundColor: theme.color_primario }}>$85</div>
-                              </div>
-                              <div className="space-y-1.5">
-                                <div className="h-1.5 w-full rounded-full" style={{ backgroundColor: textOpLow }} />
-                                <div className="h-1.5 w-3/4 rounded-full" style={{ backgroundColor: textOpLow }} />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+
+                      {/* Content Platillos */}
+                      <div className="p-4 space-y-4">
+                       <div className="h-5 pl-2 flex items-center" style={{ borderLeft: `3px solid ${theme.color_primario}` }}>
+                         <span className="text-[12px] font-black tracking-tight uppercase" style={{ color: textOpHigh }}>Tacos Especiales</span>
+                       </div>
+  
+                       {/* ── MOCK LISTA SIMPLE ── */}
+                       {currentLayoutType === 'LISTA_SIMPLE' && (
+                         <div className="space-y-3">
+                           {[
+                             { nombre: 'Taco de Rib Eye Prime', porcion: '3 pzas •', desc: 'Corte premium con costra de queso gouda.', precio: 135, orig: 180 },
+                             { nombre: 'Guacamole Imperial', porcion: 'Para 2 •', desc: 'Aguacate hass fresco con totopos crujientes.', precio: 95, orig: null },
+                             { nombre: 'Costra de Asada', porcion: '2 pzas •', desc: 'Queso dorado a la plancha con carne asada.', precio: 110, orig: null }
+                           ].map((item, idx) => (
+                             <div key={idx} className="flex justify-between items-center py-2.5 px-2 transition-all" style={{ borderBottom: `1px solid ${borderOp}` }}>
+                               <div className="space-y-0.5 flex-1 pr-3 min-w-0">
+                                 <div className="flex items-center gap-1.5">
+                                   <h5 className="font-bold text-[12px] truncate" style={{ color: textOpHigh }}>{item.nombre}</h5>
+                                   {item.orig && (
+                                     <span className="px-1.5 py-0.5 text-[8px] font-black rounded bg-red-500/20 text-red-500">
+                                       -25%
+                                     </span>
+                                   )}
+                                 </div>
+                                 <p className="text-[10px] truncate" style={{ color: textOpLow }}>
+                                   <span className="text-emerald-500 font-semibold">{item.porcion} </span>
+                                   {item.desc}
+                                 </p>
+                               </div>
+                               <div className="text-right flex-shrink-0">
+                                 {item.orig && (
+                                   <span className="block text-[8px] line-through opacity-50" style={{ color: textOpLow }}>
+                                     {formatMockPrice(item.orig)}
+                                   </span>
+                                 )}
+                                 <span className="font-black text-[12px]" style={{ color: theme.color_primario }}>
+                                   {formatMockPrice(item.precio)}
+                                 </span>
+                               </div>
+                             </div>
+                           ))}
+                         </div>
+                       )}
+  
+                       {/* ── MOCK CUADRÍCULA ── */}
+                       {currentLayoutType === 'CUADRICULA_FOTOS' && (
+                         <div className={`grid gap-3 ${previewMode === 'desktop' ? 'grid-cols-4' : 'grid-cols-2'}`}>
+                           {[
+                             { nombre: 'Taco Rib Eye Prime', precio: 135, orig: 180, icon: '🌮' },
+                             { nombre: 'Guacamole Imperial', precio: 95, orig: null, icon: '🥑' },
+                             { nombre: 'Costra de Asada', precio: 110, orig: null, icon: '🥩' },
+                             { nombre: 'Aguachile Verde', precio: 145, orig: null, icon: '🍤' }
+                           ].map((item, idx) => (
+                             <div 
+                               key={idx} 
+                               className="space-y-1.5 p-2 rounded-2xl transition-all"
+                               style={{ 
+                                 backgroundColor: mockCardBg, 
+                                 borderRadius: cardRadius,
+                                 border: mockCardBorder,
+                                 boxShadow: showShadow ? '0 4px 10px rgba(0,0,0,0.1)' : 'none',
+                                 backdropFilter: mockCardBackdrop,
+                                 WebkitBackdropFilter: mockCardBackdrop
+                               }}
+                             >
+                               <div className="aspect-square relative overflow-hidden bg-black/10 flex items-center justify-center text-3xl" style={{ borderRadius: `calc(${cardRadius} - 8px)` }}>
+                                 <span>{item.icon}</span>
+                                 {item.orig && (
+                                   <div className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded text-[7px] font-black bg-red-600 text-white animate-pulse">
+                                     -25%
+                                   </div>
+                                 )}
+                                 <div 
+                                   className="absolute bottom-1.5 right-1.5 px-2 py-0.5 rounded-full text-[8px] font-black shadow-sm flex items-center gap-1" 
+                                   style={{ backgroundColor: `${theme.color_primario}ee`, color: '#fff' }}
+                                 >
+                                   {item.orig && (
+                                     <span className="line-through opacity-75 text-[7px]">{formatMockPrice(item.orig)}</span>
+                                   )}
+                                   <span>{formatMockPrice(item.precio)}</span>
+                                 </div>
+                               </div>
+                               <h5 className="font-bold text-[11px] truncate text-center" style={{ color: textOpHigh }}>{item.nombre}</h5>
+                             </div>
+                           ))}
+                         </div>
+                       )}
+  
+                       {/* ── MOCK TARJETAS DETALLADAS ── */}
+                       {currentLayoutType === 'TARJETAS_DETALLADAS' && (
+                         <div className="space-y-3.5">
+                           {[
+                             { 
+                               nombre: 'Taco de Rib Eye Prime', 
+                               porcion: '3 piezas artesanales', 
+                               desc: 'Corte premium con costra de queso gouda y guacamole de la casa.', 
+                               precio: 135, 
+                               orig: 180, 
+                               badge: 'Oferta Especial',
+                               icon: '🌮' 
+                             },
+                             { 
+                               nombre: 'Guacamole Tradicional', 
+                               porcion: 'Ideal para compartir', 
+                               desc: 'Aguacate hass seleccionado con pico de gallo y totopos horneados.', 
+                               precio: 95, 
+                               orig: null, 
+                               badge: null,
+                               icon: '🥑' 
+                             }
+                           ].map((item, idx) => (
+                             <div 
+                               key={idx} 
+                               className="p-3.5 space-y-2.5 transition-all relative overflow-hidden" 
+                               style={{ 
+                                 backgroundColor: mockCardBg, 
+                                 border: mockCardBorder,
+                                 borderRadius: cardRadius,
+                                 boxShadow: showShadow ? '0 8px 20px rgba(0,0,0,0.12)' : 'none',
+                                 backdropFilter: mockCardBackdrop,
+                                 WebkitBackdropFilter: mockCardBackdrop
+                               }}
+                             >
+                               {/* Badge de Oferta */}
+                               {item.badge && (
+                                 <div 
+                                   className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full text-[7px] font-black text-white uppercase tracking-wider shadow-sm animate-pulse" 
+                                   style={{ backgroundColor: badgeColor }}
+                                 >
+                                   {item.badge}
+                                 </div>
+                               )}
+                               <div className="h-20 rounded-xl flex items-center justify-center text-3xl bg-black/10" style={{ borderRadius: `calc(${cardRadius} - 8px)` }}>
+                                 {item.icon}
+                               </div>
+                               <div className="space-y-1">
+                                 <h5 className="text-[12px] font-black tracking-tight" style={{ color: textOpHigh }}>
+                                   {item.nombre}
+                                 </h5>
+                                 <p className="text-[9px] font-medium text-emerald-500">
+                                   {item.porcion}
+                                 </p>
+                                 <p className="text-[10px] leading-relaxed line-clamp-2" style={{ color: textOpLow }}>
+                                   {item.desc}
+                                 </p>
+                               </div>
+                               <div className="flex justify-between items-center pt-1 border-t" style={{ borderColor: borderOp }}>
+                                 <div className="flex items-baseline gap-1.5">
+                                   <span className="text-[13px] font-black" style={{ color: theme.color_primario }}>
+                                     {formatMockPrice(item.precio)}
+                                   </span>
+                                   {item.orig && (
+                                     <span className="text-[9px] line-through font-medium opacity-50" style={{ color: textOpLow }}>
+                                       {formatMockPrice(item.orig)}
+                                     </span>
+                                   )}
+                                   {item.orig && (
+                                     <span className="px-1.5 py-0.5 text-[8px] font-black rounded bg-red-500/15 text-red-500">
+                                       -25%
+                                     </span>
+                                   )}
+                                 </div>
+                                 <span 
+                                   className="px-2.5 py-1 text-[9px] font-bold rounded-full"
+                                   style={{ backgroundColor: `${theme.color_primario}15`, color: theme.color_primario, borderRadius: btnRadius }}
+                                 >
+                                   Ver detalle
+                                 </span>
+                               </div>
+                             </div>
+                           ))}
+                         </div>
+                       )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })()}
+                );
+              })()}
           </div>
           
           <p className="mt-8 text-center text-apple-text-tertiary text-xs font-medium flex items-center justify-center gap-1.5">
@@ -1960,6 +2226,63 @@ export function Configuracion(): JSX.Element {
       </div>
         </div>
       )}
+
+      {/* Mini Modal / Popover Informativo Accesible */}
+      <AnimatePresence>
+        {infoModal && (
+          <div 
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-transparent"
+            onClick={() => setInfoModal(null)}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="info-modal-title"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ duration: 0.15, ease: 'easeOut' }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-sm rounded-3xl bg-apple-bg dark:bg-apple-dark-bg border border-apple-border dark:border-apple-dark-border p-6 shadow-2xl ring-1 ring-black/10 dark:ring-white/10 space-y-4"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-1">
+                  {infoModal.badge && (
+                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-apple-blue/10 text-apple-blue uppercase tracking-wider">
+                      {infoModal.badge}
+                    </span>
+                  )}
+                  <h4 id="info-modal-title" className="text-sm font-bold text-apple-text">
+                    {infoModal.title}
+                  </h4>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setInfoModal(null)}
+                  className="p-1.5 rounded-full text-apple-text-tertiary hover:text-apple-text hover:bg-apple-bg-secondary dark:hover:bg-apple-dark-bg-secondary transition-colors"
+                  aria-label="Cerrar ventana informativa"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <p className="text-xs text-apple-text-secondary leading-relaxed">
+                {infoModal.content}
+              </p>
+
+              <div className="pt-2 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setInfoModal(null)}
+                  className="px-4 py-2 bg-apple-blue text-white rounded-xl text-xs font-bold hover:bg-blue-600 active:scale-95 transition-all shadow-apple-xs"
+                >
+                  Entendido
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

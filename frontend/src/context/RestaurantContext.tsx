@@ -4,6 +4,7 @@ import api from '../services/api';
 
 interface RestaurantInfo {
   id: string;
+  slug?: string;
   nombre_negocio: string;
   plan: string;
   estado: string;
@@ -73,6 +74,7 @@ export function RestaurantProvider({ children }: { children: ReactNode }) {
       if (data) {
         setRestaurant({
           id: data.id,
+          slug: data.slug,
           nombre_negocio: data.nombre_negocio,
           plan: data.plan || 'basico',
           estado: data.estado,

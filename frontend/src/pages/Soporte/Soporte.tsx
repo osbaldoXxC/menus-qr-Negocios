@@ -324,9 +324,7 @@ export function Soporte() {
     );
   };
 
-  if (loading && !conversacionActiva && conversacionesCerradas.length === 0) {
-    return <div className="p-8 flex justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-apple-blue"></div></div>;
-  }
+
 
   const renderMensajes = () => (
     <div className="relative flex-1 overflow-hidden flex flex-col bg-apple-bg dark:bg-apple-dark-bg">
@@ -335,7 +333,19 @@ export function Soporte() {
         onScroll={handleScroll}
         className="chat-messages flex-1 overflow-y-auto p-4 sm:p-6 space-y-4"
       >
-      {mensajes.length === 0 ? (
+      {loading && mensajes.length === 0 ? (
+        <div className="space-y-4 animate-pulse">
+          <div className="flex justify-start">
+            <div className="w-64 h-14 bg-white/5 border border-white/10 rounded-2xl rounded-bl-sm blur-[1px]" />
+          </div>
+          <div className="flex justify-end">
+            <div className="w-52 h-12 bg-apple-blue/20 rounded-2xl rounded-br-sm blur-[1px]" />
+          </div>
+          <div className="flex justify-start">
+            <div className="w-72 h-16 bg-white/5 border border-white/10 rounded-2xl rounded-bl-sm blur-[1px]" />
+          </div>
+        </div>
+      ) : mensajes.length === 0 ? (
         <div className="h-full flex flex-col items-center justify-center text-apple-text-secondary">
           <MessageSquare size={48} className="mb-4 opacity-20" />
           <p>No hay mensajes en esta conversación.</p>
