@@ -5,6 +5,7 @@ const redisClient = require('../config/redis');
 const crypto = require('crypto');
 const { enviarCorreoResend } = require('../config/mailer');
 const logger = require('../config/logger');
+const { obtenerSlugUnico } = require('../services/slugService');
 
 
 const register = async (req, res) => {
@@ -25,11 +26,14 @@ const register = async (req, res) => {
     const salt = await bcrypt.genSalt(12);
     const password_hash = await bcrypt.hash(password, salt);
 
-    // 3. Insertar restaurante (email_verificado queda en false por defecto, suscripcion_activa = false, estado = 'pendiente')
+    // 3. Generar slug amigable único para la URL del menú
+    const slug = await obtenerSlugUnico(nombre_negocio);
+
+    // 4. Insertar restaurante (email_verificado queda en false por defecto, suscripcion_activa = false, estado = 'pendiente')
     const newRest = await db.query(
-      `INSERT INTO restaurantes (nombre_negocio, email, password_hash, plan, nombre_dueno, email_verificado, suscripcion_activa, estado) 
-       VALUES ($1, $2, $3, $4, $5, false, false, 'pendiente') RETURNING id`,
-      [nombre_negocio, email, password_hash, plan || 'basico', nombre_dueño || '']
+      `INSERT INTO restaurantes (nombre_negocio, slug, email, password_hash, plan, nombre_dueno, email_verificado, suscripcion_activa, estado) 
+       VALUES ($1, $2, $3, $4, $5, $6, false, false, 'pendiente') RETURNING id`,
+      [nombre_negocio, slug, email, password_hash, plan || 'basico', nombre_dueño || '']
     );
 
     const restId = newRest.rows[0].id;

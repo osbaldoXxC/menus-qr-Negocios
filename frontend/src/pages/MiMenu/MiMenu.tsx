@@ -60,22 +60,7 @@ export function MiMenu() {
     (p.categoria && p.categoria.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  if (loading) {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <motion.div 
-          className="text-4xl" 
-          animate={{ 
-            scale: [1, 1.2, 1],
-            rotate: [0, 10, -10, 0]
-          }} 
-          transition={{ repeat: Infinity, duration: 1.5 }}
-        >
-          🌮
-        </motion.div>
-      </div>
-    );
-  }
+
 
   return (
     <div className="py-12 px-6 lg:px-12 max-w-[1400px] mx-auto min-h-screen">
@@ -110,7 +95,21 @@ export function MiMenu() {
         </div>
       </div>
 
-      {filteredPlatillos.length === 0 ? (
+      {loading ? (
+        <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
+          {[1, 2, 3].map((n) => (
+            <div 
+              key={n} 
+              className="flex flex-col overflow-hidden rounded-[2.5rem] bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border p-6 animate-pulse"
+            >
+              <div className="h-48 rounded-2xl bg-white/5 mb-6 blur-[1px]" />
+              <div className="h-6 w-3/4 rounded-lg bg-white/10 mb-3" />
+              <div className="h-4 w-1/2 rounded-lg bg-white/5 mb-6" />
+              <div className="h-10 rounded-xl bg-white/5 mt-auto" />
+            </div>
+          ))}
+        </div>
+      ) : filteredPlatillos.length === 0 ? (
         <motion.div
           className="py-24 text-center rounded-[3rem] bg-apple-bg-secondary/50 dark:bg-apple-dark-bg-secondary/50 border-2 border-dashed border-apple-border"
           initial={{ opacity: 0, scale: 0.95 }}
@@ -181,9 +180,23 @@ export function MiMenu() {
                 <div className="p-8 flex-1 flex flex-col">
                   <div className="flex justify-between items-start mb-4 gap-4">
                     <h3 className="text-2xl font-bold tracking-tight group-hover:text-apple-blue transition-colors">{platillo.nombre}</h3>
-                    <span className="text-xl font-black text-apple-blue whitespace-nowrap">
-                      {platillo.precio.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}
-                    </span>
+                    <div className="flex flex-col items-end">
+                      {platillo.precio_original && Number(platillo.precio_original) > Number(platillo.precio) && (
+                        <span className="text-xs font-semibold text-apple-text-tertiary line-through">
+                          {Number(platillo.precio_original).toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}
+                        </span>
+                      )}
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xl font-black text-apple-blue whitespace-nowrap">
+                          {Number(platillo.precio).toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}
+                        </span>
+                        {platillo.precio_original && Number(platillo.precio_original) > Number(platillo.precio) && (
+                          <span className="px-1.5 py-0.5 rounded-md bg-orange-500/10 text-orange-600 dark:text-orange-400 text-[10px] font-black uppercase tracking-wider">
+                            -{Math.round((1 - Number(platillo.precio) / Number(platillo.precio_original)) * 100)}%
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                   
                   <p className="text-apple-text-secondary dark:text-apple-dark-text-secondary font-medium leading-relaxed mb-8 flex-1 line-clamp-3">

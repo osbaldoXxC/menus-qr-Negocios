@@ -22,21 +22,9 @@ export function CodigoQR() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="bg-apple-bg dark:bg-apple-dark-bg text-apple-text dark:text-apple-dark-text min-h-screen flex items-center justify-center">
-        <motion.div
-          className="text-4xl"
-          animate={{ scale: [1, 1.1, 1] }}
-          transition={{ repeat: Infinity, duration: 1.5 }}
-        >
-          📷
-        </motion.div>
-      </div>
-    );
-  }
 
-  const menuUrl = getPublicMenuUrl(qrData?.id, qrData?.url_menu || qrData?.url_menu_local);
+
+  const menuUrl = getPublicMenuUrl(qrData?.slug || qrData?.id, qrData?.url_menu || qrData?.url_menu_local);
 
   const handleDescargarQR = () => {
     if (!qrData?.qr_base64) return;
@@ -66,12 +54,14 @@ export function CodigoQR() {
             transition={{ delay: 0.1 }}
           >
             {qrData?.qr_base64 ? (
-              <img src={qrData.qr_base64} alt="Código QR" className="w-48 h-48" />
+              <img src={qrData.qr_base64} alt="Código QR" className="w-48 h-48 rounded-xl" />
             ) : (
-              <div className="w-48 h-48 bg-apple-bg-secondary dark:bg-[#1D1D1F] rounded-apple-lg flex items-center justify-center">
+              <div className="w-48 h-48 bg-apple-bg-secondary dark:bg-[#1D1D1F] rounded-apple-lg flex items-center justify-center animate-pulse">
                 <div className="text-center">
-                  <div className="text-4xl mb-2">📷</div>
-                  <div className="text-xs text-apple-text-secondary dark:text-[#A1A1A6]">Código QR</div>
+                  <div className="w-12 h-12 mx-auto mb-2 p-2 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+                    <img src="/favicon.svg" alt="MexxicanMX" className="w-8 h-8 object-contain blur-[1px]" />
+                  </div>
+                  <div className="text-xs text-apple-text-secondary dark:text-[#A1A1A6]">Cargando QR...</div>
                 </div>
               </div>
             )}

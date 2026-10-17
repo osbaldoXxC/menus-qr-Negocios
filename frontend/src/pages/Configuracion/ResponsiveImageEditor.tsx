@@ -27,7 +27,9 @@ import {
 interface ResponsiveImageEditorProps {
   isOpen: boolean;
   onClose: () => void;
-  imageUrl: string;
+  imageUrl?: string;
+  horizontalImageUrl?: string;
+  verticalImageUrl?: string;
   apariencia: any;
   onSave: (updatedApariencia: any) => void;
 }
@@ -36,6 +38,8 @@ export const ResponsiveImageEditor: React.FC<ResponsiveImageEditorProps> = ({
   isOpen,
   onClose,
   imageUrl,
+  horizontalImageUrl,
+  verticalImageUrl,
   apariencia,
   onSave
 }) => {
@@ -96,7 +100,11 @@ export const ResponsiveImageEditor: React.FC<ResponsiveImageEditorProps> = ({
     activeBp,
     apariencia
   );
-  // Debug log removed
+
+  const isHorizontalActive = BREAKPOINT_GROUPS.HORIZONTAL.includes(activeBp);
+  const activeImageUrl = isHorizontalActive
+    ? (horizontalImageUrl || apariencia?.fondo_imagen_horizontal_url || imageUrl || apariencia?.fondo_imagen_url || '')
+    : (verticalImageUrl || apariencia?.fondo_imagen_vertical_url || imageUrl || apariencia?.fondo_imagen_url || '');
 
   const activeBpMeta = BREAKPOINTS_LIST.find(b => b.key === activeBp) || BREAKPOINTS_LIST[1];
   const isCustomized = inheritedFrom === activeBp;
@@ -674,7 +682,7 @@ export const ResponsiveImageEditor: React.FC<ResponsiveImageEditorProps> = ({
             )}
 
             {/* IMAGEN DE CONFIGURACIÓN INTERACTIVA */}
-            {imageUrl ? (
+            {activeImageUrl ? (
               <div
                 className="absolute select-none cursor-grab active:cursor-grabbing hover:ring-2 hover:ring-apple-blue/50 rounded-lg transition-all group"
                 style={{
@@ -690,7 +698,7 @@ export const ResponsiveImageEditor: React.FC<ResponsiveImageEditorProps> = ({
                 onTouchStart={handleMouseDownImage}
               >
                 <img
-                  src={imageUrl}
+                  src={activeImageUrl}
                   alt="Fondo interactivo"
                   className="w-full h-full pointer-events-none max-w-none"
                   style={{

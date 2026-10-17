@@ -14,6 +14,7 @@ export interface Platillo {
   nombre: string;
   descripcion: string;
   precio: number;
+  precio_original?: number | null;
   url_imagen: string;
   activo: boolean;
   porcion?: string;
@@ -21,6 +22,12 @@ export interface Platillo {
   etiquetas_dieteticas?: string[];
   ingredientes_principales?: string[];
   complementos?: (string | ComplementoObj)[];
+}
+
+export function formatPrice(val: number | string, simbolo = '$', posicion = 'prefijo') {
+  const num = Number(val) || 0;
+  const formatted = num.toFixed(2);
+  return posicion === 'prefijo' ? `${simbolo}${formatted}` : `${formatted} ${simbolo}`;
 }
 
 interface Categoria {
@@ -264,11 +271,11 @@ export function PublicMenu() {
     return (
       <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center">
         <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
-          className="text-5xl"
+          animate={{ scale: [1, 1.08, 1] }}
+          transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+          className="w-16 h-16 p-2 rounded-2xl bg-white/5 border border-white/10 shadow-[0_0_35px_rgba(210,35,35,0.4)] flex items-center justify-center"
         >
-          🌮
+          <img src="/favicon.svg" alt="MexxicanMX" className="w-12 h-12 object-contain" />
         </motion.div>
       </div>
     );
@@ -303,24 +310,15 @@ export function PublicMenu() {
   const headerBg    = dark ? `${bg}cc`               : `${bg}cc`;
   const priceBadge  = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
 
-  // Configuración de bordes, sombras y glassmorphism
+  // Configuración de bordes, sombras y diseño
   const configVisuales = restaurante.config_diseno?.elementos_visuales || {};
   const configApariencia = restaurante.config_diseno?.apariencia || {};
-  const fondoUrl = restaurante.fondo_url;
-  const isImageBg = restaurante.fondo_tipo === 'imagen' || (!restaurante.fondo_tipo && !!fondoUrl);
-
-  const borderRadiusBotones = configApariencia.border_radius_botones || '12px';
-  const borderRadiusTarjetas = configApariencia.border_radius_tarjetas || '24px';
-  const sombrasHabilitadas = configVisuales.sombras_habilitadas !== undefined ? configVisuales.sombras_habilitadas : true;
-  
-  // Condicional crítico: glassmorphism solo si existe imagen de fondo configurada
-  const glassmorphismActivo = !!(configVisuales.glassmorphism && isImageBg && fondoUrl);
-
-  const isSticky = restaurante.config_diseno?.layout?.categorias_sticky !== false;
 
   const fontFamily =
     restaurante.fuente_familia === 'Serif' ? 'Georgia, "Times New Roman", serif' :
     restaurante.fuente_familia === 'Mono'  ? '"SF Mono", "JetBrains Mono", monospace' :
+    restaurante.fuente_familia === 'Poppins' ? 'Poppins, sans-serif' :
+    restaurante.fuente_familia === 'Outfit' ? 'Outfit, sans-serif' :
     'Inter, -apple-system, BlinkMacSystemFont, sans-serif';
 
   const css = { 
@@ -347,6 +345,33 @@ export function PublicMenu() {
   const layoutType = isHorizontalBp 
     ? (restaurante.config_diseno?.layout?.layout_type_horizontal || restaurante.layout_type || 'TARJETAS_DETALLADAS')
     : (restaurante.config_diseno?.layout?.layout_type_vertical || restaurante.layout_type || 'TARJETAS_DETALLADAS');
+
+  // Selección dinámica de imagen de fondo: Horizontal vs Vertical con fallback retrocompatible
+  const rawFondoUrl = isHorizontalBp
+    ? (configApariencia.fondo_imagen_horizontal_url || configApariencia.fondo_imagen_url || restaurante.fondo_url)
+    : (configApariencia.fondo_imagen_vertical_url || configApariencia.fondo_imagen_url || restaurante.fondo_url);
+
+  // Blindaje estricto: Si el tipo configurado es 'solido' o 'gradiente', NUNCA renderizar imagen de fondo
+  const fondoTipo = restaurante.fondo_tipo || configApariencia.fondo_tipo || 'solido';
+  const isImageBg = (fondoTipo === 'imagen') && !!rawFondoUrl;
+  const fondoUrl = isImageBg ? rawFondoUrl : '';
+
+  const borderRadiusBotones = configApariencia.border_radius_botones || '12px';
+  const borderRadiusTarjetas = configApariencia.border_radius_tarjetas || '24px';
+  const sombrasHabilitadas = configVisuales.sombras_habilitadas !== undefined ? configVisuales.sombras_habilitadas : true;
+  
+  // Condicional crítico: glassmorphism solo si existe imagen de fondo configurada
+  const glassmorphismActivo = !!(configVisuales.glassmorphism && isImageBg && fondoUrl);
+
+  // Nuevas opciones de personalización total (Alternativa 1)
+  const estiloEncabezado = restaurante.config_diseno?.layout?.estilo_encabezado || 'fondo_completo';
+  const isHeroBanner = estiloEncabezado === 'banner_hero';
+  const tarjetaEstilo = configVisuales.tarjeta_estilo || (configVisuales.glassmorphism ? 'frosted' : 'solida');
+  const tarjetaOpacidad = configVisuales.tarjeta_opacidad ?? (configVisuales.glassmorphism ? 35 : 95);
+  const simboloMoneda = restaurante.config_diseno?.moneda?.simbolo || '$';
+  const posicionMoneda = restaurante.config_diseno?.moneda?.posicion || 'prefijo';
+
+  const isSticky = restaurante.config_diseno?.layout?.categorias_sticky !== false;
 
   const isGradientBg = restaurante.fondo_tipo === 'gradiente';
 
@@ -389,7 +414,7 @@ export function PublicMenu() {
         className="fixed inset-0 z-0 pointer-events-none w-full h-full overflow-hidden flex items-center justify-center"
         style={{ backgroundColor: bg }}
       >
-        {isImageBg && fondoUrl && (
+        {isImageBg && fondoUrl && !isHeroBanner && (
           <div 
             className="relative flex items-center justify-center origin-center flex-shrink-0"
             style={{ 
@@ -450,6 +475,83 @@ export function PublicMenu() {
       <div 
         className="relative z-10 flex flex-col w-full h-full min-h-screen"
       >
+
+      {/* ── HERO BANNER SUPERIOR (Si layout.estilo_encabezado === 'banner_hero') ── */}
+      {isHeroBanner && (
+        <div className="relative w-full overflow-hidden mb-6">
+          <div className="h-48 sm:h-64 md:h-72 w-full relative bg-zinc-900 overflow-hidden">
+            {fondoUrl ? (
+              <img
+                src={fondoUrl}
+                alt={restaurante.nombre}
+                className="w-full h-full object-cover"
+                style={{
+                  filter: `blur(${blurVal}px) brightness(${brightness}%) contrast(${contrast}%) saturate(${saturate}%)`,
+                  transform: 'scale(1.04)',
+                }}
+              />
+            ) : (
+              <div 
+                className="w-full h-full"
+                style={{
+                  background: `linear-gradient(135deg, ${primary}40 0%, ${bg} 100%)`
+                }}
+              />
+            )}
+            {/* Overlay gradiente */}
+            <div 
+              className="absolute inset-0 bg-gradient-to-t via-black/40 to-transparent"
+              style={{ backgroundColor: overlayColor ? `${overlayColor}${Math.round(overlayOpacity * 255).toString(16).padStart(2, '0')}` : undefined }}
+            />
+          </div>
+
+          {/* Tarjeta de Información en relieve sobre el Hero */}
+          <div className="max-w-[900px] mx-auto px-5 -mt-14 sm:-mt-16 relative z-20 flex flex-col sm:flex-row items-center sm:items-end justify-between gap-4">
+            <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 text-center sm:text-left">
+              {restaurante.logo_url ? (
+                <img
+                  src={restaurante.logo_url}
+                  alt={restaurante.nombre}
+                  className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover shadow-2xl border-4"
+                  style={{ borderColor: bg, backgroundColor: surface }}
+                />
+              ) : (
+                <div
+                  className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl flex items-center justify-center font-black text-3xl shadow-2xl border-4"
+                  style={{ borderColor: bg, backgroundColor: `${primary}30`, color: primary }}
+                >
+                  {restaurante.nombre.charAt(0)}
+                </div>
+              )}
+              <div className="space-y-1">
+                <h1 className="text-2xl sm:text-3xl font-black tracking-tight" style={{ color: textMain }}>
+                  {restaurante.nombre}
+                </h1>
+                {restaurante.config_diseno?.informacion?.ambiente && (
+                  <p className="text-xs sm:text-sm font-semibold opacity-80" style={{ color: textSub }}>
+                    ✨ {restaurante.config_diseno.informacion.ambiente}
+                  </p>
+                )}
+                {restaurante.config_diseno?.informacion?.direccion && (
+                  <p className="text-xs opacity-70 max-w-md line-clamp-1" style={{ color: textSub }}>
+                    📍 {restaurante.config_diseno.informacion.direccion}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Badges de estado */}
+            <div className="flex items-center gap-2 pb-1">
+              {restaurante.config_diseno?.layout?.mostrar_estado_abierto !== false && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  Abierto ahora
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── HEADER ── */}
       <header
@@ -529,7 +631,8 @@ export function PublicMenu() {
                   onSelect={() => setSelectedPlatillo(p)}
                   colors={{ 
                     primary, textMain, textSub, textMuted, surface, surfaceHover, border, priceBadge, dark,
-                    borderRadiusBotones, borderRadiusTarjetas, sombrasHabilitadas, glassmorphismActivo 
+                    borderRadiusBotones, borderRadiusTarjetas, sombrasHabilitadas, glassmorphismActivo,
+                    tarjetaEstilo, tarjetaOpacidad, simboloMoneda, posicionMoneda
                   }}
                 />
               ))}
@@ -570,7 +673,8 @@ export function PublicMenu() {
             onClose={() => setSelectedPlatillo(null)}
             colors={{ 
               primary, textMain, textSub, textMuted, surface, surfaceHover, border, priceBadge, dark,
-              borderRadiusBotones, borderRadiusTarjetas, sombrasHabilitadas, glassmorphismActivo 
+              borderRadiusBotones, borderRadiusTarjetas, sombrasHabilitadas, glassmorphismActivo,
+              tarjetaEstilo, tarjetaOpacidad, simboloMoneda, posicionMoneda
             }}
           />
         )}
@@ -584,6 +688,10 @@ interface CardColors {
   surface: string; surfaceHover: string; border: string; priceBadge: string; dark: boolean;
   borderRadiusBotones: string; borderRadiusTarjetas: string; sombrasHabilitadas: boolean;
   glassmorphismActivo: boolean;
+  tarjetaEstilo?: string;
+  tarjetaOpacidad?: number;
+  simboloMoneda?: string;
+  posicionMoneda?: string;
 }
 
 function PlatilloCard({ platillo, layout, index, colors, onSelect }: {
@@ -591,8 +699,20 @@ function PlatilloCard({ platillo, layout, index, colors, onSelect }: {
 }) {
   const { 
     primary, textMain, textSub, surface, surfaceHover, border, priceBadge, dark,
-    borderRadiusBotones, borderRadiusTarjetas, sombrasHabilitadas, glassmorphismActivo 
+    borderRadiusBotones, borderRadiusTarjetas, sombrasHabilitadas, glassmorphismActivo,
+    tarjetaEstilo, tarjetaOpacidad, simboloMoneda, posicionMoneda
   } = colors;
+
+  const estilo = tarjetaEstilo || (glassmorphismActivo ? 'frosted' : 'solida');
+  const opacidadPct = Math.min(Math.max(Number(tarjetaOpacidad ?? (estilo === 'solida' ? 95 : 35)), 10), 100);
+  const alpha = (opacidadPct / 100).toFixed(2);
+  const simbolo = simboloMoneda || '$';
+  const posicion = posicionMoneda || 'prefijo';
+
+  const hasDiscount = !!(platillo.precio_original && Number(platillo.precio_original) > Number(platillo.precio));
+  const discountPct = hasDiscount 
+    ? Math.round(((Number(platillo.precio_original) - Number(platillo.precio)) / Number(platillo.precio_original)) * 100) 
+    : 0;
 
   // Fallbacks de border-radius nativos para no alterar la apariencia por defecto
   const radiusTarjetas = borderRadiusTarjetas || (
@@ -637,7 +757,7 @@ function PlatilloCard({ platillo, layout, index, colors, onSelect }: {
       <motion.div
         variants={anim} initial="hidden" whileInView="visible" viewport={{ once: true }}
         onClick={onSelect}
-        className="flex items-center justify-between py-4 px-2 transition-colors cursor-pointer group"
+        className="flex items-center justify-between py-4 px-3 transition-colors cursor-pointer group"
         style={{ color: textMain, borderBottom: `1px solid ${border}`, borderRadius: radiusTarjetas }}
         onMouseEnter={e => (e.currentTarget.style.backgroundColor = surface)}
         onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
@@ -654,13 +774,27 @@ function PlatilloCard({ platillo, layout, index, colors, onSelect }: {
           <div className="flex items-center gap-2">
             <h3 className="font-bold text-[15px] truncate group-hover:text-apple-blue transition-colors" style={{ color: textMain }}>{platillo.nombre}</h3>
             {platillo.nivel_picante ? <span className="text-xs flex-shrink-0">{renderPicante(platillo.nivel_picante)}</span> : null}
+            {hasDiscount && (
+              <span className="px-1.5 py-0.5 text-[10px] font-black rounded bg-red-500/15 text-red-500 border border-red-500/30">
+                -{discountPct}%
+              </span>
+            )}
           </div>
           <p className="text-[12px] mt-0.5 truncate" style={{ color: textSub }}>
             {platillo.porcion && <span className="font-semibold text-emerald-500 mr-1.5">{platillo.porcion} •</span>}
             {platillo.descripcion}
           </p>
         </div>
-        <span className="font-black text-[16px] flex-shrink-0" style={{ color: primary }}>${Number(platillo.precio).toFixed(2)}</span>
+        <div className="text-right flex-shrink-0">
+          {hasDiscount && (
+            <span className="block text-[11px] line-through opacity-50 font-medium" style={{ color: textSub }}>
+              {formatPrice(platillo.precio_original!, simbolo, posicion)}
+            </span>
+          )}
+          <span className="font-black text-[16px]" style={{ color: primary }}>
+            {formatPrice(platillo.precio, simbolo, posicion)}
+          </span>
+        </div>
       </motion.div>
     );
   }
@@ -683,11 +817,21 @@ function PlatilloCard({ platillo, layout, index, colors, onSelect }: {
               {renderPicante(platillo.nivel_picante)}
             </div>
           ) : null}
+          {hasDiscount && (
+            <div className="absolute top-2 right-2 px-2 py-0.5 text-[11px] font-black bg-red-600 text-white rounded-md shadow-md animate-pulse">
+              -{discountPct}%
+            </div>
+          )}
           <div
-            className="absolute bottom-2.5 right-2.5 px-2.5 py-1 text-[12px] font-bold backdrop-blur-md shadow-md"
+            className="absolute bottom-2.5 right-2.5 px-2.5 py-1 text-[12px] font-bold backdrop-blur-md shadow-md flex items-center gap-1.5"
             style={{ backgroundColor: `${primary}dd`, color: '#fff', borderRadius: radiusBotones }}
           >
-            ${Number(platillo.precio).toFixed(2)}
+            {hasDiscount && (
+              <span className="line-through opacity-75 text-[10px] font-normal">
+                {formatPrice(platillo.precio_original!, simbolo, posicion)}
+              </span>
+            )}
+            <span>{formatPrice(platillo.precio, simbolo, posicion)}</span>
           </div>
         </div>
         <div className="text-center px-1">
@@ -699,32 +843,42 @@ function PlatilloCard({ platillo, layout, index, colors, onSelect }: {
   }
 
   // ── TARJETAS DETALLADAS ──
+  let cardBg = surface;
+  let cardBackdrop = 'none';
+  let cardBorder = `1px solid ${border}`;
+
+  if (estilo === 'solida') {
+    cardBg = dark ? `rgba(26, 26, 30, ${alpha})` : `rgba(255, 255, 255, ${alpha})`;
+    cardBackdrop = 'none';
+  } else if (estilo === 'frosted') {
+    cardBg = dark ? `rgba(18, 18, 22, ${alpha})` : `rgba(255, 255, 255, ${alpha})`;
+    cardBackdrop = 'blur(16px)';
+  } else if (estilo === 'minimalista') {
+    cardBg = 'transparent';
+    cardBackdrop = 'none';
+    cardBorder = `1px dashed ${border}`;
+  }
+
   return (
     <motion.div
       variants={anim} initial="hidden" whileInView="visible" viewport={{ once: true }}
       onClick={onSelect}
       className="flex flex-col sm:flex-row gap-5 p-5 group transition-all duration-300 relative cursor-pointer"
       style={{ 
-        backgroundColor: glassmorphismActivo ? (dark ? 'rgba(10, 10, 10, 0.45)' : 'rgba(255, 255, 255, 0.45)') : surface,
-        backdropFilter: glassmorphismActivo ? 'blur(16px)' : 'none',
-        WebkitBackdropFilter: glassmorphismActivo ? 'blur(16px)' : 'none',
-        border: `1px solid ${border}`,
+        backgroundColor: cardBg,
+        backdropFilter: cardBackdrop,
+        WebkitBackdropFilter: cardBackdrop,
+        border: cardBorder,
         borderRadius: radiusTarjetas,
         boxShadow: sombrasHabilitadas ? (dark ? '0 10px 30px -10px rgba(0,0,0,0.6)' : '0 10px 30px -10px rgba(0,0,0,0.08)') : 'none'
       }}
       onMouseEnter={e => {
-        if (!glassmorphismActivo) {
-          e.currentTarget.style.backgroundColor = surfaceHover;
-        } else {
-          e.currentTarget.style.backgroundColor = dark ? 'rgba(10, 10, 10, 0.55)' : 'rgba(255, 255, 255, 0.55)';
+        if (estilo !== 'minimalista') {
+          e.currentTarget.style.backgroundColor = dark ? `rgba(38, 38, 44, ${Math.min(Number(alpha) + 0.1, 1)})` : `rgba(245, 245, 247, ${Math.min(Number(alpha) + 0.05, 1)})`;
         }
       }}
       onMouseLeave={e => {
-        if (!glassmorphismActivo) {
-          e.currentTarget.style.backgroundColor = surface;
-        } else {
-          e.currentTarget.style.backgroundColor = dark ? 'rgba(10, 10, 10, 0.45)' : 'rgba(255, 255, 255, 0.45)';
-        }
+        e.currentTarget.style.backgroundColor = cardBg;
       }}
     >
       <div
@@ -777,12 +931,24 @@ function PlatilloCard({ platillo, layout, index, colors, onSelect }: {
         </div>
 
         <div className="flex items-center justify-between mt-3">
-          <span
-            className="text-[1.3rem] font-black"
-            style={{ color: primary }}
-          >
-            ${Number(platillo.precio).toFixed(2)}
-          </span>
+          <div className="flex items-baseline gap-2 flex-wrap">
+            <span
+              className="text-[1.3rem] font-black"
+              style={{ color: primary }}
+            >
+              {formatPrice(platillo.precio, simbolo, posicion)}
+            </span>
+            {hasDiscount && (
+              <span className="text-[12px] line-through font-medium opacity-50" style={{ color: textSub }}>
+                {formatPrice(platillo.precio_original!, simbolo, posicion)}
+              </span>
+            )}
+            {hasDiscount && (
+              <span className="px-2 py-0.5 text-[10px] font-black rounded bg-red-500/15 text-red-500 border border-red-500/30">
+                -{discountPct}% OFF
+              </span>
+            )}
+          </div>
           <span
             className="px-3 py-1 text-[11px] font-bold transition-all group-hover:scale-105"
             style={{ 
@@ -805,7 +971,9 @@ function PlatilloDetailModal({ platillo, onClose, colors }: {
   onClose: () => void;
   colors: CardColors;
 }) {
-  const { primary, textMain, textSub, surface, border, dark } = colors;
+  const { primary, textMain, textSub, surface, border, dark, simboloMoneda, posicionMoneda } = colors;
+  const simbolo = simboloMoneda || '$';
+  const posicion = posicionMoneda || 'prefijo';
 
   const [selectedExtras, setSelectedExtras] = useState<Record<number, boolean>>({});
 
@@ -834,6 +1002,11 @@ function PlatilloDetailModal({ platillo, onClose, colors }: {
     sin_lactosa: { label: 'Sin Lactosa', icon: '🥛' },
     keto: { label: 'Keto', icon: '🥑' },
   };
+
+  const hasDiscount = !!(platillo.precio_original && Number(platillo.precio_original) > Number(platillo.precio));
+  const discountPct = hasDiscount 
+    ? Math.round(((Number(platillo.precio_original) - Number(platillo.precio)) / Number(platillo.precio_original)) * 100) 
+    : 0;
 
   return (
     <motion.div
@@ -884,9 +1057,21 @@ function PlatilloDetailModal({ platillo, onClose, colors }: {
                 </p>
               )}
             </div>
-            <span className="text-2xl font-black flex-shrink-0" style={{ color: primary }}>
-              ${totalPrice.toFixed(2)}
-            </span>
+            <div className="text-right flex-shrink-0">
+              {hasDiscount && (
+                <div className="flex items-center justify-end gap-1.5 mb-1">
+                  <span className="text-xs line-through opacity-50 font-medium" style={{ color: textSub }}>
+                    {formatPrice(platillo.precio_original!, simbolo, posicion)}
+                  </span>
+                  <span className="px-1.5 py-0.5 text-[10px] font-black rounded bg-red-500/20 text-red-500">
+                    -{discountPct}% OFF
+                  </span>
+                </div>
+              )}
+              <span className="text-2xl font-black" style={{ color: primary }}>
+                {formatPrice(totalPrice, simbolo, posicion)}
+              </span>
+            </div>
           </div>
 
           {/* Dietary Badges */}
@@ -969,7 +1154,7 @@ function PlatilloDetailModal({ platillo, onClose, colors }: {
                       </div>
                       {comp.precio > 0 && (
                         <span className="text-xs font-black text-emerald-500">
-                          + ${comp.precio.toFixed(2)}
+                          + {formatPrice(comp.precio, simbolo, posicion)}
                         </span>
                       )}
                     </label>

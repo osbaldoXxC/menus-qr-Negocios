@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const redisClient = require('../config/redis');
+const { invalidateMenuCache } = require('../services/cacheService');
 
 const createCategory = async (req, res) => {
   const { nombre, orden } = req.body;
@@ -32,7 +33,7 @@ const createCategory = async (req, res) => {
     );
 
     // Invalida caché del menú
-    await redisClient.del(`cache:menu:${restaurante_id}`);
+    await invalidateMenuCache(restaurante_id);
 
     res.status(201).json({
       mensaje: 'Categoría creada correctamente',
@@ -82,7 +83,7 @@ const updateCategory = async (req, res) => {
       return res.status(404).json({ mensaje: 'Categoría no encontrada o no tienes permisos' });
     }
 
-    await redisClient.del(`cache:menu:${restaurante_id}`);
+    await invalidateMenuCache(restaurante_id);
 
     res.json({
       mensaje: 'Categoría actualizada correctamente',
@@ -120,7 +121,7 @@ const deleteCategory = async (req, res) => {
       return res.status(404).json({ mensaje: 'Categoría no encontrada o no tienes permisos' });
     }
 
-    await redisClient.del(`cache:menu:${restaurante_id}`);
+    await invalidateMenuCache(restaurante_id);
 
     res.json({ mensaje: 'Categoría eliminada correctamente' });
   } catch (error) {
@@ -150,7 +151,7 @@ const reorderCategories = async (req, res) => {
     }
 
     await client.query('COMMIT');
-    await redisClient.del(`cache:menu:${restaurante_id}`);
+    await invalidateMenuCache(restaurante_id);
 
     res.json({ mensaje: 'Orden de categorías actualizado correctamente' });
   } catch (error) {

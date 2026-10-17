@@ -87,3 +87,7 @@ __pycache__/
 *.njsproj
 *.sln
 *.sw?
+
+# Uploads locales
+uploads/
+backend/uploads/

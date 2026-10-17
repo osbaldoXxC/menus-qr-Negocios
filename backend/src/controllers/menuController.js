@@ -2,10 +2,11 @@ const db = require('../config/db');
 const redisClient = require('../config/redis');
 const axios = require('axios');
 const SubscriptionService = require('../services/subscriptionService');
+const { invalidateMenuCache } = require('../services/cacheService');
 
 const createDish = async (req, res) => {
   let { 
-    nombre, descripcion, precio, categoria_id, categoria, 
+    nombre, descripcion, precio, precio_original, categoria_id, categoria, 
     ingredientes_principales, complementos, activo,
     nivel_picante, porcion, etiquetas_dieteticas
   } = req.body;
@@ -73,6 +74,10 @@ const createDish = async (req, res) => {
     }
   }
 
+  const cleanPrecioOriginal = (precio_original !== undefined && precio_original !== null && precio_original !== '' && !isNaN(Number(precio_original)) && Number(precio_original) > 0)
+    ? Number(precio_original)
+    : null;
+
   const client = await db.pool.connect();
 
   try {
@@ -80,14 +85,15 @@ const createDish = async (req, res) => {
 
     // 1. Insertar el platillo
     const dishRes = await client.query(
-      `INSERT INTO platillos (restaurante_id, nombre, descripcion, precio, categoria_id, url_imagen, activo, estado_ia, ingredientes_principales, complementos, nivel_picante, porcion, etiquetas_dieteticas) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, 'pendiente', $8, $9, $10, $11, $12) 
+      `INSERT INTO platillos (restaurante_id, nombre, descripcion, precio, precio_original, categoria_id, url_imagen, activo, estado_ia, ingredientes_principales, complementos, nivel_picante, porcion, etiquetas_dieteticas) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pendiente', $9, $10, $11, $12, $13) 
        RETURNING id`,
       [
         restaurante_id, 
         nombre, 
         descripcion, 
         precio, 
+        cleanPrecioOriginal,
         final_categoria_id, 
         url_imagen, 
         activo !== undefined ? (activo === 'true' || activo === true) : true,
@@ -101,8 +107,8 @@ const createDish = async (req, res) => {
 
     await client.query('COMMIT');
 
-    // 2. Invalidar caché
-    await redisClient.del(`cache:menu:${restaurante_id}`);
+    // 2. Invalidar caché sincrónicamente (UUID y slug)
+    await invalidateMenuCache(restaurante_id);
     await redisClient.del('cache:busquedas_globales');
 
     res.status(201).json({
@@ -122,7 +128,7 @@ const createDish = async (req, res) => {
 const updateDish = async (req, res) => {
   const { id } = req.params;
   let { 
-    nombre, descripcion, precio, categoria_id, categoria,
+    nombre, descripcion, precio, precio_original, categoria_id, categoria,
     ingredientes_principales, complementos, activo,
     nivel_picante, porcion, etiquetas_dieteticas
   } = req.body;
@@ -174,21 +180,33 @@ const updateDish = async (req, res) => {
       SET nombre = COALESCE($1, nombre),
           descripcion = COALESCE($2, descripcion),
           precio = COALESCE($3, precio),
-          categoria_id = COALESCE($4, categoria_id),
-          url_imagen = COALESCE($5, url_imagen),
-          activo = COALESCE($6, activo),
-          ingredientes_principales = COALESCE($7, ingredientes_principales),
-          complementos = COALESCE($8, complementos),
-          nivel_picante = COALESCE($9, nivel_picante),
-          porcion = COALESCE($10, porcion),
-          etiquetas_dieteticas = COALESCE($11, etiquetas_dieteticas)
-      WHERE id = $12 AND restaurante_id = $13
+          precio_original = CASE WHEN $4::text = 'CLEAR' THEN NULL WHEN $4 IS NOT NULL THEN $4::numeric ELSE precio_original END,
+          categoria_id = COALESCE($5, categoria_id),
+          url_imagen = COALESCE($6, url_imagen),
+          activo = COALESCE($7, activo),
+          ingredientes_principales = COALESCE($8, ingredientes_principales),
+          complementos = COALESCE($9, complementos),
+          nivel_picante = COALESCE($10, nivel_picante),
+          porcion = COALESCE($11, porcion),
+          etiquetas_dieteticas = COALESCE($12, etiquetas_dieteticas)
+      WHERE id = $13 AND restaurante_id = $14
       RETURNING id
     `;
+
+    let precioOriginalParam = null;
+    if (precio_original !== undefined) {
+      if (precio_original === '' || precio_original === null || Number(precio_original) <= 0) {
+        precioOriginalParam = 'CLEAR';
+      } else if (!isNaN(Number(precio_original))) {
+        precioOriginalParam = Number(precio_original);
+      }
+    }
+
     const updateValues = [
       nombre, 
       descripcion, 
       precio, 
+      precioOriginalParam,
       final_categoria_id, 
       url_imagen, 
       activo !== undefined ? (activo === 'true' || activo === true) : undefined, 
@@ -209,7 +227,7 @@ const updateDish = async (req, res) => {
     }
 
     await client.query('COMMIT');
-    await redisClient.del(`cache:menu:${restaurante_id}`);
+    await invalidateMenuCache(restaurante_id);
 
     res.json({ mensaje: 'Platillo actualizado correctamente' });
 
@@ -236,7 +254,7 @@ const deleteDish = async (req, res) => {
       return res.status(404).json({ mensaje: 'Platillo no encontrado o no tienes permisos' });
     }
 
-    await redisClient.del(`cache:menu:${restaurante_id}`);
+    await invalidateMenuCache(restaurante_id);
 
     res.json({ mensaje: 'Platillo eliminado correctamente' });
   } catch (error) {
@@ -267,7 +285,7 @@ const getPublicMenu = async (req, res) => {
     let restRes;
     if (isUuid) {
       restRes = await db.query(
-        `SELECT r.id, r.nombre_negocio, r.suscripcion_activa, r.plan,
+        `SELECT r.id, r.nombre_negocio, r.slug, r.suscripcion_activa, r.plan,
                 t.logo_url, t.banner_url, t.color_primario, t.color_fondo, 
                 t.fuente_familia, t.layout_type, t.banner_promocional_activo, t.banner_promocional_texto,
                 t.config_diseno
@@ -278,7 +296,7 @@ const getPublicMenu = async (req, res) => {
       );
     } else {
       restRes = await db.query(
-        `SELECT r.id, r.nombre_negocio, r.suscripcion_activa, r.plan,
+        `SELECT r.id, r.nombre_negocio, r.slug, r.suscripcion_activa, r.plan,
                 t.logo_url, t.banner_url, t.color_primario, t.color_fondo, 
                 t.fuente_familia, t.layout_type, t.banner_promocional_activo, t.banner_promocional_texto,
                 t.config_diseno
@@ -302,7 +320,7 @@ const getPublicMenu = async (req, res) => {
 
     // 3. Obtener platillos con sus categorías ordenadas (solo activos)
     const dishesRes = await db.query(
-      `SELECT p.id, p.nombre, p.descripcion, p.precio, p.url_imagen, p.ingredientes_principales, p.complementos, p.nivel_picante, p.porcion, p.etiquetas_dieteticas, c.nombre as categoria_nombre, c.orden as categoria_orden
+      `SELECT p.id, p.nombre, p.descripcion, p.precio, p.precio_original, p.url_imagen, p.ingredientes_principales, p.complementos, p.nivel_picante, p.porcion, p.etiquetas_dieteticas, c.nombre as categoria_nombre, c.orden as categoria_orden
        FROM platillos p
        LEFT JOIN categorias_restaurante c ON p.categoria_id = c.id
        WHERE p.restaurante_id = $1 AND p.activo = true
@@ -329,16 +347,29 @@ const getPublicMenu = async (req, res) => {
     const features = planConfig.features || {};
 
     if (configDisenoObj.apariencia) {
+      const ap = configDisenoObj.apariencia;
+      const tieneImagenes = !!(ap.fondo_imagen_horizontal_url || ap.fondo_imagen_vertical_url);
+
+      // Si el tipo no es imagen o ambas imágenes están vacías, purgar URLs residuales
+      if (ap.fondo_tipo !== 'imagen' || !tieneImagenes) {
+        delete ap.fondo_imagen_url;
+        if (!tieneImagenes && ap.fondo_tipo === 'imagen') {
+          ap.fondo_tipo = 'solido';
+        }
+      }
+
       if (!features.imagen_fondo) {
-        delete configDisenoObj.apariencia.fondo_imagen_url;
-        if (configDisenoObj.apariencia.fondo_tipo === 'imagen') {
-          configDisenoObj.apariencia.fondo_tipo = 'solido';
+        delete ap.fondo_imagen_url;
+        delete ap.fondo_imagen_horizontal_url;
+        delete ap.fondo_imagen_vertical_url;
+        if (ap.fondo_tipo === 'imagen') {
+          ap.fondo_tipo = 'solido';
         }
       }
       
       if (!features.configuracion_diseno) {
-        delete configDisenoObj.apariencia.border_radius_botones;
-        delete configDisenoObj.apariencia.border_radius_tarjetas;
+        delete ap.border_radius_botones;
+        delete ap.border_radius_tarjetas;
       }
     }
 
@@ -383,6 +414,7 @@ const getPublicMenu = async (req, res) => {
         nombre: dish.nombre,
         descripcion: dish.descripcion,
         precio: dish.precio,
+        precio_original: dish.precio_original ? Number(dish.precio_original) : null,
         url_imagen: dish.url_imagen,
         ingredientes_principales: dish.ingredientes_principales,
         complementos: dish.complementos,
@@ -392,9 +424,16 @@ const getPublicMenu = async (req, res) => {
       });
     });
 
-    // 5. Guardar en Redis (4h) - Aislado para evitar romper respuesta si Redis falla
+    // 5. Guardar en Redis (4h) - Sincronizado para UUID y slug
     try {
-      await redisClient.setEx(cacheKey, 14400, JSON.stringify(response));
+      const serialized = JSON.stringify(response);
+      await redisClient.setEx(cacheKey, 14400, serialized);
+      if (restInfo.slug && cacheKey !== `cache:menu:${restInfo.slug}`) {
+        await redisClient.setEx(`cache:menu:${restInfo.slug}`, 14400, serialized);
+      }
+      if (cacheKey !== `cache:menu:${realRestaurantId}`) {
+        await redisClient.setEx(`cache:menu:${realRestaurantId}`, 14400, serialized);
+      }
     } catch (redisError) {
       console.warn(`[Redis Write Error] Error al guardar caché para ${cacheKey}:`, redisError.message);
     }
@@ -412,7 +451,7 @@ const getDishes = async (req, res) => {
 
   try {
     const result = await db.query(
-      `SELECT p.id, p.nombre, p.descripcion, p.precio, p.url_imagen, p.estado_ia, p.activo, p.ingredientes_principales, p.complementos, p.nivel_picante, p.porcion, p.etiquetas_dieteticas, c.nombre as categoria_nombre
+      `SELECT p.id, p.nombre, p.descripcion, p.precio, p.precio_original, p.url_imagen, p.estado_ia, p.activo, p.ingredientes_principales, p.complementos, p.nivel_picante, p.porcion, p.etiquetas_dieteticas, c.nombre as categoria_nombre
        FROM platillos p
        LEFT JOIN categorias_restaurante c ON p.categoria_id = c.id
        WHERE p.restaurante_id = $1

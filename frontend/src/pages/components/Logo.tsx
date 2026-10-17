@@ -10,12 +10,12 @@ export function Logo({ className = '', size = 20 }: LogoProps) {
 
   if (error) {
     return (
-      <span 
-        style={{ fontSize: size }} 
-        className={`leading-none select-none inline-block ${className}`}
+      <div 
+        style={{ width: size, height: size }} 
+        className={`rounded-lg bg-red-600 text-white font-bold text-xs flex items-center justify-center select-none ${className}`}
       >
-        🌮
-      </span>
+        M
+      </div>
     );
   }
 

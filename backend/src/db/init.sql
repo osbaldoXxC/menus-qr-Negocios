@@ -94,6 +94,7 @@ CREATE TABLE IF NOT EXISTS platillos (
     nombre VARCHAR(255) NOT NULL,
     descripcion TEXT,
     precio DECIMAL(10,2) NOT NULL,
+    precio_original DECIMAL(10,2) DEFAULT NULL, -- Precio regular antes de descuento (ofertas / tachado)
     url_imagen TEXT, -- Apunta a S3
     categoria_id UUID REFERENCES categorias_restaurante(id) ON DELETE SET NULL,
     tamano_porcion_id UUID, -- Foreign key to tamanos_porcion table (sync: production uses this)
@@ -218,7 +219,9 @@ CREATE TABLE IF NOT EXISTS soporte_conversaciones (
     mensajes_restaurante_count INTEGER DEFAULT 0, -- ACTIVELY USED: track message count
     leido_admin BOOLEAN DEFAULT false, -- ACTIVELY USED: mark as read by admin
     leido_restaurante BOOLEAN DEFAULT true, -- ACTIVELY USED: mark as read by restaurant
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    estado VARCHAR(50) DEFAULT 'abierta',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 COMMENT ON TABLE soporte_conversaciones IS 'Support tickets/conversations with active tracking fields';

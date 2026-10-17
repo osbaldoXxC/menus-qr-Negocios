@@ -9,7 +9,16 @@ import { WelcomeSplash } from './pages/components/WelcomeSplash';
 import { Logo } from './pages/components/Logo';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// Lazy-loaded pages
+// Direct imports for instant, zero-delay dashboard navigation
+import { DashboardRestaurante } from './pages/DashboardRestaurante/DashboardRestaurante';
+import { MiMenu } from './pages/MiMenu/MiMenu';
+import { NuevoPlatillo } from './pages/NuevoPlatillo/NuevoPlatillo';
+import { CodigoQR } from './pages/CodigoQR/CodigoQR';
+import { Configuracion } from './pages/Configuracion/Configuracion';
+import { Soporte } from './pages/Soporte/Soporte';
+import { Perfil } from './pages/Perfil/Perfil';
+
+// Lazy-loaded public pages
 const HomeDiners = lazy(() => import('./pages/Landing/NoSabesQueComer').then(m => ({ default: m.NoSabesQueComer })));
 const PublicMenu = lazy(() => import('./pages/PublicMenu/PublicMenu').then(m => ({ default: m.PublicMenu })));
 const Register = lazy(() => import('./pages/Register/Register').then(m => ({ default: m.Register })));
@@ -20,13 +29,6 @@ const Precios = lazy(() => import('./pages/Precios/Precios').then(m => ({ defaul
 const EscanearQR = lazy(() => import('./pages/EscanearQR/EscanearQR').then(m => ({ default: m.EscanearQR })));
 const Descubrir = lazy(() => import('./pages/Descubrir/Descubrir').then(m => ({ default: m.Descubrir })));
 const CuestionarioIA = lazy(() => import('./pages/CuestionarioIA/CuestionarioIA').then(m => ({ default: m.CuestionarioIA })));
-const DashboardRestaurante = lazy(() => import('./pages/DashboardRestaurante/DashboardRestaurante').then(m => ({ default: m.DashboardRestaurante })));
-const MiMenu = lazy(() => import('./pages/MiMenu/MiMenu').then(m => ({ default: m.MiMenu })));
-const NuevoPlatillo = lazy(() => import('./pages/NuevoPlatillo/NuevoPlatillo').then(m => ({ default: m.NuevoPlatillo })));
-const CodigoQR = lazy(() => import('./pages/CodigoQR/CodigoQR').then(m => ({ default: m.CodigoQR })));
-const Configuracion = lazy(() => import('./pages/Configuracion/Configuracion').then(m => ({ default: m.Configuracion })));
-const Soporte = lazy(() => import('./pages/Soporte/Soporte').then(m => ({ default: m.Soporte })));
-const Perfil = lazy(() => import('./pages/Perfil/Perfil').then(m => ({ default: m.Perfil })));
 const VerifyEmail = lazy(() => import('./pages/Login/VerifyEmail').then(m => ({ default: m.VerifyEmail })));
 const RecuperarContrasena = lazy(() => import('./pages/Login/RecuperarContrasena').then(m => ({ default: m.RecuperarContrasena })));
 const AdminPanel = lazy(() => import('./pages/Admin/AdminPanel').then(m => ({ default: m.AdminPanel })));

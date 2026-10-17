@@ -100,11 +100,19 @@ export function WelcomeSplash() {
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
           >
             <motion.div
-              className="text-6xl mb-6 inline-block"
-              animate={{ rotate: [0, -10, 10, -5, 0] }}
-              transition={{ duration: 1.2, delay: 0.3 }}
+              className="mb-6 inline-flex items-center justify-center p-3 rounded-3xl bg-white/5 border border-white/10 shadow-[0_0_50px_rgba(210,35,35,0.35)] backdrop-blur-md"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: [1, 1.05, 1], opacity: 1 }}
+              transition={{ 
+                opacity: { duration: 0.5 },
+                scale: { duration: 3, repeat: Infinity, ease: 'easeInOut' } 
+              }}
             >
-              🌮
+              <img
+                src="/favicon.svg"
+                alt="MexxicanMX"
+                className="w-20 h-20 sm:w-24 sm:h-24 object-contain rounded-2xl drop-shadow-2xl"
+              />
             </motion.div>
 
             <motion.p

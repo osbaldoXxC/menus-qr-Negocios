@@ -94,6 +94,7 @@ async function runMigrations() {
       ALTER TABLE platillos ADD COLUMN IF NOT EXISTS porcion VARCHAR(100) DEFAULT '';
       ALTER TABLE platillos ADD COLUMN IF NOT EXISTS etiquetas_dieteticas JSONB DEFAULT '[]'::jsonb;
       ALTER TABLE platillos ADD COLUMN IF NOT EXISTS tamano_porcion_id UUID;
+      ALTER TABLE platillos ADD COLUMN IF NOT EXISTS precio_original DECIMAL(10, 2) DEFAULT NULL;
 
       ALTER TABLE usuarios_comensales ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP WITH TIME ZONE;
 
