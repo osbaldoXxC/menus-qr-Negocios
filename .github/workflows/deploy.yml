@@ -32,12 +32,23 @@ jobs:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
           aws-region: us-east-1
 
-      - name: Build & Sync User Frontend
-        working-directory: ./frontend
+      - name: Build & Sync Comensales Frontend
+        working-directory: ./frontend-comensales
         run: |
           npm ci
           npm run build
           aws s3 sync ./dist s3://oamdevsol-restaurant-256663926988 --delete
+        env:
+          VITE_API_URL: ${{ vars.VITE_API_URL || 'https://backend.oamdevsol.site/api' }}
+
+      - name: Build & Sync Restaurantes Frontend (si existe bucket configurado)
+        working-directory: ./frontend-restaurantes
+        run: |
+          npm ci
+          npm run build
+          if [ -n "${{ vars.S3_RESTAURANTES_BUCKET }}" ]; then
+            aws s3 sync ./dist s3://${{ vars.S3_RESTAURANTES_BUCKET }} --delete
+          fi
         env:
           VITE_API_URL: ${{ vars.VITE_API_URL || 'https://backend.oamdevsol.site/api' }}
 

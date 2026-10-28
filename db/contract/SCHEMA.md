@@ -120,6 +120,7 @@ Ningun nombre fuera de este archivo puede usarse en consultas, modelos o DTOs.
 | `nombre` | character varying | no |  |
 | `descripcion` | text | si |  |
 | `precio` | numeric | no |  |
+| `precio_original` | numeric | si |  |
 | `url_imagen` | text | si |  |
 | `categoria_id` | uuid | si |  |
 | `tamano_porcion_id` | uuid | si |  |

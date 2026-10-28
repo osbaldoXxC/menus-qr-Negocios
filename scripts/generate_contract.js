@@ -123,6 +123,7 @@ const tablesDef = [
       { nombre: 'nombre', tipo: 'character varying', nulable: false, default: null, longitud_maxima: 255 },
       { nombre: 'descripcion', tipo: 'text', nulable: true, default: null },
       { nombre: 'precio', tipo: 'numeric', nulable: false, default: null, precision: 10, escala: 2 },
+      { nombre: 'precio_original', tipo: 'numeric', nulable: true, default: null, precision: 10, escala: 2 },
       { nombre: 'url_imagen', tipo: 'text', nulable: true, default: null },
       { nombre: 'categoria_id', tipo: 'uuid', nulable: true, default: null },
       { nombre: 'tamano_porcion_id', tipo: 'uuid', nulable: true, default: null },

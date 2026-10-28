@@ -259,7 +259,7 @@ export function Configuracion(): JSX.Element {
       if (key === 'fuente_familia') extra.fuente_familia = value;
       if (key === 'fondo_valor' && apariencia.fondo_tipo === 'solido') extra.color_fondo = value;
 
-      // Mantener sincronizado y limpio fondo_imagen_url para evitar residuos en BD y caché
+      // Mantener sincronizado y limpio fondo_imagen_url para evitar residuos y contaminación cruzada
       if (key === 'fondo_imagen_horizontal_url' || key === 'fondo_imagen_vertical_url' || key === 'fondo_tipo') {
         const horiz = key === 'fondo_imagen_horizontal_url' ? value : apariencia.fondo_imagen_horizontal_url;
         const vert = key === 'fondo_imagen_vertical_url' ? value : apariencia.fondo_imagen_vertical_url;
@@ -267,8 +267,12 @@ export function Configuracion(): JSX.Element {
 
         if (tipo !== 'imagen' || (!horiz && !vert)) {
           apariencia.fondo_imagen_url = '';
+        } else if (horiz) {
+          // Solo si hay horizontal explícita, se usa como legacy general (pantallas estándar)
+          apariencia.fondo_imagen_url = horiz;
         } else {
-          apariencia.fondo_imagen_url = horiz || vert || '';
+          // Si solo hay vertical, NO asignar a fondo_imagen_url para que las pantallas horizontales no la consuman por error
+          apariencia.fondo_imagen_url = '';
         }
       }
 
@@ -1032,26 +1036,30 @@ export function Configuracion(): JSX.Element {
                           </div>
                         </div>
 
-                        <div className="flex-1 space-y-2 min-w-0">
+                        <div className="flex-1 flex flex-col justify-center gap-2 min-w-0">
                           <button
                             type="button"
                             onClick={() => bgFileInputHorizontalRef.current?.click()}
                             disabled={uploadingBgHorizontal}
-                            className="w-full px-3 py-2 bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border hover:border-apple-blue/50 text-xs font-bold rounded-xl transition-colors inline-flex items-center justify-center gap-1.5"
+                            className="w-full px-3.5 py-2 bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary hover:bg-apple-blue/10 border border-apple-border dark:border-apple-dark-border hover:border-apple-blue text-xs font-semibold rounded-xl transition-all inline-flex items-center justify-center gap-2 shadow-xs active:scale-98"
                           >
-                            <Upload size={12} />
-                            {theme.config_diseno?.apariencia?.fondo_imagen_horizontal_url ? 'Reemplazar' : 'Subir imagen'}
+                            <Upload size={13} className="text-apple-blue shrink-0" />
+                            <span>{theme.config_diseno?.apariencia?.fondo_imagen_horizontal_url ? 'Reemplazar imagen' : 'Subir imagen'}</span>
                           </button>
 
-                          {theme.config_diseno?.apariencia?.fondo_imagen_horizontal_url && (
+                          {theme.config_diseno?.apariencia?.fondo_imagen_horizontal_url ? (
                             <button 
                               type="button" 
                               onClick={() => updateDisenoApariencia('fondo_imagen_horizontal_url', '')}
-                              className="w-full py-1.5 text-center text-red-500 hover:bg-red-500/10 rounded-xl text-xs font-bold transition-colors inline-flex items-center justify-center gap-1"
+                              className="w-full px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/20 rounded-xl text-xs font-medium transition-all inline-flex items-center justify-center gap-1.5 active:scale-98"
                             >
-                              <Trash2 size={12} />
-                              Eliminar
+                              <Trash2 size={13} className="shrink-0" />
+                              <span>Eliminar imagen</span>
                             </button>
+                          ) : (
+                            <span className="text-[10px] text-apple-text-tertiary text-center block pt-0.5">
+                              Sin imagen (usa color sólido)
+                            </span>
                           )}
                         </div>
                       </div>
@@ -1120,26 +1128,30 @@ export function Configuracion(): JSX.Element {
                           </div>
                         </div>
 
-                        <div className="flex-1 space-y-2 min-w-0">
+                        <div className="flex-1 flex flex-col justify-center gap-2 min-w-0">
                           <button
                             type="button"
                             onClick={() => bgFileInputVerticalRef.current?.click()}
                             disabled={uploadingBgVertical}
-                            className="w-full px-3 py-2 bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border hover:border-apple-blue/50 text-xs font-bold rounded-xl transition-colors inline-flex items-center justify-center gap-1.5"
+                            className="w-full px-3.5 py-2 bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary hover:bg-apple-blue/10 border border-apple-border dark:border-apple-dark-border hover:border-apple-blue text-xs font-semibold rounded-xl transition-all inline-flex items-center justify-center gap-2 shadow-xs active:scale-98"
                           >
-                            <Upload size={12} />
-                            {theme.config_diseno?.apariencia?.fondo_imagen_vertical_url ? 'Reemplazar' : 'Subir imagen'}
+                            <Upload size={13} className="text-apple-blue shrink-0" />
+                            <span>{theme.config_diseno?.apariencia?.fondo_imagen_vertical_url ? 'Reemplazar imagen' : 'Subir imagen'}</span>
                           </button>
 
-                          {theme.config_diseno?.apariencia?.fondo_imagen_vertical_url && (
+                          {theme.config_diseno?.apariencia?.fondo_imagen_vertical_url ? (
                             <button 
                               type="button" 
                               onClick={() => updateDisenoApariencia('fondo_imagen_vertical_url', '')}
-                              className="w-full py-1.5 text-center text-red-500 hover:bg-red-500/10 rounded-xl text-xs font-bold transition-colors inline-flex items-center justify-center gap-1"
+                              className="w-full px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/20 rounded-xl text-xs font-medium transition-all inline-flex items-center justify-center gap-1.5 active:scale-98"
                             >
-                              <Trash2 size={12} />
-                              Eliminar
+                              <Trash2 size={13} className="shrink-0" />
+                              <span>Eliminar imagen</span>
                             </button>
+                          ) : (
+                            <span className="text-[10px] text-apple-text-tertiary text-center block pt-0.5">
+                              Sin imagen (usa color sólido)
+                            </span>
                           )}
                         </div>
                       </div>
@@ -1161,7 +1173,7 @@ export function Configuracion(): JSX.Element {
                   <h4 className="text-xs font-bold text-apple-blue">Estilo de Encabezado / Portada</h4>
                   <span className="text-[10px] text-apple-text-tertiary">Formato de bienvenida del comensal</span>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {[
                     {
                       id: 'fondo_completo',
@@ -1182,17 +1194,24 @@ export function Configuracion(): JSX.Element {
                         key={hero.id}
                         type="button"
                         onClick={() => updateDisenoLayout('estilo_encabezado', hero.id)}
-                        className={`p-5 rounded-3xl border-2 transition-all text-left flex items-start gap-3 active:scale-98 ${
+                        className={`p-5 rounded-2xl border-2 transition-all text-left flex items-start gap-4 relative active:scale-98 min-h-[110px] ${
                           isSelected
-                            ? 'border-apple-blue bg-apple-blue/5 shadow-apple-glow'
-                            : 'border-apple-border dark:border-apple-dark-border bg-apple-bg dark:bg-apple-dark-bg text-apple-text-secondary hover:border-apple-blue/30'
+                            ? 'border-apple-blue bg-apple-blue/5 shadow-apple-glow ring-1 ring-apple-blue/20'
+                            : 'border-apple-border dark:border-apple-dark-border bg-apple-bg dark:bg-apple-dark-bg text-apple-text-secondary hover:border-apple-blue/40'
                         }`}
                       >
-                        <span className="text-2xl flex-shrink-0">{hero.icon}</span>
-                        <div>
-                          <div className={`text-xs font-bold ${isSelected ? 'text-apple-blue' : 'text-apple-text'}`}>{hero.label}</div>
-                          <p className="text-[11px] text-apple-text-tertiary mt-1 leading-relaxed">{hero.desc}</p>
+                        <div className="w-12 h-12 rounded-xl bg-apple-bg-secondary dark:bg-apple-dark-bg-secondary border border-apple-border dark:border-apple-dark-border flex items-center justify-center text-2xl flex-shrink-0 shadow-xs">
+                          {hero.icon}
                         </div>
+                        <div className="flex-1 min-w-0 pr-6">
+                          <div className={`text-sm font-bold leading-tight ${isSelected ? 'text-apple-blue' : 'text-apple-text'}`}>{hero.label}</div>
+                          <p className="text-xs text-apple-text-tertiary mt-1.5 leading-relaxed">{hero.desc}</p>
+                        </div>
+                        {isSelected && (
+                          <div className="absolute top-4 right-4 w-5 h-5 rounded-full bg-apple-blue text-white flex items-center justify-center text-[10px] font-bold shadow-sm">
+                            ✓
+                          </div>
+                        )}
                       </button>
                     );
                   })}
@@ -1829,8 +1848,8 @@ export function Configuracion(): JSX.Element {
                      const isGlass = theme.config_diseno?.elementos_visuales?.glassmorphism || false;
                      const isImageBg = theme.config_diseno?.apariencia?.fondo_tipo === 'imagen';
                      const imageBgUrl = previewMode === 'desktop'
-                       ? (theme.config_diseno?.apariencia?.fondo_imagen_horizontal_url || theme.config_diseno?.apariencia?.fondo_imagen_url)
-                       : (theme.config_diseno?.apariencia?.fondo_imagen_vertical_url || theme.config_diseno?.apariencia?.fondo_imagen_url);
+                       ? (theme.config_diseno?.apariencia?.fondo_imagen_horizontal_url || (!theme.config_diseno?.apariencia?.fondo_imagen_vertical_url ? (theme.config_diseno?.apariencia?.fondo_imagen_url || '') : ''))
+                       : (theme.config_diseno?.apariencia?.fondo_imagen_vertical_url || (!theme.config_diseno?.apariencia?.fondo_imagen_horizontal_url ? (theme.config_diseno?.apariencia?.fondo_imagen_url || '') : ''));
                      const showShadow = theme.config_diseno?.elementos_visuales?.sombras_habilitadas !== undefined
                        ? theme.config_diseno.elementos_visuales.sombras_habilitadas
                        : true;
@@ -1891,8 +1910,8 @@ export function Configuracion(): JSX.Element {
                       className="w-full h-full overflow-y-auto scrollbar-hide flex flex-col relative transition-all duration-300"
                       style={{ fontFamily: font }}
                     >
-                      {/* Fondo de imagen (Solo si no es banner_hero o como fondo del viewport) */}
-                      {isImageBg && imageBgUrl && !isHeroBanner && (
+                      {/* Fondo de imagen (Visible también en modo Hero Banner) */}
+                      {isImageBg && imageBgUrl && (
                         <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden z-0">
                           <div 
                             className="relative flex items-center justify-center" 
@@ -1943,46 +1962,34 @@ export function Configuracion(): JSX.Element {
                       {/* HERO BANNER SUPERIOR (Si layout.estilo_encabezado === 'banner_hero') */}
                       {isHeroBanner ? (
                         <div className="relative w-full overflow-hidden mb-3">
-                          <div className="h-28 sm:h-36 w-full relative bg-zinc-900 overflow-hidden">
-                            {imageBgUrl ? (
-                              <img 
-                                src={imageBgUrl} 
-                                alt="" 
-                                className="w-full h-full object-cover" 
-                                style={{ filter: `blur(${blurVal}px)` }}
-                              />
-                            ) : (
-                              <div 
-                                className="w-full h-full"
-                                style={{ background: `linear-gradient(135deg, ${theme.color_primario}60 0%, ${theme.color_fondo} 100%)` }}
-                              />
-                            )}
-                            <div className="absolute inset-0 bg-gradient-to-t via-black/40 to-transparent" />
+                          <div 
+                            className="h-28 sm:h-32 w-full relative overflow-hidden flex items-center justify-center shadow-md"
+                            style={{ background: `linear-gradient(135deg, ${theme.color_primario} 0%, ${theme.color_fondo} 100%)` }}
+                          >
+                            <div className="absolute inset-0 bg-black/15 backdrop-blur-[1px]" />
                           </div>
                           
-                          {/* Info de Hero en relieve */}
-                          <div className="px-4 -mt-7 relative z-20 flex items-end justify-between gap-2">
-                            <div className="flex items-end gap-2.5">
-                              <div 
-                                className="w-14 h-14 rounded-2xl flex items-center justify-center text-xl shadow-2xl border-2 flex-shrink-0"
-                                style={{ borderColor: theme.color_fondo, backgroundColor: `${theme.color_primario}25` }}
-                              >
-                                {theme.logo_url
-                                  ? <img src={theme.logo_url} alt="" className="w-full h-full object-cover rounded-2xl" />
-                                  : <span style={{ color: theme.color_primario }}>🌮</span>}
-                              </div>
-                              <div className="pb-1">
-                                <h4 className="text-[13px] font-black tracking-tight line-clamp-1" style={{ color: textOpHigh }}>
-                                  Mi Restaurante
-                                </h4>
-                                {theme.config_diseno?.informacion?.ambiente && (
-                                  <p className="text-[9px] font-semibold opacity-75" style={{ color: textOpLow }}>
-                                    ✨ {theme.config_diseno.informacion.ambiente}
-                                  </p>
-                                )}
-                              </div>
+                          {/* Info de Hero en relieve centrada */}
+                          <div className="px-4 -mt-8 relative z-20 flex flex-col items-center text-center gap-1.5">
+                            <div 
+                              className="w-14 h-14 rounded-2xl flex items-center justify-center text-xl shadow-2xl border-2 flex-shrink-0"
+                              style={{ borderColor: theme.color_fondo, backgroundColor: `${theme.color_primario}25` }}
+                            >
+                              {theme.logo_url
+                                ? <img src={theme.logo_url} alt="" className="w-full h-full object-cover rounded-2xl" />
+                                : <span style={{ color: theme.color_primario }}>🌮</span>}
                             </div>
-                            <span className="px-2 py-0.5 rounded-full text-[8px] font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 mb-1 flex-shrink-0">
+                            <div className="space-y-0.5">
+                              <h4 className="text-[13px] font-black tracking-tight" style={{ color: textOpHigh }}>
+                                Mi Restaurante
+                              </h4>
+                              {theme.config_diseno?.informacion?.ambiente && (
+                                <p className="text-[9px] font-semibold opacity-75" style={{ color: textOpLow }}>
+                                  ✨ {theme.config_diseno.informacion.ambiente}
+                                </p>
+                              )}
+                            </div>
+                            <span className="px-2 py-0.5 rounded-full text-[8px] font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                               🟢 Abierto
                             </span>
                           </div>

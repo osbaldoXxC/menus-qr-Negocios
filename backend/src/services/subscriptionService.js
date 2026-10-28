@@ -130,7 +130,7 @@ class SubscriptionService {
    */
   static async getUsageStats(restauranteId) {
      const { rows: restRows } = await db.query(
-      'SELECT plan, suscripcion_activa, suscripcion_expira_en, estado FROM restaurantes WHERE id = $1',
+      'SELECT plan, suscripcion_activa, suscripcion_expira_en, estado, dias_licencia FROM restaurantes WHERE id = $1',
       [restauranteId]
     );
 
@@ -153,6 +153,15 @@ class SubscriptionService {
       // Calcular la diferencia exacta en milisegundos y usar Math.ceil para no perder el día en curso
       const diffTime = expDate.getTime() - Date.now();
       dias_restantes = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+    } else if (restRows[0].suscripcion_activa) {
+      const dias = restRows[0].dias_licencia && restRows[0].dias_licencia > 0 ? restRows[0].dias_licencia : 30;
+      dias_restantes = dias;
+      db.query(
+        `UPDATE restaurantes 
+         SET suscripcion_expira_en = CURRENT_TIMESTAMP + ($1::int * INTERVAL '1 day') 
+         WHERE id = $2 AND suscripcion_expira_en IS NULL`,
+        [dias, restauranteId]
+      ).catch(e => console.error('Error auto-setting suscripcion_expira_en:', e));
     }
     
     return {

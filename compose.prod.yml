@@ -71,12 +71,23 @@ services:
       - public-net
       - private-net
 
-  frontend:
+  frontend-comensales:
     build:
-      context: ./frontend
+      context: ./frontend-comensales
       dockerfile: Dockerfile.prod
     ports:
       - "${FRONTEND_PORT:-3000}:80"
+    networks:
+      - public-net
+    depends_on:
+      - backend
+
+  frontend-restaurantes:
+    build:
+      context: ./frontend-restaurantes
+      dockerfile: Dockerfile.prod
+    ports:
+      - "${RESTAURANTES_PORT:-3002}:80"
     networks:
       - public-net
     depends_on:

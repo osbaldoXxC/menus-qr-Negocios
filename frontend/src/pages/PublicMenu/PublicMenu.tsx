@@ -346,10 +346,10 @@ export function PublicMenu() {
     ? (restaurante.config_diseno?.layout?.layout_type_horizontal || restaurante.layout_type || 'TARJETAS_DETALLADAS')
     : (restaurante.config_diseno?.layout?.layout_type_vertical || restaurante.layout_type || 'TARJETAS_DETALLADAS');
 
-  // Selección dinámica de imagen de fondo: Horizontal vs Vertical con fallback retrocompatible
+  // Selección dinámica de imagen de fondo: Horizontal vs Vertical estrictamente desacoplada
   const rawFondoUrl = isHorizontalBp
-    ? (configApariencia.fondo_imagen_horizontal_url || configApariencia.fondo_imagen_url || restaurante.fondo_url)
-    : (configApariencia.fondo_imagen_vertical_url || configApariencia.fondo_imagen_url || restaurante.fondo_url);
+    ? (configApariencia.fondo_imagen_horizontal_url || (!configApariencia.fondo_imagen_vertical_url ? (configApariencia.fondo_imagen_url || restaurante.fondo_url) : ''))
+    : (configApariencia.fondo_imagen_vertical_url || (!configApariencia.fondo_imagen_horizontal_url ? (configApariencia.fondo_imagen_url || restaurante.fondo_url) : ''));
 
   // Blindaje estricto: Si el tipo configurado es 'solido' o 'gradiente', NUNCA renderizar imagen de fondo
   const fondoTipo = restaurante.fondo_tipo || configApariencia.fondo_tipo || 'solido';
@@ -414,7 +414,7 @@ export function PublicMenu() {
         className="fixed inset-0 z-0 pointer-events-none w-full h-full overflow-hidden flex items-center justify-center"
         style={{ backgroundColor: bg }}
       >
-        {isImageBg && fondoUrl && !isHeroBanner && (
+        {isImageBg && fondoUrl && (
           <div 
             className="relative flex items-center justify-center origin-center flex-shrink-0"
             style={{ 
@@ -479,109 +479,95 @@ export function PublicMenu() {
       {/* ── HERO BANNER SUPERIOR (Si layout.estilo_encabezado === 'banner_hero') ── */}
       {isHeroBanner && (
         <div className="relative w-full overflow-hidden mb-6">
-          <div className="h-48 sm:h-64 md:h-72 w-full relative bg-zinc-900 overflow-hidden">
-            {fondoUrl ? (
-              <img
-                src={fondoUrl}
-                alt={restaurante.nombre}
-                className="w-full h-full object-cover"
-                style={{
-                  filter: `blur(${blurVal}px) brightness(${brightness}%) contrast(${contrast}%) saturate(${saturate}%)`,
-                  transform: 'scale(1.04)',
-                }}
-              />
-            ) : (
-              <div 
-                className="w-full h-full"
-                style={{
-                  background: `linear-gradient(135deg, ${primary}40 0%, ${bg} 100%)`
-                }}
-              />
-            )}
-            {/* Overlay gradiente */}
-            <div 
-              className="absolute inset-0 bg-gradient-to-t via-black/40 to-transparent"
-              style={{ backgroundColor: overlayColor ? `${overlayColor}${Math.round(overlayOpacity * 255).toString(16).padStart(2, '0')}` : undefined }}
-            />
+          {/* Cabecera superior con el color de marca elegido arriba */}
+          <div 
+            className="h-44 sm:h-56 md:h-64 w-full relative overflow-hidden flex items-center justify-center shadow-lg"
+            style={{
+              background: `linear-gradient(135deg, ${primary} 0%, ${bg} 100%)`
+            }}
+          >
+            {/* Overlay sutil de luminosidad y contraste */}
+            <div className="absolute inset-0 bg-black/15 backdrop-blur-[1px]" />
           </div>
 
-          {/* Tarjeta de Información en relieve sobre el Hero */}
-          <div className="max-w-[900px] mx-auto px-5 -mt-14 sm:-mt-16 relative z-20 flex flex-col sm:flex-row items-center sm:items-end justify-between gap-4">
-            <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 text-center sm:text-left">
-              {restaurante.logo_url ? (
-                <img
-                  src={restaurante.logo_url}
-                  alt={restaurante.nombre}
-                  className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover shadow-2xl border-4"
-                  style={{ borderColor: bg, backgroundColor: surface }}
-                />
-              ) : (
-                <div
-                  className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl flex items-center justify-center font-black text-3xl shadow-2xl border-4"
-                  style={{ borderColor: bg, backgroundColor: `${primary}30`, color: primary }}
-                >
-                  {restaurante.nombre.charAt(0)}
-                </div>
-              )}
-              <div className="space-y-1">
-                <h1 className="text-2xl sm:text-3xl font-black tracking-tight" style={{ color: textMain }}>
-                  {restaurante.nombre}
-                </h1>
-                {restaurante.config_diseno?.informacion?.ambiente && (
-                  <p className="text-xs sm:text-sm font-semibold opacity-80" style={{ color: textSub }}>
-                    ✨ {restaurante.config_diseno.informacion.ambiente}
-                  </p>
-                )}
-                {restaurante.config_diseno?.informacion?.direccion && (
-                  <p className="text-xs opacity-70 max-w-md line-clamp-1" style={{ color: textSub }}>
-                    📍 {restaurante.config_diseno.informacion.direccion}
-                  </p>
-                )}
+          {/* Tarjeta de Información en relieve sobre el Hero - Centrado armónico */}
+          <div className="max-w-[900px] mx-auto px-5 -mt-16 sm:-mt-20 relative z-20 flex flex-col items-center text-center gap-3">
+            {restaurante.logo_url ? (
+              <img
+                src={restaurante.logo_url}
+                alt={restaurante.nombre}
+                className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl object-cover shadow-2xl border-4 ring-2 ring-black/5"
+                style={{ borderColor: surface, backgroundColor: surface }}
+              />
+            ) : (
+              <div
+                className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl flex items-center justify-center font-black text-3xl shadow-2xl border-4 ring-2 ring-black/5"
+                style={{ borderColor: surface, backgroundColor: `${primary}20`, color: primary }}
+              >
+                {restaurante.nombre.charAt(0)}
               </div>
+            )}
+            <div className="space-y-1.5 max-w-xl">
+              <h1 className="text-2xl sm:text-4xl font-black tracking-tight" style={{ color: textMain }}>
+                {restaurante.nombre}
+              </h1>
+              {restaurante.config_diseno?.informacion?.ambiente && (
+                <p className="text-xs sm:text-sm font-semibold opacity-85" style={{ color: textSub }}>
+                  ✨ {restaurante.config_diseno.informacion.ambiente}
+                </p>
+              )}
+              {restaurante.config_diseno?.informacion?.direccion && (
+                <p className="text-xs opacity-75 max-w-md mx-auto line-clamp-1" style={{ color: textSub }}>
+                  📍 {restaurante.config_diseno.informacion.direccion}
+                </p>
+              )}
             </div>
 
-            {/* Badges de estado */}
-            <div className="flex items-center gap-2 pb-1">
-              {restaurante.config_diseno?.layout?.mostrar_estado_abierto !== false && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
+            {/* Badges de estado centrados */}
+            {restaurante.config_diseno?.layout?.mostrar_estado_abierto !== false && (
+              <div className="flex items-center justify-center gap-2 pt-0.5">
+                <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 shadow-xs">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                   Abierto ahora
                 </span>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* ── HEADER ── */}
-      <header
-        className="sticky top-0 z-50 px-5 py-3.5 flex items-center justify-between backdrop-blur-xl"
-        style={{ backgroundColor: 'transparent' }}
-      >
-        <div className="flex items-center gap-3">
-          {restaurante.logo_url ? (
-            <img src={restaurante.logo_url} alt={restaurante.nombre} className="h-9 w-9 rounded-xl object-cover flex-shrink-0" />
-          ) : (
-            <div
-              className="h-9 w-9 rounded-xl flex items-center justify-center font-black text-base flex-shrink-0"
-              style={{ backgroundColor: `${primary}20`, color: primary }}
-            >
-              {restaurante.nombre.charAt(0)}
-            </div>
-          )}
-          <span className="font-bold text-[15px] tracking-tight" style={{ color: textMain }}>
-            {restaurante.nombre}
-          </span>
-        </div>
-        <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: primary, boxShadow: `0 0 8px ${primary}` }} />
-      </header>
+      {/* ── HEADER (Solo para formato compacto cuando no hay Hero Banner) ── */}
+      {!isHeroBanner && (
+        <header
+          className="sticky top-0 z-50 px-5 py-3.5 flex items-center justify-between backdrop-blur-xl"
+          style={{ backgroundColor: 'transparent' }}
+        >
+          <div className="flex items-center gap-3">
+            {restaurante.logo_url ? (
+              <img src={restaurante.logo_url} alt={restaurante.nombre} className="h-9 w-9 rounded-xl object-cover flex-shrink-0" />
+            ) : (
+              <div
+                className="h-9 w-9 rounded-xl flex items-center justify-center font-black text-base flex-shrink-0"
+                style={{ backgroundColor: `${primary}20`, color: primary }}
+              >
+                {restaurante.nombre.charAt(0)}
+              </div>
+            )}
+            <span className="font-bold text-[15px] tracking-tight" style={{ color: textMain }}>
+              {restaurante.nombre}
+            </span>
+          </div>
+          <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: primary, boxShadow: `0 0 8px ${primary}` }} />
+        </header>
+      )}
 
-      {/* ── NAV CATEGORÍAS ── */}
+      {/* ── NAV CATEGORÍAS (Centrado armónico con el menú) ── */}
       <nav
-        className={`${isSticky ? 'sticky top-[64px]' : 'relative'} z-40 px-5 py-3 overflow-x-auto scrollbar-hide backdrop-blur-xl`}
+        className={`${isSticky ? 'sticky top-0' : 'relative'} z-40 px-5 py-3 backdrop-blur-xl`}
         style={{ backgroundColor: 'transparent' }}
       >
-        <div className="flex gap-2 w-max">
+        <div className="max-w-[900px] mx-auto flex items-center justify-center overflow-x-auto scrollbar-hide py-1">
+          <div className="flex gap-2 w-max">
           {categorias.map(cat => (
             <a
               key={cat.id}
@@ -599,6 +585,7 @@ export function PublicMenu() {
               {cat.nombre}
             </a>
           ))}
+        </div>
         </div>
       </nav>
 

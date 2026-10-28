@@ -1,0 +1,98 @@
+name: Continuous Integration (CI)
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+  pull_request:
+    branches:
+      - develop
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate-schema:
+    name: Database Schema Contract Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate Code vs Schema Contract
+        run: |
+          python scripts/validate_code_vs_schema.py --schema db/contract/schema.json --root .
+
+  build-backend:
+    name: Build & Verify Backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies & Check Syntax
+        working-directory: ./backend
+        run: |
+          npm ci
+          node -c src/index.js
+          node -c src/config/db.js
+          node -c src/controllers/menuController.js
+
+  build-frontends:
+    name: Build All Frontends (Comensales, Restaurantes, Admin)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build Frontend Comensales
+        working-directory: ./frontend-comensales
+        run: |
+          npm ci
+          npm run build
+
+      - name: Build Frontend Restaurantes
+        working-directory: ./frontend-restaurantes
+        run: |
+          npm ci
+          npm run build
+
+      - name: Build Admin
+        working-directory: ./admin
+        run: |
+          npm ci
+          npm run build
+
+  verify-python-services:
+    name: Verify Python ML & AI Services
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Verify Python Compilation
+        run: |
+          python -m py_compile ml-service/app/main.py
+          python -m py_compile ai-engine/worker.py

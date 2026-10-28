@@ -265,6 +265,15 @@ export default function Support() {
     }
   };
 
+  // Sincronización suave cada 3 segundos para la conversación activa del Admin
+  useEffect(() => {
+    if (!selectedConv?.id) return;
+    const interval = setInterval(() => {
+      fetchMessages(selectedConv.id);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [selectedConv?.id]);
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || selectedConv?.state === 'closed' || selectedConv?.state === 'pending' || isSending) return;
@@ -579,7 +588,7 @@ export default function Support() {
 
                   return (
                     <div key={msg.id} className={`msg-bubble msg-${msg.senderType === 'admin' ? 'admin' : 'client'}`}>
-                      {msg.senderType === 'restaurant' && <div className="text-xs opacity-75 mb-1 font-semibold">{msg.senderName}</div>}
+                      {/* Nombre omitido en burbujas porque ya figura en el encabezado del chat */}
                       <div>{msg.content}</div>
                       <div className="msg-time">
                         {dateString}

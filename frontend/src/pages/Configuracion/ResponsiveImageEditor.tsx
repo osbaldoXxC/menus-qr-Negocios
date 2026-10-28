@@ -103,8 +103,8 @@ export const ResponsiveImageEditor: React.FC<ResponsiveImageEditorProps> = ({
 
   const isHorizontalActive = BREAKPOINT_GROUPS.HORIZONTAL.includes(activeBp);
   const activeImageUrl = isHorizontalActive
-    ? (horizontalImageUrl || apariencia?.fondo_imagen_horizontal_url || imageUrl || apariencia?.fondo_imagen_url || '')
-    : (verticalImageUrl || apariencia?.fondo_imagen_vertical_url || imageUrl || apariencia?.fondo_imagen_url || '');
+    ? (horizontalImageUrl || apariencia?.fondo_imagen_horizontal_url || (!verticalImageUrl && !apariencia?.fondo_imagen_vertical_url ? (imageUrl || apariencia?.fondo_imagen_url) : '') || '')
+    : (verticalImageUrl || apariencia?.fondo_imagen_vertical_url || (!horizontalImageUrl && !apariencia?.fondo_imagen_horizontal_url ? (imageUrl || apariencia?.fondo_imagen_url) : '') || '');
 
   const activeBpMeta = BREAKPOINTS_LIST.find(b => b.key === activeBp) || BREAKPOINTS_LIST[1];
   const isCustomized = inheritedFrom === activeBp;

@@ -30,7 +30,10 @@ export default function SupportChat({ conversation, onClose }: SupportChatProps)
 
   useEffect(() => {
     fetchMessages();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const interval = setInterval(() => {
+      fetchMessages();
+    }, 3000);
+    return () => clearInterval(interval);
   }, [conversation.id]); // We will define fetchMessages below using function keyword for hoisting
 
   useEffect(() => {

@@ -96,9 +96,13 @@ const getMisConversaciones = async (req, res) => {
   const restaurante_id = req.user.id;
   try {
     const query = `
-      SELECT * FROM soporte_conversaciones
-      WHERE restaurante_id = $1
-      ORDER BY fecha_creacion DESC
+      SELECT 
+        c.*,
+        COALESCE(a.nombre_dueno, 'Soporte') as agente_nombre
+      FROM soporte_conversaciones c
+      LEFT JOIN restaurantes a ON c.admin_id = a.id
+      WHERE c.restaurante_id = $1
+      ORDER BY c.fecha_creacion DESC
     `;
     const result = await db.query(query, [restaurante_id]);
     const conversaciones = result.rows;
@@ -171,18 +175,19 @@ const sendMessageRestaurante = async (req, res) => {
     await db.query('COMMIT');
     
     const mensajeGuardado = msgResult.rows[0];
+    let autoMensajeGuardado = null;
 
     if (isNew) {
       await logAudit(conversacion.id, 'CREADA', restaurante_id, 'RESTAURANTE', 'Conversación creada por el restaurante');
-      
-      // Auto welcome message
+
+      // Auto welcome message ÚNICAMENTE en la creación de una nueva conversación
       const autoMsg = "Hola, bienvenido al soporte de Mexicana MX. Ya estamos revisando tu caso. En unos momentos un agente te responderá.";
       const autoMsgResult = await db.query(
         `INSERT INTO soporte_mensajes (conversacion_id, remitente_id, remitente_tipo, mensaje) VALUES ($1, NULL, 'SOPORTE', $2) RETURNING id, conversacion_id, remitente_id, remitente_tipo, mensaje, created_at`,
         [conversacion.id, autoMsg]
       );
       
-      const autoMensajeGuardado = autoMsgResult.rows[0];
+      autoMensajeGuardado = autoMsgResult.rows[0];
       
       notifyUser(restaurante_id, 'NEW_MESSAGE', {
         conversacion_id: conversacion.id,
@@ -197,7 +202,12 @@ const sendMessageRestaurante = async (req, res) => {
       mensaje: mensajeGuardado
     });
 
-    res.status(201).json({ mensaje: mensajeGuardado, conversacion_id: conversacion.id });
+    res.status(201).json({ 
+      mensaje: mensajeGuardado, 
+      conversacion_id: conversacion.id,
+      mensajes_restaurante_count: conversacion.mensajes_restaurante_count + 1,
+      autoMensaje: autoMensajeGuardado
+    });
   } catch (error) {
     await db.query('ROLLBACK');
     console.error('Error in sendMessageRestaurante:', error);
@@ -358,12 +368,14 @@ const sendMessageAdmin = async (req, res) => {
     }
 
     let estadoChanged = false;
+    let presMensajeGuardado = null;
     if (conv.estado === 'pendiente') {
       const presMsg = `Buenos días. Soy ${admin_name}, del equipo de soporte. Con gusto atenderé tu solicitud.`;
-      await db.query(
-        `INSERT INTO soporte_mensajes (conversacion_id, remitente_id, remitente_tipo, mensaje) VALUES ($1, $2, 'SOPORTE', $3)`,
+      const presResult = await db.query(
+        `INSERT INTO soporte_mensajes (conversacion_id, remitente_id, remitente_tipo, mensaje) VALUES ($1, $2, 'SOPORTE', $3) RETURNING id, conversacion_id, remitente_id, remitente_tipo, mensaje, created_at`,
         [conversacion_id, admin_id, presMsg]
       );
+      presMensajeGuardado = presResult.rows[0];
       
       await db.query(
         `UPDATE soporte_conversaciones SET estado = 'en_atencion', admin_id = $1 WHERE id = $2`,
@@ -393,6 +405,13 @@ const sendMessageAdmin = async (req, res) => {
     
     const mensajeGuardado = msgResult.rows[0];
     
+    if (presMensajeGuardado) {
+      notifyUser(conv.restaurante_id, 'NEW_MESSAGE', {
+        conversacion_id: conversacion_id,
+        mensaje: presMensajeGuardado
+      });
+    }
+
     notifyUser(conv.restaurante_id, 'NEW_MESSAGE', {
       conversacion_id: conversacion_id,
       mensaje: mensajeGuardado
