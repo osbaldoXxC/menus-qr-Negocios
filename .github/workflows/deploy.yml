@@ -11,20 +11,24 @@ permissions:
   contents: read
 
 jobs:
+  validate-release:
+    uses: ./.github/workflows/ci-entrega.yml
+
   # -----------------------------------------------------------
   # 1. DESPLIEGUE DE FRONTENDS A S3 + CLOUDFRONT
   # -----------------------------------------------------------
   deploy-frontends:
+    needs: validate-release
     name: Build & Deploy Frontends
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 20
+      - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22.12.0'
 
       - name: Configure AWS Credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v4
@@ -61,6 +65,7 @@ jobs:
   # 2. DESPLIEGUE DEL BACKEND Y CONTENEDORES EC2 VÍA SSM
   # -----------------------------------------------------------
   deploy-backend:
+    needs: validate-release
     name: Deploy Backend to EC2
     runs-on: ubuntu-latest
     steps:
