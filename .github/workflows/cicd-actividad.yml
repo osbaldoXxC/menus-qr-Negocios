@@ -1,0 +1,157 @@
+name: CI/CD Actividad (feature/abraham-actividad-cicd)
+
+# Pipeline de la actividad "Manejo de Scripts".
+# No reemplaza a deploy.yml (producción): lo complementa con CI, un entorno de
+# liberación efímero con pruebas y un despliegue manual con retroceso.
+
+on:
+  push:
+    branches: [develop, "feature/**"]
+  pull_request:
+    branches: [develop]
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: "Desplegar el backend en la EC2 (requiere aprobación del entorno production)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: cicd-actividad-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: "20"
+  VITE_API_URL: http://localhost:4000/api
+
+jobs:
+  # ---------------------------------------------------------------
+  # Etapa 1 - Integración continua
+  # ---------------------------------------------------------------
+  backend-checks:
+    name: Backend - instalación y validación de sintaxis
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: Instalar dependencias
+        working-directory: backend
+        run: npm ci
+      - name: Validar sintaxis de todos los archivos JS
+        run: bash scripts/cicd/pipeline/check-syntax.sh backend/src
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Validar código contra el contrato de base de datos
+        run: python scripts/validate_code_vs_schema.py --schema db/contract/schema.json --root .
+      - name: Auditoría de dependencias (informativa)
+        working-directory: backend
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
+  frontends:
+    name: Compilar ${{ matrix.app }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [frontend-comensales, frontend-restaurantes, admin]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: ${{ matrix.app }}/package-lock.json
+      - name: Instalar dependencias
+        working-directory: ${{ matrix.app }}
+        run: npm ci
+      - name: Lint (solo admin, informativo)
+        if: matrix.app == 'admin'
+        working-directory: admin
+        run: npm run lint
+        continue-on-error: true
+      - name: Compilar
+        working-directory: ${{ matrix.app }}
+        run: npm run build
+
+  # ---------------------------------------------------------------
+  # Etapa 2 - Entorno de liberación efímero + pruebas
+  # ---------------------------------------------------------------
+  release-env-tests:
+    name: Entorno de liberación y pruebas de humo
+    needs: [backend-checks]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generar entorno de liberación (PostgreSQL + Redis + backend)
+        run: bash scripts/cicd/env/release-up.sh
+      - name: Pruebas en el entorno de liberación
+        run: bash scripts/cicd/tests/smoke-test.sh http://127.0.0.1:4000
+      - name: Mostrar logs si algo falló
+        if: failure()
+        run: docker compose -p mexxican-release -f compose.release.yml logs --no-color --tail=200
+      - name: Destruir entorno de liberación
+        if: always()
+        run: bash scripts/cicd/env/release-down.sh
+
+  # ---------------------------------------------------------------
+  # Etapa 3 - Paquete de liberación (artefacto versionado por commit)
+  # ---------------------------------------------------------------
+  package-release:
+    name: Empaquetar liberación
+    needs: [release-env-tests, frontends]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generar bundle del backend
+        run: bash scripts/cicd/deploy/package-bundle.sh "${GITHUB_SHA}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: backend-bundle-${{ github.sha }}
+          path: dist-release/backend_app-${{ github.sha }}.zip
+          retention-days: 14
+
+  # ---------------------------------------------------------------
+  # Etapa 4 - Despliegue manual en la EC2 vía SSM, con retroceso
+  # ---------------------------------------------------------------
+  deploy:
+    name: Desplegar backend (EC2 vía SSM)
+    needs: [package-release]
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment: production      # exige revisores configurados en GitHub
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      AWS_REGION: us-east-1
+      INSTANCE_ID: ${{ vars.EC2_INSTANCE_ID }}
+      RELEASE_BUCKET: ${{ vars.RELEASE_BUCKET }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+      - name: Verificar variables requeridas
+        run: |
+          : "${INSTANCE_ID:?Define la variable EC2_INSTANCE_ID en el entorno production}"
+          : "${RELEASE_BUCKET:?Define la variable RELEASE_BUCKET en el entorno production}"
+      - name: Desplegar
+        run: bash scripts/cicd/deploy/ssm-deploy.sh "${GITHUB_SHA}"
+      - name: Retroceder a la versión anterior si falló
+        if: failure()
+        run: bash scripts/cicd/deploy/ssm-rollback.sh

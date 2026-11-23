@@ -1,0 +1,52 @@
+# Entorno de liberación efímero (CI). No usa volúmenes persistentes ni secretos reales.
+# Uso: docker compose -p mexxican-release -f compose.release.yml up -d --build
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: release
+      POSTGRES_PASSWORD: release
+      POSTGRES_DB: mexxicanmx_release
+    volumes:
+      - ./backend/src/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U release -d mexxicanmx_release"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: staging
+      PORT: "4000"
+      DATABASE_URL: postgresql://release:release@postgres:5432/mexxicanmx_release
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: secreto-solo-para-liberacion
+      REFRESH_TOKEN_SECRET: otro-secreto-solo-para-liberacion
+      FRONTEND_URL: http://localhost:3000
+      AWS_REGION: us-east-1
+    ports:
+      - "127.0.0.1:4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:4000/health || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
